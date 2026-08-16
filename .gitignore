@@ -141,6 +141,7 @@ docs/*
 .serena/
 .codex/
 frontend/coverage/
+frontend/audit.json
 aicodex
 output/
 
