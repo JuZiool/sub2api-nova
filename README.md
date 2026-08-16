@@ -36,7 +36,32 @@ cd sub2api-nova/deploy
 
 ### 2. 创建环境配置
 
-Linux/macOS：
+推荐使用交互式初始化脚本。脚本会自动生成 PostgreSQL、Redis、JWT 和 TOTP 密钥，只要求手动输入管理员邮箱、管理员初始密码，并通过 Yes/No 选择是否开启 Codex 额度透支。
+
+Linux、macOS、Git Bash 或 WSL：
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+脚本会完成以下操作：
+
+- 根据 `.env.example` 生成 `.env`
+- 自动生成 `POSTGRES_PASSWORD`
+- 自动生成 `REDIS_PASSWORD`
+- 自动生成 `JWT_SECRET`
+- 自动生成 `TOTP_ENCRYPTION_KEY`
+- 手动填写 `ADMIN_EMAIL` 和 `ADMIN_PASSWORD`
+- 通过 Yes/No 配置 `GATEWAY_CODEX_QUOTA_OVERDRAFT_ENABLED`
+- 创建 `data`、`postgres_data` 和 `redis_data` 目录
+- 将 `.env` 权限设置为仅当前用户可读写
+
+如果 `.env` 已存在，脚本会先询问是否覆盖。也可以使用 `./setup.sh --help` 查看可用选项。
+
+管理员初始密码不限制位数，但不能为空。为了使用 `.env` 的单引号字面量安全保存空格、`$`、`#`、双引号和反斜杠，密码不能包含单引号字符。
+
+需要手动创建配置时，Linux/macOS 执行：
 
 ```bash
 cp .env.example .env
@@ -80,6 +105,8 @@ openssl rand -hex 32
 每个密码和密钥都应使用不同的随机值。不要把 `deploy/.env` 提交到 Git 仓库。
 
 ### 3. 创建数据目录
+
+使用 `setup.sh` 时会自动创建数据目录，可以跳过本步骤。手动配置 `.env` 时执行以下命令。
 
 Linux/macOS：
 
@@ -377,6 +404,7 @@ GATEWAY_CODEX_QUOTA_OVERDRAFT_ENABLED=false
 backend/                    Go 后端与网关服务
 frontend/                   Vue 3 管理端和用户端
 deploy/                     Docker Compose、环境配置和持久化数据目录
+deploy/setup.sh             交互式环境配置初始化脚本
 docs/                       法律文本及项目文档
 Dockerfile                  Nova 本地源码多阶段构建文件
 FORK_VERSION                当前 Nova 源码版本
