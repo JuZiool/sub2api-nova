@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"errors"
+	"io"
 	"mime"
 	"net/http"
 	"strconv"
@@ -110,6 +112,37 @@ func (h *BackupHandler) CreateBackup(c *gin.Context) {
 		return
 	}
 	response.Accepted(c, record)
+}
+
+func (h *BackupHandler) ImportLocalBackup(c *gin.Context) {
+	reader, err := c.Request.MultipartReader()
+	if err != nil {
+		response.BadRequest(c, "backup upload must use multipart/form-data")
+		return
+	}
+	for {
+		part, nextErr := reader.NextPart()
+		if errors.Is(nextErr, io.EOF) {
+			break
+		}
+		if nextErr != nil {
+			response.BadRequest(c, "read backup upload: "+nextErr.Error())
+			return
+		}
+		if part.FormName() != "file" || part.FileName() == "" {
+			_ = part.Close()
+			continue
+		}
+		record, importErr := h.backupService.ImportLocalBackup(c.Request.Context(), part.FileName(), part)
+		_ = part.Close()
+		if importErr != nil {
+			response.ErrorFrom(c, importErr)
+			return
+		}
+		response.Success(c, record)
+		return
+	}
+	response.BadRequest(c, "backup upload requires a file field")
 }
 
 func (h *BackupHandler) ListBackups(c *gin.Context) {

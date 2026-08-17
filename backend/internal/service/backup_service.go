@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bufio"
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
@@ -11,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -32,6 +34,7 @@ const (
 
 	maxBackupRecords           = 100
 	backupObjectCleanupTimeout = 2 * time.Minute
+	maxImportedBackupBytes     = 64 << 30 // 64 GiB compressed archive
 
 	// backupScheduledLeaderLockKey gates the scheduled full-database backup so
 	// that only one instance in a clustered deployment performs the
@@ -1170,6 +1173,58 @@ func (s *BackupService) DeleteBackup(ctx context.Context, backupID string) error
 	}
 
 	return s.saveRecordsLocked(ctx, remaining)
+}
+
+// ImportLocalBackup stores an uploaded pg_dump gzip archive in the persistent
+// local backup directory. Importing only creates a backup record; restoring it
+// remains a separate password-confirmed operation.
+func (s *BackupService) ImportLocalBackup(ctx context.Context, fileName string, body io.Reader) (*BackupRecord, error) {
+	if s.shuttingDown.Load() {
+		return nil, infraerrors.ServiceUnavailable("SERVER_SHUTTING_DOWN", "server is shutting down")
+	}
+	fileName = filepath.Base(strings.TrimSpace(fileName))
+	if fileName == "." || fileName == "" || !strings.HasSuffix(strings.ToLower(fileName), ".sql.gz") {
+		return nil, infraerrors.BadRequest("BACKUP_IMPORT_INVALID_FILENAME", "backup file must use the .sql.gz extension")
+	}
+
+	reader := bufio.NewReader(body)
+	header, err := reader.Peek(3)
+	if err != nil || len(header) != 3 || header[0] != 0x1f || header[1] != 0x8b || header[2] != 0x08 {
+		return nil, infraerrors.BadRequest("BACKUP_IMPORT_INVALID_GZIP", "backup file must be a gzip archive")
+	}
+
+	store, err := newLocalBackupStore(s.localBackupDir)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	record := &BackupRecord{
+		ID:          uuid.New().String()[:8],
+		Status:      "completed",
+		BackupType:  "postgres",
+		FileName:    fileName,
+		S3Key:       fmt.Sprintf("imports/%s-%s", uuid.NewString(), fileName),
+		StorageType: backupStorageLocal,
+		TriggeredBy: "imported",
+		StartedAt:   now.Format(time.RFC3339),
+		FinishedAt:  now.Format(time.RFC3339),
+	}
+
+	limited := &io.LimitedReader{R: reader, N: maxImportedBackupBytes + 1}
+	sizeBytes, err := store.Upload(ctx, record.S3Key, limited, "application/gzip")
+	if err != nil {
+		return nil, fmt.Errorf("store imported backup: %w", err)
+	}
+	if sizeBytes > maxImportedBackupBytes {
+		_ = store.Delete(context.Background(), record.S3Key)
+		return nil, infraerrors.BadRequest("BACKUP_IMPORT_TOO_LARGE", "backup file exceeds the 64 GiB limit")
+	}
+	record.SizeBytes = sizeBytes
+	if err := s.saveRecord(ctx, record); err != nil {
+		_ = store.Delete(context.Background(), record.S3Key)
+		return nil, fmt.Errorf("save imported backup record: %w", err)
+	}
+	return record, nil
 }
 
 // GetBackupDownloadURL 获取备份文件预签名下载 URL

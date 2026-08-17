@@ -133,10 +133,14 @@ export default {
       },
       operations: {
         title: 'Backup Records',
-        description: 'Create manual backups and manage existing backup records',
+        description: 'Create, import, and manage database backups; imported backups require a separate restore confirmation',
         createBackup: 'Create Backup',
         backing: 'Backing up...',
         backupCreated: 'Backup created successfully',
+        selectFile: 'Select a .sql.gz backup file',
+        importBackup: 'Upload Backup',
+        uploading: 'Uploading...',
+        imported: 'Backup uploaded and ready to restore',
         expireDays: 'Expire Days',
         alreadyInProgress: 'A backup is already in progress',
         backupRunning: 'Backup in progress...',
@@ -167,7 +171,8 @@ export default {
       },
       trigger: {
         manual: 'Manual',
-        scheduled: 'Scheduled'
+        scheduled: 'Scheduled',
+        imported: 'Imported'
       },
       neverExpire: 'Never',
       empty: 'No backup records',

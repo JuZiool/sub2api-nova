@@ -132,6 +132,7 @@ var auditActionOverrides = map[string]string{
 	"POST /api/v1/admin/audit-logs/clear":                     service.AuditActionAuditLogClear,
 	"POST /api/v1/admin/accounts/data":                        "admin.accounts.import",
 	"POST /api/v1/admin/backups":                              "admin.backups.create",
+	"POST /api/v1/admin/backups/import":                       "admin.backups.import",
 	"POST /api/v1/admin/backups/:id/restore":                  "admin.backups.restore",
 	"DELETE /api/v1/admin/backups/:id":                        "admin.backups.delete",
 	"PUT /api/v1/admin/backups/s3-config":                     "admin.backups.s3_config.update",
@@ -145,12 +146,13 @@ var auditActionOverrides = map[string]string{
 	"POST /api/v1/admin/prompt-audit/events/delete-by-filter": "admin.prompt_audit.events.filter_delete",
 }
 
-// auditBodyOmittedRoutes 请求体几乎整体由凭证构成的路由（如整块粘贴 auth JSON 的导入接口）。
-// 这类 body 的凭证内嵌在普通字符串值里，键级脱敏无法覆盖，整体不入库。
+// auditBodyOmittedRoutes 请求体含有凭证或二进制大文件的路由。
+// 这类 body 无法安全脱敏或不应被预读，整体不入库。
 var auditBodyOmittedRoutes = map[string]struct{}{
 	"POST /api/v1/auth/passkey/login/finish":                    {},
 	"POST /api/v1/user/passkeys/register/finish":                {},
 	"POST /api/v1/admin/accounts/import/codex-session":          {},
+	"POST /api/v1/admin/backups/import":                         {},
 	"PUT /api/v1/admin/accounts/:id/ollama-cloud-usage/session": {},
 	"PUT /api/v1/admin/prompt-audit/config":                     {},
 	"POST /api/v1/admin/prompt-audit/endpoints/probe":           {},

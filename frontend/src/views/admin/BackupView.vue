@@ -195,6 +195,19 @@
             <button type="button" class="btn btn-primary btn-sm" :disabled="creatingBackup" @click="createBackup">
               {{ creatingBackup ? t('admin.backup.operations.backing') : t('admin.backup.operations.createBackup') }}
             </button>
+            <label class="sr-only" for="backup-import-file">{{ t('admin.backup.operations.selectFile') }}</label>
+            <input
+              id="backup-import-file"
+              ref="importFileInput"
+              type="file"
+              accept=".sql.gz,application/gzip"
+              class="block max-w-52 text-xs text-gray-600 file:mr-2 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-gray-700 hover:file:bg-gray-200 dark:text-gray-300 dark:file:bg-dark-700 dark:file:text-gray-200 dark:hover:file:bg-dark-600"
+              :disabled="importingBackup"
+              @change="selectImportFile"
+            />
+            <button type="button" class="btn btn-secondary btn-sm" :disabled="!importFile || importingBackup" @click="importBackup">
+              {{ importingBackup ? t('admin.backup.operations.uploading') : t('admin.backup.operations.importBackup') }}
+            </button>
             <button type="button" class="btn btn-secondary btn-sm" :disabled="loadingBackups" @click="loadBackups">
               {{ loadingBackups ? t('common.loading') : t('common.refresh') }}
             </button>
@@ -236,7 +249,11 @@
                   {{ record.expires_at ? formatDate(record.expires_at) : t('admin.backup.neverExpire') }}
                 </td>
                 <td class="py-3 pr-4 text-xs">
-                  {{ record.triggered_by === 'scheduled' ? t('admin.backup.trigger.scheduled') : t('admin.backup.trigger.manual') }}
+                  {{ record.triggered_by === 'scheduled'
+                    ? t('admin.backup.trigger.scheduled')
+                    : record.triggered_by === 'imported'
+                      ? t('admin.backup.trigger.imported')
+                      : t('admin.backup.trigger.manual') }}
                 </td>
                 <td class="py-3 pr-4 text-xs">{{ formatDate(record.started_at) }}</td>
                 <td class="py-3 text-xs">
@@ -494,6 +511,9 @@ const savingSchedule = ref(false)
 const backups = ref<BackupRecord[]>([])
 const loadingBackups = ref(false)
 const creatingBackup = ref(false)
+const importingBackup = ref(false)
+const importFile = ref<File | null>(null)
+const importFileInput = ref<HTMLInputElement | null>(null)
 const restoringId = ref('')
 const manualExpireDays = ref(14)
 const downloadParts = ref<BackupDownloadPart[]>([])
@@ -776,6 +796,29 @@ async function createBackup() {
       appStore.showError(error?.message || t('errors.networkError'))
     }
     creatingBackup.value = false
+  }
+}
+
+function selectImportFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  importFile.value = input.files?.[0] || null
+}
+
+async function importBackup() {
+  if (!importFile.value) return
+  importingBackup.value = true
+  try {
+    const record = await backupStepUp.run(() => adminAPI.backup.importLocalBackup(importFile.value!))
+    backups.value.unshift(record)
+    importFile.value = null
+    if (importFileInput.value) importFileInput.value.value = ''
+    appStore.showSuccess(t('admin.backup.operations.imported'))
+  } catch (error) {
+    if (isStepUpCancelled(error)) return
+    if (reportStepUpBlocked(error)) return
+    appStore.showError((error as { message?: string })?.message || t('errors.networkError'))
+  } finally {
+    importingBackup.value = false
   }
 }
 

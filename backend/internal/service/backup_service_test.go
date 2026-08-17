@@ -315,7 +315,53 @@ func seedS3Config(t *testing.T, repo *mockSettingRepo) {
 	require.NoError(t, repo.Set(context.Background(), settingKeyBackupS3Config, string(data)))
 }
 
+func gzipBackupData(t *testing.T, content []byte) []byte {
+	t.Helper()
+	var compressed bytes.Buffer
+	writer := gzip.NewWriter(&compressed)
+	_, err := writer.Write(content)
+	require.NoError(t, err)
+	require.NoError(t, writer.Close())
+	return compressed.Bytes()
+}
+
 // ─── Tests ───
+
+func TestBackupService_ImportLocalBackup_CanRestoreImportedArchive(t *testing.T) {
+	repo := newMockSettingRepo()
+	dumper := &mockDumper{}
+	svc := newTestBackupService(repo, dumper, newMockObjectStore())
+	svc.localBackupDir = t.TempDir()
+
+	payload := []byte("CREATE TABLE imported_backup (id integer);\n")
+	record, err := svc.ImportLocalBackup(context.Background(), "migration.sql.gz", bytes.NewReader(gzipBackupData(t, payload)))
+	require.NoError(t, err)
+	require.Equal(t, "completed", record.Status)
+	require.Equal(t, backupStorageLocal, record.StorageType)
+	require.Equal(t, "imported", record.TriggeredBy)
+	require.Equal(t, int64(len(gzipBackupData(t, payload))), record.SizeBytes)
+
+	stored, err := newLocalBackupStore(svc.localBackupDir)
+	require.NoError(t, err)
+	body, err := stored.Download(context.Background(), record.S3Key)
+	require.NoError(t, err)
+	require.NoError(t, body.Close())
+
+	require.NoError(t, svc.RestoreBackup(context.Background(), record.ID))
+	require.Equal(t, payload, dumper.restored)
+}
+
+func TestBackupService_ImportLocalBackup_RejectsNonGzipArchive(t *testing.T) {
+	svc := newTestBackupService(newMockSettingRepo(), &mockDumper{}, newMockObjectStore())
+	svc.localBackupDir = t.TempDir()
+
+	_, err := svc.ImportLocalBackup(context.Background(), "migration.sql.gz", strings.NewReader("not a gzip archive"))
+	require.Error(t, err)
+
+	records, listErr := svc.ListBackups(context.Background())
+	require.NoError(t, listErr)
+	require.Empty(t, records)
+}
 
 func TestBackupService_S3ConfigEncryption(t *testing.T) {
 	repo := newMockSettingRepo()

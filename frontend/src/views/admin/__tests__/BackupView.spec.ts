@@ -10,6 +10,7 @@ const {
   listBackups,
   getDownloadURL,
   downloadLocalBackup,
+  importLocalBackup,
 } = vi.hoisted(() => ({
   getS3Config: vi.fn(),
   getImageStorageConfig: vi.fn(),
@@ -17,6 +18,7 @@ const {
   listBackups: vi.fn(),
   getDownloadURL: vi.fn(),
   downloadLocalBackup: vi.fn(),
+  importLocalBackup: vi.fn(),
 }))
 
 vi.mock('@/api', () => ({
@@ -31,6 +33,7 @@ vi.mock('@/api', () => ({
       getSchedule,
       updateSchedule: vi.fn(),
       createBackup: vi.fn(),
+      importLocalBackup,
       listBackups,
       getBackup: vi.fn(),
       deleteBackup: vi.fn(),
@@ -96,6 +99,7 @@ describe('admin BackupView 分卷备份', () => {
     getSchedule.mockResolvedValue({ enabled: false, cron_expr: '', retain_days: 14, retain_count: 10 })
     getDownloadURL.mockReset()
     downloadLocalBackup.mockReset()
+    importLocalBackup.mockReset()
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
   })
 
@@ -162,6 +166,31 @@ describe('admin BackupView 分卷备份', () => {
     await flushPromises()
 
     expect(downloadLocalBackup).toHaveBeenCalledWith('local', undefined)
+  })
+
+  it('上传 .sql.gz 文件后将导入记录加入列表', async () => {
+    listBackups.mockResolvedValue({ items: [] })
+    importLocalBackup.mockResolvedValue({ ...baseRecord('imported'), storage_type: 'local', triggered_by: 'imported' })
+
+    const wrapper = mountBackupView()
+    await flushPromises()
+    const fileInput = wrapper.find('#backup-import-file')
+    Object.defineProperty(fileInput.element, 'files', {
+      configurable: true,
+      value: [new File(['backup'], 'migration.sql.gz', { type: 'application/gzip' })],
+    })
+    await fileInput.trigger('change')
+
+    const importButton = wrapper.findAll('button').find(button =>
+      button.text().includes('admin.backup.operations.importBackup'),
+    )
+    expect(importButton).toBeDefined()
+    await importButton!.trigger('click')
+    await flushPromises()
+
+    expect(importLocalBackup).toHaveBeenCalledWith(expect.objectContaining({ name: 'migration.sql.gz' }))
+    expect(wrapper.text()).toContain('imported.sql.gz')
+    expect(wrapper.text()).toContain('admin.backup.trigger.imported')
   })
 
   it('运行中的备份不显示删除入口', async () => {

@@ -145,6 +145,16 @@ export async function createBackup(req?: CreateBackupRequest): Promise<BackupRec
   return data
 }
 
+export async function importLocalBackup(file: File): Promise<BackupRecord> {
+  const form = new FormData()
+  form.append('file', file)
+  const { data } = await apiClient.post<BackupRecord>('/admin/backups/import', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 0,
+  })
+  return data
+}
+
 export async function listBackups(): Promise<{ items: BackupRecord[] }> {
   const { data } = await apiClient.get<{ items: BackupRecord[] }>('/admin/backups')
   return data
@@ -188,6 +198,7 @@ export const backupAPI = {
   getSchedule,
   updateSchedule,
   createBackup,
+  importLocalBackup,
   listBackups,
   getBackup,
   deleteBackup,
