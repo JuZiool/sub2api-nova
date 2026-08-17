@@ -16,6 +16,13 @@
 - 本地 commit 完成后，只有在当前任务需要同步远程仓库或用户明确要求时才执行 push。
 - 禁止使用强制推送覆盖远程历史，除非用户明确要求并确认目标分支。
 
+## Docker 构建与部署
+
+- 每次完成实际的代码改动后，必须使用 Docker 构建并部署当前项目，再将部署结果交由用户查看。
+- 使用项目既有的 Nova Compose 配置执行构建和部署：`cd deploy && docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build`。
+- 构建或部署失败时，必须如实报告失败原因，不得宣称部署成功。
+- 部署完成后，向用户提供访问地址或部署状态，由用户进行页面与功能确认；除非用户另有要求，不代替用户做最终界面验收。
+
 ## 提交示例
 
 ```text
