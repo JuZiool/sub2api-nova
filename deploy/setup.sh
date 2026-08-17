@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_FILE="${SCRIPT_DIR}/.env.example"
 OUTPUT_FILE="${SCRIPT_DIR}/.env"
 FORCE=false
+START_ENABLED=true
+HEALTH_TIMEOUT=180
 
 usage() {
   cat <<'EOF'
@@ -14,6 +16,7 @@ usage() {
 选项：
   --force          覆盖尚未启动过的环境配置；已有部署数据时会拒绝执行
   --output <路径>  将配置写入指定文件，默认写入 deploy/.env
+  --no-start       只生成配置，不构建或启动服务
   -h, --help       显示帮助
 EOF
 }
@@ -31,6 +34,10 @@ while (($# > 0)); do
       fi
       OUTPUT_FILE="$2"
       shift 2
+      ;;
+    --no-start)
+      START_ENABLED=false
+      shift
       ;;
     -h | --help)
       usage
@@ -69,6 +76,84 @@ fi
 if [[ -e "$OUTPUT_FILE" && "$FORCE" != true ]]; then
   echo "错误：配置文件 ${OUTPUT_FILE} 已存在。使用 --force 仅可覆盖尚未启动过的配置。" >&2
   exit 1
+fi
+
+compose() {
+  (
+    cd -- "$SCRIPT_DIR"
+    docker compose \
+      --env-file "$OUTPUT_FILE" \
+      -f docker-compose.local.yml \
+      -f docker-compose.nova.yml \
+      "$@"
+  )
+}
+
+ensure_docker_available() {
+  command -v docker >/dev/null 2>&1 || {
+    echo "错误：未安装 Docker。请先安装 Docker Engine。" >&2
+    exit 1
+  }
+
+  docker compose version >/dev/null 2>&1 || {
+    echo "错误：未安装 Docker Compose v2。" >&2
+    exit 1
+  }
+
+  docker info >/dev/null 2>&1 || {
+    echo "错误：Docker 服务未运行，或当前用户无权访问 Docker。" >&2
+    exit 1
+  }
+}
+
+wait_for_application() {
+  local deadline=$((SECONDS + HEALTH_TIMEOUT))
+  local container_id
+  local health
+
+  echo "等待 Sub2API 健康检查，最长 ${HEALTH_TIMEOUT} 秒..."
+  while ((SECONDS < deadline)); do
+    container_id="$(compose ps -q sub2api 2>/dev/null || true)"
+    if [[ -n "$container_id" ]]; then
+      health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container_id" 2>/dev/null || true)"
+      case "$health" in
+        healthy)
+          return
+          ;;
+        unhealthy | exited | dead)
+          break
+          ;;
+      esac
+    fi
+    sleep 2
+  done
+
+  compose ps >&2 || true
+  compose logs --tail=200 sub2api >&2 || true
+  echo "错误：Sub2API 未在 ${HEALTH_TIMEOUT} 秒内通过健康检查。" >&2
+  exit 1
+}
+
+start_application() {
+  echo
+  echo "校验 Docker Compose 配置..."
+  compose config --quiet
+
+  echo "构建并启动 Sub2API Nova..."
+  if ! compose up -d --build --remove-orphans; then
+    echo "错误：Docker Compose 启动失败，配置文件已保留在 $OUTPUT_FILE。" >&2
+    exit 1
+  fi
+
+  wait_for_application
+  echo
+  echo "Sub2API Nova 已启动。"
+  echo "访问地址：http://服务器IP:$SERVER_PORT"
+  compose ps
+}
+
+if [[ "$START_ENABLED" == true ]]; then
+  ensure_docker_available
 fi
 
 generate_hex() {
@@ -273,6 +358,12 @@ echo "配置已生成：$OUTPUT_FILE"
 echo "服务端口：$SERVER_PORT"
 echo "数据库、Redis、JWT 和 TOTP 密钥已自动随机生成。"
 echo "Codex 额度透支：$OVERDRAFT_ENABLED"
-echo
-echo "启动命令："
-echo "docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build"
+
+if [[ "$START_ENABLED" == true ]]; then
+  start_application
+else
+  echo
+  echo "已按 --no-start 仅生成配置。"
+  echo "启动命令："
+  echo "cd \"$SCRIPT_DIR\" && docker compose --env-file \"$OUTPUT_FILE\" -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build"
+fi

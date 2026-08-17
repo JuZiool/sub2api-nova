@@ -408,7 +408,7 @@ initialize_config() {
   log "开始初始化部署配置。"
   (
     cd -- "$DEPLOY_DIR"
-    ./setup.sh </dev/tty
+    ./setup.sh --no-start </dev/tty
   )
 }
 

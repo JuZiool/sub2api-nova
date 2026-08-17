@@ -75,6 +75,7 @@ chmod +x setup.sh
 - 通过 Yes/No 选择是否开启 Codex 额度透支
 - 创建 `data`、`postgres_data` 和 `redis_data` 持久化目录
 - 将 `.env` 权限设置为仅当前用户可读写
+- 自动构建并启动三个容器，等待 Sub2API 通过健康检查
 
 管理员初始密码不限制位数，但不能为空，需要输入两次确认。密码不能包含单引号字符。
 
@@ -82,6 +83,12 @@ chmod +x setup.sh
 
 ```bash
 ./setup.sh --help
+```
+
+如果只希望生成配置而暂不启动：
+
+```bash
+./setup.sh --no-start
 ```
 
 如果不使用脚本，可以手动创建配置。
@@ -124,9 +131,9 @@ GATEWAY_CODEX_QUOTA_OVERDRAFT_ENABLED=true
 
 不要将 `.env` 提交到 Git 仓库，也不要向他人公开其中的密码和密钥。
 
-### 3. 构建并启动
+### 3. 手动构建或重新启动
 
-在 `deploy` 目录执行。
+正常执行 `./setup.sh` 后服务已经启动。仅在使用 `--no-start`、手工创建 `.env` 或需要重新构建时，在 `deploy` 目录执行以下命令。
 
 Linux、macOS、Git Bash 或 WSL：
 
@@ -276,6 +283,20 @@ docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nov
 ### 启动时报 `POSTGRES_PASSWORD is required`
 
 确认 `deploy/.env` 已创建，且 `POSTGRES_PASSWORD` 不是空值或示例占位值。
+
+### `docker-entrypoint.sh` 提示 `Permission denied`
+
+在项目根目录拉取最新代码并重新构建应用镜像：
+
+```bash
+git pull origin main
+chmod 755 deploy/docker-entrypoint.sh
+cd deploy
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml build --no-cache sub2api
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml up -d --force-recreate
+```
+
+当前 Dockerfile 会在构建时统一清理 Shell 脚本的 CRLF 行尾，并强制设置入口脚本权限为 `755`。
 
 ### 页面无法访问
 
