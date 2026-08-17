@@ -9,7 +9,44 @@
 - Docker Compose v2
 - 建议至少 2 核 CPU、4 GB 内存
 
+## Linux 一键部署
+
+在常见 Linux 服务器上执行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh | sudo bash
+```
+
+脚本会自动完成：
+
+- 安装缺少的基础依赖，并在需要时运行 Docker 官方安装脚本
+- 首次部署时克隆源码并调用 `setup.sh` 生成安全配置
+- 重复运行时保留 `.env` 和全部持久化数据
+- 更新前使用 `pg_dump` 备份 PostgreSQL
+- 使用 `git merge --ff-only` 拉取 `main` 分支，拒绝覆盖本地源码修改
+- 构建并启动 Sub2API、PostgreSQL 和 Redis
+- 等待 `/health` 健康检查，失败时输出容器状态和应用日志
+
+默认安装目录为 `/opt/sub2api-nova`。再次执行同一条命令即可更新。
+
+向脚本传递参数：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh | \
+  sudo bash -s -- --dir /srv/sub2api-nova --branch main
+```
+
+查看全部参数：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh | sudo bash -s -- --help
+```
+
+更新备份保存在 `deploy/backups/<时间>/database.sql.gz`。数据库备份包含敏感业务数据，应限制访问并定期转移到独立存储。
+
 ## 从零部署
+
+以下步骤适用于希望手工控制 Git、配置和 Docker Compose 命令的场景。
 
 ### 1. 获取源码
 
@@ -207,6 +244,7 @@ Nova 已移除后台内置版本更新检测，源码更新需要手动执行。
 deploy/data/           应用数据和日志
 deploy/postgres_data/  PostgreSQL 数据
 deploy/redis_data/     Redis 数据
+deploy/backups/        一键更新前生成的 PostgreSQL 逻辑备份
 ```
 
 备份或迁移前先停止服务：
