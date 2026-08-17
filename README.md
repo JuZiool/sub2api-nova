@@ -236,12 +236,26 @@ docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nov
 
 ## 更新部署
 
-先停止服务并备份数据，然后在项目根目录执行：
+日常更新可以在项目根目录直接运行：
+
+```bash
+bash deploy/update.sh
+```
+
+脚本会拉取 `main` 分支、复用 Docker 构建缓存，并只更新 `sub2api` 应用容器。现有 `.env`、PostgreSQL、Redis 和持久化数据不会被删除。更新成功后，脚本会删除刚被替换的上一版应用镜像，但会保留构建缓存以加快下次更新。
+
+需要顺便清理超过 7 天的 Docker 构建缓存时运行：
+
+```bash
+bash deploy/update.sh --prune-cache
+```
+
+也可以手动执行同等更新流程：
 
 ```bash
 git pull origin main
 cd deploy
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build sub2api
 ```
 
 Nova 已移除后台内置版本更新检测，源码更新需要手动执行。
