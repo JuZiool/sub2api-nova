@@ -9,12 +9,14 @@ const {
   getSchedule,
   listBackups,
   getDownloadURL,
+  downloadLocalBackup,
 } = vi.hoisted(() => ({
   getS3Config: vi.fn(),
   getImageStorageConfig: vi.fn(),
   getSchedule: vi.fn(),
   listBackups: vi.fn(),
   getDownloadURL: vi.fn(),
+  downloadLocalBackup: vi.fn(),
 }))
 
 vi.mock('@/api', () => ({
@@ -33,6 +35,7 @@ vi.mock('@/api', () => ({
       getBackup: vi.fn(),
       deleteBackup: vi.fn(),
       getDownloadURL,
+      downloadLocalBackup,
       restoreBackup: vi.fn(),
     },
   },
@@ -58,6 +61,10 @@ vi.mock('vue-i18n', () => ({
     t: (key: string, params?: Record<string, unknown>) =>
       params?.index === undefined ? key : `${key}:${params.index}`,
   }),
+}))
+
+vi.mock('file-saver', () => ({
+  saveAs: vi.fn(),
 }))
 
 const baseRecord = (id: string, parts?: unknown[]) => ({
@@ -88,6 +95,7 @@ describe('admin BackupView 分卷备份', () => {
     getImageStorageConfig.mockResolvedValue({ config: {}, secret_configured: false })
     getSchedule.mockResolvedValue({ enabled: false, cron_expr: '', retain_days: 14, retain_count: 10 })
     getDownloadURL.mockReset()
+    downloadLocalBackup.mockReset()
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
   })
 
@@ -138,6 +146,22 @@ describe('admin BackupView 分卷备份', () => {
 
     expect(getDownloadURL).toHaveBeenCalledWith('legacy')
     expect(document.body.textContent).not.toContain('admin.backup.actions.downloadParts')
+  })
+
+  it('本地备份通过受保护的下载接口获取文件', async () => {
+    listBackups.mockResolvedValue({ items: [{ ...baseRecord('local'), storage_type: 'local' }] })
+    getDownloadURL.mockResolvedValue({ local: true })
+    downloadLocalBackup.mockResolvedValue(new Blob(['backup']))
+
+    const wrapper = mountBackupView()
+    await flushPromises()
+    const downloadButton = wrapper.findAll('button').find(button =>
+      button.text().includes('admin.backup.actions.download'),
+    )
+    await downloadButton!.trigger('click')
+    await flushPromises()
+
+    expect(downloadLocalBackup).toHaveBeenCalledWith('local', undefined)
   })
 
   it('运行中的备份不显示删除入口', async () => {

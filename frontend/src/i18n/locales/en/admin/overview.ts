@@ -83,6 +83,10 @@ export default {
     backup: {
       title: 'Data Backup & Restore',
       description: 'Full database backup to S3-compatible storage with scheduled backup and restore',
+      localStorage: {
+        title: 'Local directory backup',
+        description: 'When S3 is not configured, backups are saved to deploy/data/backups and can be downloaded or restored from the backup records. Copy this directory when migrating servers.',
+      },
       s3: {
         title: 'S3 Storage Configuration',
         description: 'Configure S3-compatible storage (supports Cloudflare R2)',

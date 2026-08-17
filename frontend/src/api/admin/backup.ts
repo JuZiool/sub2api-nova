@@ -23,6 +23,7 @@ export interface BackupRecord {
   backup_type: string
   file_name: string
   s3_key: string
+  storage_type?: 's3' | 'local'
   parts?: BackupPart[]
   size_bytes: number
   triggered_by: string
@@ -46,12 +47,14 @@ export interface BackupPart {
 export interface BackupDownloadPart {
   index: number
   size_bytes: number
-  url: string
+  url?: string
+  local?: boolean
 }
 
 export interface BackupDownloadResponse {
   url?: string
   parts?: BackupDownloadPart[]
+  local?: boolean
 }
 
 export interface CreateBackupRequest {
@@ -161,6 +164,14 @@ export async function getDownloadURL(id: string): Promise<BackupDownloadResponse
   return data
 }
 
+export async function downloadLocalBackup(id: string, partIndex?: number): Promise<Blob> {
+  const { data } = await apiClient.get<Blob>(`/admin/backups/${id}/download`, {
+    params: partIndex ? { part: partIndex } : undefined,
+    responseType: 'blob',
+  })
+  return data
+}
+
 // Restore
 export async function restoreBackup(id: string, password: string): Promise<BackupRecord> {
   const { data } = await apiClient.post<BackupRecord>(`/admin/backups/${id}/restore`, { password })
@@ -181,6 +192,7 @@ export const backupAPI = {
   getBackup,
   deleteBackup,
   getDownloadURL,
+  downloadLocalBackup,
   restoreBackup,
 }
 

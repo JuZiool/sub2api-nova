@@ -1,6 +1,10 @@
 package admin
 
 import (
+	"mime"
+	"net/http"
+	"strconv"
+
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -159,6 +163,38 @@ func (h *BackupHandler) GetDownloadURL(c *gin.Context) {
 		return
 	}
 	response.Success(c, download)
+}
+
+// DownloadLocalBackup streams a locally stored backup through the authenticated
+// API. Local archives must never be exposed as a public static directory.
+func (h *BackupHandler) DownloadLocalBackup(c *gin.Context) {
+	backupID := c.Param("id")
+	if backupID == "" {
+		response.BadRequest(c, "backup ID is required")
+		return
+	}
+
+	partIndex := 0
+	if rawPart := c.Query("part"); rawPart != "" {
+		parsed, err := strconv.Atoi(rawPart)
+		if err != nil || parsed < 1 {
+			response.BadRequest(c, "part must be a positive integer")
+			return
+		}
+		partIndex = parsed
+	}
+
+	body, fileName, sizeBytes, err := h.backupService.OpenLocalBackupDownload(c.Request.Context(), backupID, partIndex)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	defer func() { _ = body.Close() }()
+
+	c.Header("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": fileName}))
+	c.Header("Cache-Control", "private, no-store")
+	c.Header("X-Content-Type-Options", "nosniff")
+	c.DataFromReader(http.StatusOK, sizeBytes, "application/gzip", body, nil)
 }
 
 // ─── 恢复操作（需要重新输入管理员密码） ───

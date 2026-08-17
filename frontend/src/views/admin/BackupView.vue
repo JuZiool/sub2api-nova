@@ -1,5 +1,14 @@
 <template>
     <div class="space-y-6">
+      <div class="rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-800 dark:bg-primary-900/20">
+        <h3 class="text-sm font-semibold text-primary-900 dark:text-primary-100">
+          {{ t('admin.backup.localStorage.title') }}
+        </h3>
+        <p class="mt-1 text-sm text-primary-800 dark:text-primary-200">
+          {{ t('admin.backup.localStorage.description') }}
+        </p>
+      </div>
+
       <!-- S3 Storage Config -->
       <div class="card p-6">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -384,7 +393,15 @@
                   {{ t('admin.backup.actions.partLabel', { index: part.index }) }}
                   <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">{{ formatSize(part.size_bytes) }}</span>
                 </span>
-                <a :href="part.url" class="btn btn-secondary btn-xs" rel="noopener">
+                <button
+                  v-if="part.local"
+                  type="button"
+                  class="btn btn-secondary btn-xs"
+                  @click="downloadLocalBackup(downloadPartsRecordId, part.index)"
+                >
+                  {{ t('admin.backup.actions.download') }}
+                </button>
+                <a v-else :href="part.url" class="btn btn-secondary btn-xs" rel="noopener">
                   {{ t('admin.backup.actions.download') }}
                 </a>
               </div>
@@ -402,6 +419,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { saveAs } from 'file-saver'
 import { adminAPI } from '@/api'
 import { useAppStore } from '@/stores'
 import type {
@@ -480,6 +498,7 @@ const restoringId = ref('')
 const manualExpireDays = ref(14)
 const downloadParts = ref<BackupDownloadPart[]>([])
 const downloadPartsModalOpen = ref(false)
+const downloadPartsRecordId = ref('')
 
 // Polling
 const pollingTimer = ref<ReturnType<typeof setInterval> | null>(null)
@@ -763,6 +782,16 @@ async function createBackup() {
 async function downloadBackup(id: string) {
   try {
     const result = await backupStepUp.run(() => adminAPI.backup.getDownloadURL(id))
+    if (result.local) {
+      if (result.parts && result.parts.length > 0) {
+        downloadPartsRecordId.value = id
+        downloadParts.value = result.parts
+        downloadPartsModalOpen.value = true
+        return
+      }
+      await downloadLocalBackup(id)
+      return
+    }
     if (result.parts && result.parts.length > 0) {
       downloadParts.value = result.parts
       downloadPartsModalOpen.value = true
@@ -784,9 +813,23 @@ async function downloadBackup(id: string) {
   }
 }
 
+async function downloadLocalBackup(id: string, partIndex?: number) {
+  try {
+    const blob = await backupStepUp.run(() => adminAPI.backup.downloadLocalBackup(id, partIndex))
+    const record = backups.value.find(item => item.id === id)
+    const suffix = partIndex ? `.part-${String(partIndex).padStart(6, '0')}` : ''
+    saveAs(blob, `${record?.file_name || `backup-${id}.sql.gz`}${suffix}`)
+  } catch (error) {
+    if (isStepUpCancelled(error)) return
+    if (reportStepUpBlocked(error)) return
+    appStore.showError((error as { message?: string })?.message || t('errors.networkError'))
+  }
+}
+
 function closeDownloadParts() {
   downloadPartsModalOpen.value = false
   downloadParts.value = []
+  downloadPartsRecordId.value = ''
 }
 
 async function restoreBackup(id: string) {

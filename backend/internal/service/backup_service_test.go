@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -603,12 +604,27 @@ func TestBackupService_CreateBackup_DumpFailure(t *testing.T) {
 	require.Contains(t, record.ErrorMsg, "pg_dump")
 }
 
-func TestBackupService_CreateBackup_NoS3Config(t *testing.T) {
+func TestBackupService_CreateBackup_UsesLocalStorageWithoutS3Config(t *testing.T) {
 	repo := newMockSettingRepo()
-	svc := newTestBackupService(repo, &mockDumper{}, newMockObjectStore())
+	svc := newTestBackupService(repo, &mockDumper{dumpData: []byte("local backup")}, newMockObjectStore())
+	svc.localBackupDir = t.TempDir()
 
-	_, err := svc.CreateBackup(context.Background(), "manual", 14)
-	require.ErrorIs(t, err, ErrBackupS3NotConfigured)
+	record, err := svc.CreateBackup(context.Background(), "manual", 14)
+	require.NoError(t, err)
+	require.Equal(t, backupStorageLocal, record.StorageType)
+	require.FileExists(t, filepath.Join(svc.localBackupDir, record.S3Key))
+
+	download, err := svc.GetBackupDownloadURL(context.Background(), record.ID)
+	require.NoError(t, err)
+	require.True(t, download.Local)
+
+	body, fileName, sizeBytes, err := svc.OpenLocalBackupDownload(context.Background(), record.ID, 0)
+	require.NoError(t, err)
+	defer func() { _ = body.Close() }()
+	require.Equal(t, record.FileName, fileName)
+	require.Equal(t, record.SizeBytes, sizeBytes)
+	_, err = io.ReadAll(body)
+	require.NoError(t, err)
 }
 
 func TestBackupService_CreateBackup_ConcurrentBlocked(t *testing.T) {

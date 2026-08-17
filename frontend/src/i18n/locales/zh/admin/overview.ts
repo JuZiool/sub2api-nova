@@ -83,6 +83,10 @@ export default {
     backup: {
       title: '数据备份与恢复',
       description: '全量数据库备份到 S3 兼容存储，支持定时备份与恢复',
+      localStorage: {
+        title: '本地目录备份',
+        description: '未配置 S3 时，备份会自动保存到 deploy/data/backups；可在备份记录中下载或恢复。迁移服务器时请同时复制该目录。',
+      },
       s3: {
         title: 'S3 存储配置',
         description: '配置 S3 兼容存储（支持 Cloudflare R2）',
