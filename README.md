@@ -51,7 +51,7 @@ curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/in
 已经安装 Git、Docker Engine 和 Docker Compose v2 时，可以使用一条命令完成源码克隆并启动交互式初始化：
 
 ```bash
-git clone --depth 1 https://github.com/JuZiool/sub2api-nova.git && cd sub2api-nova && bash deploy/setup.sh
+git clone --depth 1 https://github.com/JuZiool/sub2api-nova.git && bash sub2api-nova/deploy/setup.sh
 ```
 
 脚本会：
