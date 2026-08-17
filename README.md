@@ -48,22 +48,10 @@ curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/in
 
 ## 从零部署
 
-以下步骤适用于希望手工控制 Git、配置和 Docker Compose 命令的场景。
-
-### 1. 获取源码
+已经安装 Git、Docker Engine 和 Docker Compose v2 时，可以使用一条命令完成源码克隆并启动交互式初始化：
 
 ```bash
-git clone https://github.com/JuZiool/sub2api-nova.git
-cd sub2api-nova/deploy
-```
-
-### 2. 初始化配置
-
-推荐在 Linux、macOS、Git Bash 或 WSL 中运行交互式初始化脚本：
-
-```bash
-chmod +x setup.sh
-./setup.sh
+git clone --depth 1 https://github.com/JuZiool/sub2api-nova.git && cd sub2api-nova && bash deploy/setup.sh
 ```
 
 脚本会：
@@ -82,20 +70,21 @@ chmod +x setup.sh
 查看脚本参数：
 
 ```bash
-./setup.sh --help
+bash deploy/setup.sh --help
 ```
 
 如果只希望生成配置而暂不启动：
 
 ```bash
-./setup.sh --no-start
+bash deploy/setup.sh --no-start
 ```
 
-如果不使用脚本，可以手动创建配置。
+如果不使用脚本，可以进入 `deploy` 目录后手动创建配置。
 
 Linux 或 macOS：
 
 ```bash
+cd deploy
 cp .env.example .env
 mkdir -p data postgres_data redis_data
 ```
@@ -103,6 +92,7 @@ mkdir -p data postgres_data redis_data
 Windows PowerShell：
 
 ```powershell
+Set-Location deploy
 Copy-Item .env.example .env
 New-Item -ItemType Directory -Force data, postgres_data, redis_data
 ```
@@ -131,7 +121,7 @@ GATEWAY_CODEX_QUOTA_OVERDRAFT_ENABLED=true
 
 不要将 `.env` 提交到 Git 仓库，也不要向他人公开其中的密码和密钥。
 
-### 3. 手动启动或源码构建
+### 手动启动或源码构建
 
 正常执行 `./setup.sh` 后服务已经启动。仅在使用 `--no-start` 或手工创建 `.env` 时，在 `deploy` 目录执行以下命令拉取预构建镜像。
 
@@ -178,7 +168,7 @@ bash setup.sh --build
 docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build
 ```
 
-### 4. 检查部署
+### 检查部署
 
 查看三个容器的状态：
 
