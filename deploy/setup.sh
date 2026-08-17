@@ -3,10 +3,13 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 TEMPLATE_FILE="${SCRIPT_DIR}/.env.example"
 OUTPUT_FILE="${SCRIPT_DIR}/.env"
 FORCE=false
 START_ENABLED=true
+LOCAL_BUILD=false
+COMPOSE_OVERLAY="docker-compose.ghcr.yml"
 HEALTH_TIMEOUT=180
 
 usage() {
@@ -17,6 +20,7 @@ usage() {
   --force          覆盖尚未启动过的环境配置；已有部署数据时会拒绝执行
   --output <路径>  将配置写入指定文件，默认写入 deploy/.env
   --no-start       只生成配置，不构建或启动服务
+  --build          不拉取 GHCR 镜像，改为从本地源码构建
   -h, --help       显示帮助
 EOF
 }
@@ -37,6 +41,11 @@ while (($# > 0)); do
       ;;
     --no-start)
       START_ENABLED=false
+      shift
+      ;;
+    --build)
+      LOCAL_BUILD=true
+      COMPOSE_OVERLAY="docker-compose.nova.yml"
       shift
       ;;
     -h | --help)
@@ -84,7 +93,7 @@ compose() {
     docker compose \
       --env-file "$OUTPUT_FILE" \
       -f docker-compose.local.yml \
-      -f docker-compose.nova.yml \
+      -f "$COMPOSE_OVERLAY" \
       "$@"
   )
 }
@@ -135,12 +144,36 @@ wait_for_application() {
 }
 
 start_application() {
+  local commit
+  local -a start_args
+
+  export BUILD_COMMIT
+  export SUB2API_IMAGE
+  commit="$(git -C "$REPO_DIR" rev-parse HEAD 2>/dev/null || true)"
+  BUILD_COMMIT="${commit:0:7}"
+  if [[ -n "$commit" ]]; then
+    SUB2API_IMAGE="${SUB2API_IMAGE:-ghcr.io/juziool/sub2api-nova:sha-${commit}}"
+  else
+    SUB2API_IMAGE="${SUB2API_IMAGE:-ghcr.io/juziool/sub2api-nova:latest}"
+  fi
+
   echo
   echo "校验 Docker Compose 配置..."
   compose config --quiet
 
-  echo "构建并启动 Sub2API Nova..."
-  if ! compose up -d --build --remove-orphans; then
+  if [[ "$LOCAL_BUILD" == true ]]; then
+    echo "从本地源码构建并启动 Sub2API Nova..."
+    start_args=(up -d --build --remove-orphans)
+  else
+    echo "拉取预构建镜像：$SUB2API_IMAGE"
+    if ! compose pull sub2api; then
+      echo "错误：镜像尚未发布或 GHCR 无法访问。请确认 GitHub Actions 已完成后重试，或使用 --build 在本地构建。" >&2
+      exit 1
+    fi
+    start_args=(up -d --remove-orphans)
+  fi
+
+  if ! compose "${start_args[@]}"; then
     echo "错误：Docker Compose 启动失败，配置文件已保留在 $OUTPUT_FILE。" >&2
     exit 1
   fi
@@ -365,5 +398,10 @@ else
   echo
   echo "已按 --no-start 仅生成配置。"
   echo "启动命令："
-  echo "cd \"$SCRIPT_DIR\" && docker compose --env-file \"$OUTPUT_FILE\" -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build"
+  if [[ "$LOCAL_BUILD" == true ]]; then
+    echo "cd \"$SCRIPT_DIR\" && docker compose --env-file \"$OUTPUT_FILE\" -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build"
+  else
+    echo "cd \"$SCRIPT_DIR\" && docker compose --env-file \"$OUTPUT_FILE\" -f docker-compose.local.yml -f docker-compose.ghcr.yml pull sub2api"
+    echo "cd \"$SCRIPT_DIR\" && docker compose --env-file \"$OUTPUT_FILE\" -f docker-compose.local.yml -f docker-compose.ghcr.yml up -d"
+  fi
 fi

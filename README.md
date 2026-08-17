@@ -1,6 +1,6 @@
 # Sub2API Nova 部署指南
 
-本项目使用 Docker Compose 从当前源码构建 Nova 镜像，并同时运行 Sub2API、PostgreSQL 和 Redis 三个容器。
+本项目使用 Docker Compose 运行 Sub2API、PostgreSQL 和 Redis 三个容器。生产服务器默认从 GitHub Container Registry 拉取预构建的 Nova 镜像，不需要在服务器编译前后端源码。
 
 ## 部署要求
 
@@ -26,10 +26,10 @@ curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/in
 - 重复运行时保留 `.env` 和全部持久化数据
 - 更新前使用 `pg_dump` 备份 PostgreSQL
 - 使用 `git merge --ff-only` 拉取 `main` 分支，拒绝覆盖本地源码修改
-- 构建并启动 Sub2API、PostgreSQL 和 Redis
+- 从 GHCR 拉取当前 Git 提交对应的预构建镜像并启动三个容器
 - 等待 `/health` 健康检查，失败时输出容器状态和应用日志
 
-脚本会提示输入安装位置，直接回车默认使用 `/opt/sub2api-nova`。再次执行同一条命令并选择相同路径即可更新。
+脚本会提示输入安装位置，直接回车默认使用 `/opt/sub2api-nova`。再次执行同一条命令并选择相同路径即可更新。若 GHCR 暂时不可用，可以增加 `--build` 参数在服务器从源码构建。
 
 也可以通过 `--dir` 直接指定路径并跳过安装位置询问：
 
@@ -75,7 +75,7 @@ chmod +x setup.sh
 - 通过 Yes/No 选择是否开启 Codex 额度透支
 - 创建 `data`、`postgres_data` 和 `redis_data` 持久化目录
 - 将 `.env` 权限设置为仅当前用户可读写
-- 自动构建并启动三个容器，等待 Sub2API 通过健康检查
+- 自动拉取预构建镜像并启动三个容器，等待 Sub2API 通过健康检查
 
 管理员初始密码不限制位数，但不能为空，需要输入两次确认。密码不能包含单引号字符。
 
@@ -131,17 +131,21 @@ GATEWAY_CODEX_QUOTA_OVERDRAFT_ENABLED=true
 
 不要将 `.env` 提交到 Git 仓库，也不要向他人公开其中的密码和密钥。
 
-### 3. 手动构建或重新启动
+### 3. 手动启动或源码构建
 
-正常执行 `./setup.sh` 后服务已经启动。仅在使用 `--no-start`、手工创建 `.env` 或需要重新构建时，在 `deploy` 目录执行以下命令。
+正常执行 `./setup.sh` 后服务已经启动。仅在使用 `--no-start` 或手工创建 `.env` 时，在 `deploy` 目录执行以下命令拉取预构建镜像。
 
 Linux、macOS、Git Bash 或 WSL：
 
 ```bash
 docker compose --env-file .env \
   -f docker-compose.local.yml \
-  -f docker-compose.nova.yml \
-  up -d --build
+  -f docker-compose.ghcr.yml \
+  pull sub2api
+docker compose --env-file .env \
+  -f docker-compose.local.yml \
+  -f docker-compose.ghcr.yml \
+  up -d
 ```
 
 Windows PowerShell：
@@ -149,23 +153,37 @@ Windows PowerShell：
 ```powershell
 docker compose --env-file .env `
   -f docker-compose.local.yml `
-  -f docker-compose.nova.yml `
-  up -d --build
+  -f docker-compose.ghcr.yml `
+  pull sub2api
+docker compose --env-file .env `
+  -f docker-compose.local.yml `
+  -f docker-compose.ghcr.yml `
+  up -d
 ```
 
 必须同时加载两个 Compose 文件：
 
 - `docker-compose.local.yml`：定义应用、PostgreSQL、Redis、端口和数据目录
-- `docker-compose.nova.yml`：从当前 Nova 源码构建 `sub2api-nova:local` 镜像
+- `docker-compose.ghcr.yml`：拉取 `ghcr.io/juziool/sub2api-nova` 预构建镜像
 
-首次构建需要下载基础镜像和依赖，耗时取决于网络环境。
+如果需要在本机从源码构建，可运行：
+
+```bash
+bash setup.sh --build
+```
+
+或手动使用 `docker-compose.nova.yml`：
+
+```bash
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build
+```
 
 ### 4. 检查部署
 
 查看三个容器的状态：
 
 ```bash
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml ps
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml ps
 ```
 
 健康检查：
@@ -195,43 +213,44 @@ http://服务器地址:8080
 查看状态：
 
 ```bash
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml ps
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml ps
 ```
 
 查看应用日志：
 
 ```bash
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml logs -f sub2api
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml logs -f sub2api
 ```
 
 查看全部日志：
 
 ```bash
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml logs -f
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml logs -f
 ```
 
 停止服务并保留容器和数据：
 
 ```bash
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml stop
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml stop
 ```
 
 重新启动已停止的服务：
 
 ```bash
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml start
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml start
 ```
 
 停止并删除容器，但保留持久化数据：
 
 ```bash
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml down
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml down
 ```
 
-重新构建并启动：
+拉取最新预构建镜像并启动：
 
 ```bash
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml pull sub2api
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml up -d
 ```
 
 ## 更新部署
@@ -242,20 +261,18 @@ docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nov
 bash deploy/update.sh
 ```
 
-脚本会拉取 `main` 分支、复用 Docker 构建缓存，并只更新 `sub2api` 应用容器。现有 `.env`、PostgreSQL、Redis 和持久化数据不会被删除。更新成功后，脚本会删除刚被替换的上一版应用镜像，但会保留构建缓存以加快下次更新。
+脚本会拉取 `main` 分支，再下载与该 Git 提交完全对应的 GHCR 镜像，并只更新 `sub2api` 应用容器。现有 `.env`、PostgreSQL、Redis 和持久化数据不会被删除。更新成功后，脚本会清理刚被替换的上一版应用镜像。
 
-需要顺便清理超过 7 天的 Docker 构建缓存时运行：
+GHCR 暂时不可用时，可以回退到服务器本地源码构建：
+
+```bash
+bash deploy/update.sh --build
+```
+
+如果服务器上曾经执行过源码构建，可顺便清理超过 7 天的 Docker 构建缓存：
 
 ```bash
 bash deploy/update.sh --prune-cache
-```
-
-也可以手动执行同等更新流程：
-
-```bash
-git pull origin main
-cd deploy
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build sub2api
 ```
 
 Nova 已移除后台内置版本更新检测，源码更新需要手动执行。
@@ -274,12 +291,12 @@ deploy/backups/        一键更新前生成的 PostgreSQL 逻辑备份
 备份或迁移前先停止服务：
 
 ```bash
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml stop
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml stop
 ```
 
 最稳妥的方式是完整打包整个 `sub2api-nova` 项目目录，这会同时保存源码、Dockerfile、Compose 配置、`.env` 和全部持久化数据。
 
-恢复时将项目解压到目标机器，进入 `deploy` 目录，再执行构建启动命令。备份包包含数据库和密钥，应加密保存并限制访问。
+恢复时将项目解压到目标机器，进入 `deploy` 目录，再执行镜像拉取和启动命令。备份包包含数据库和密钥，应加密保存并限制访问。
 
 不要在 PostgreSQL 仍有写入时直接复制 `postgres_data`。跨 PostgreSQL 大版本迁移时，应使用 PostgreSQL 逻辑备份和恢复，而不是直接复制数据目录。
 
@@ -300,25 +317,21 @@ docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nov
 
 ### `docker-entrypoint.sh` 提示 `Permission denied`
 
-在项目根目录拉取最新代码并重新构建应用镜像：
+在项目根目录运行更新脚本，拉取已经修复权限的预构建镜像：
 
 ```bash
-git pull origin main
-chmod 755 deploy/docker-entrypoint.sh
-cd deploy
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml build --no-cache sub2api
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml up -d --force-recreate
+bash deploy/update.sh
 ```
 
-当前 Dockerfile 会在构建时统一清理 Shell 脚本的 CRLF 行尾，并强制设置入口脚本权限为 `755`。
+需要从源码构建时，使用 `bash deploy/update.sh --build`。当前 Dockerfile 会在构建时统一清理 Shell 脚本的 CRLF 行尾，并强制设置入口脚本权限为 `755`。
 
 ### 页面无法访问
 
 检查容器状态和应用日志：
 
 ```bash
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml ps
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml logs --tail=200 sub2api
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml ps
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml logs --tail=200 sub2api
 ```
 
 同时确认 `SERVER_PORT` 未被占用，服务器防火墙允许访问该端口。
@@ -328,10 +341,10 @@ docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nov
 重新创建容器：
 
 ```bash
-docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml up -d --force-recreate
+docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml up -d --force-recreate
 ```
 
-涉及源码或 Dockerfile 修改时，额外添加 `--build`。
+涉及源码或 Dockerfile 修改时，等待 GitHub Actions 发布新镜像后运行 `bash deploy/update.sh`；也可以使用 `bash deploy/update.sh --build` 立即在本机构建。
 
 ### 如何关闭额度透支
 

@@ -1,0 +1,9 @@
+# Sub2API Nova prebuilt image overlay.
+# Use together with docker-compose.local.yml for production deployments:
+#   docker compose -f docker-compose.local.yml -f docker-compose.ghcr.yml up -d
+
+services:
+  sub2api:
+    image: ${SUB2API_IMAGE:-ghcr.io/juziool/sub2api-nova:latest}
+    environment:
+      - GATEWAY_CODEX_QUOTA_OVERDRAFT_ENABLED=${GATEWAY_CODEX_QUOTA_OVERDRAFT_ENABLED:-true}

@@ -16,6 +16,8 @@ INSTALL_DIR_EXPLICIT=false
 UPDATE_ONLY=false
 BACKUP_ENABLED=true
 DOCKER_INSTALL_ENABLED=true
+LOCAL_BUILD=false
+COMPOSE_OVERLAY="docker-compose.ghcr.yml"
 LOCK_FILE="/var/lock/sub2api-nova-install.lock"
 TEMP_FILES=()
 DEPLOY_DIR=""
@@ -70,6 +72,7 @@ Sub2API Nova Linux 一键安装与更新脚本
   --update-only         仅更新，目标目录不存在时退出
   --no-backup           更新前不执行 PostgreSQL 逻辑备份
   --no-install-docker   Docker 缺失时不自动安装
+  --build               不拉取 GHCR 镜像，改为在服务器从源码构建
   -h, --help            显示帮助
 
 环境变量：
@@ -77,6 +80,7 @@ Sub2API Nova Linux 一键安装与更新脚本
   SUB2API_REPO_URL
   SUB2API_BRANCH
   SUB2API_HEALTH_TIMEOUT
+  SUB2API_IMAGE
 EOF
 }
 
@@ -120,6 +124,11 @@ parse_args() {
         ;;
       --no-install-docker)
         DOCKER_INSTALL_ENABLED=false
+        shift
+        ;;
+      --build)
+        LOCAL_BUILD=true
+        COMPOSE_OVERLAY="docker-compose.nova.yml"
         shift
         ;;
       -h | --help)
@@ -266,7 +275,7 @@ compose() {
     docker compose \
       --env-file .env \
       -f docker-compose.local.yml \
-      -f docker-compose.nova.yml \
+      -f "$COMPOSE_OVERLAY" \
       "$@"
   )
 }
@@ -455,11 +464,24 @@ wait_for_application() {
 }
 
 deploy_application() {
+  export BUILD_COMMIT
+  export SUB2API_IMAGE
+  BUILD_COMMIT="$(repo_git rev-parse --short HEAD)"
+  SUB2API_IMAGE="${SUB2API_IMAGE:-ghcr.io/juziool/sub2api-nova:sha-$(repo_git rev-parse HEAD)}"
+
   log "校验 Docker Compose 配置。"
   compose config --quiet
 
-  log "构建并启动 Sub2API Nova。"
-  compose up -d --build --remove-orphans
+  if [[ "$LOCAL_BUILD" == true ]]; then
+    log "从本地源码构建并启动 Sub2API Nova。"
+    compose up -d --build --remove-orphans
+  else
+    log "拉取预构建镜像：$SUB2API_IMAGE"
+    if ! compose pull sub2api; then
+      die "镜像尚未发布或 GHCR 无法访问。请确认 GitHub Actions 已完成后重试，或使用 --build 在服务器本地构建。"
+    fi
+    compose up -d --remove-orphans
+  fi
   wait_for_application
 }
 
@@ -473,7 +495,7 @@ Sub2API Nova 部署成功
 安装目录：$INSTALL_DIR
 当前版本：$commit
 访问地址：http://服务器IP:$ACCESS_PORT
-查看状态：cd $DEPLOY_DIR && docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml ps
+查看状态：cd $DEPLOY_DIR && docker compose --env-file .env -f docker-compose.local.yml -f $COMPOSE_OVERLAY ps
 EOF
 }
 
@@ -502,6 +524,7 @@ main() {
   fi
 
   [[ -d "$DEPLOY_DIR" ]] || die "仓库缺少 deploy 目录。"
+  [[ -f "$DEPLOY_DIR/$COMPOSE_OVERLAY" ]] || die "仓库缺少 Compose 配置：deploy/$COMPOSE_OVERLAY"
   initialize_config
   deploy_application
 

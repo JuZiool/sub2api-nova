@@ -8,6 +8,8 @@ REPO_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 BRANCH="${SUB2API_BRANCH:-main}"
 HEALTH_TIMEOUT="${SUB2API_HEALTH_TIMEOUT:-180}"
 PRUNE_CACHE=false
+LOCAL_BUILD=false
+COMPOSE_OVERLAY="docker-compose.ghcr.yml"
 OLD_IMAGE_ID=""
 
 log() {
@@ -31,18 +33,25 @@ Sub2API Nova 服务器更新脚本
   bash deploy/update.sh [选项]
 
 选项：
+  --build        不拉取 GHCR 镜像，改为在服务器从源码构建
   --prune-cache  更新成功后清理超过 7 天的 Docker 构建缓存
   -h, --help     显示帮助
 
 环境变量：
   SUB2API_BRANCH          更新分支，默认 main
   SUB2API_HEALTH_TIMEOUT  健康检查超时秒数，默认 180
+  SUB2API_IMAGE           自定义预构建镜像；默认使用当前提交对应的 GHCR 镜像
 EOF
 }
 
 parse_args() {
   while (($# > 0)); do
     case "$1" in
+      --build)
+        LOCAL_BUILD=true
+        COMPOSE_OVERLAY="docker-compose.nova.yml"
+        shift
+        ;;
       --prune-cache)
         PRUNE_CACHE=true
         shift
@@ -68,7 +77,7 @@ compose() {
     docker compose \
       --env-file .env \
       -f docker-compose.local.yml \
-      -f docker-compose.nova.yml \
+      -f "$COMPOSE_OVERLAY" \
       "$@"
   )
 }
@@ -76,6 +85,7 @@ compose() {
 ensure_requirements() {
   [[ -d "$REPO_DIR/.git" ]] || die "项目目录不是 Git 仓库：$REPO_DIR"
   [[ -f "$SCRIPT_DIR/.env" ]] || die "缺少 $SCRIPT_DIR/.env，请先完成首次安装。"
+  [[ -f "$SCRIPT_DIR/$COMPOSE_OVERLAY" ]] || die "缺少 Compose 配置：$SCRIPT_DIR/$COMPOSE_OVERLAY"
   [[ "$HEALTH_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || die "健康检查超时必须是正整数。"
 
   command -v git >/dev/null 2>&1 || die "未安装 Git。"
@@ -161,7 +171,7 @@ remove_previous_image() {
   local new_image_id
 
   [[ -n "$OLD_IMAGE_ID" ]] || return 0
-  new_image_id="$(docker image inspect sub2api-nova:local --format '{{.Id}}' 2>/dev/null || true)"
+  new_image_id="$(compose images -q sub2api 2>/dev/null | head -n 1 || true)"
   [[ -n "$new_image_id" && "$new_image_id" != "$OLD_IMAGE_ID" ]] || return 0
 
   if ! docker image inspect "$OLD_IMAGE_ID" >/dev/null 2>&1; then
@@ -178,14 +188,24 @@ remove_previous_image() {
 
 deploy_application() {
   export BUILD_COMMIT
+  export SUB2API_IMAGE
   BUILD_COMMIT="$(repo_git rev-parse --short HEAD)"
-  OLD_IMAGE_ID="$(docker image inspect sub2api-nova:local --format '{{.Id}}' 2>/dev/null || true)"
+  SUB2API_IMAGE="${SUB2API_IMAGE:-ghcr.io/juziool/sub2api-nova:sha-$(repo_git rev-parse HEAD)}"
+  OLD_IMAGE_ID="$(compose images -q sub2api 2>/dev/null | head -n 1 || true)"
 
   log "校验 Docker Compose 配置。"
   compose config --quiet
 
-  log "使用构建缓存更新应用容器。"
-  compose up -d --build sub2api
+  if [[ "$LOCAL_BUILD" == true ]]; then
+    log "使用本地构建缓存更新应用容器。"
+    compose up -d --build sub2api
+  else
+    log "拉取预构建镜像：$SUB2API_IMAGE"
+    if ! compose pull sub2api; then
+      die "镜像尚未发布或 GHCR 无法访问。请确认 GitHub Actions 已完成后重试，或使用 --build 在服务器本地构建。"
+    fi
+    compose up -d sub2api
+  fi
   wait_for_application
   remove_previous_image
 
