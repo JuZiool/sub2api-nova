@@ -92,6 +92,70 @@ dotenv_single_quote() {
   printf "'%s'" "$1"
 }
 
+port_is_in_use() {
+  local port="$1"
+  local hex_port
+  local proc_files=(/proc/net/tcp)
+
+  if command -v ss >/dev/null 2>&1; then
+    ss -H -ltn "sport = :${port}" 2>/dev/null | grep -q .
+    return
+  fi
+
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | grep -q .
+    return
+  fi
+
+  if command -v netstat >/dev/null 2>&1; then
+    netstat -an 2>/dev/null | awk -v port="$port" '
+      toupper($1) == "TCP" && toupper($NF) ~ /^LISTEN/ {
+        local_address = $2
+        if (local_address ~ (":" port "$") || local_address ~ ("\\." port "$")) {
+          found = 1
+        }
+      }
+      END { exit found ? 0 : 1 }
+    '
+    return
+  fi
+
+  if [[ -r /proc/net/tcp ]]; then
+    hex_port="$(printf '%04X' "$port")"
+    [[ -r /proc/net/tcp6 ]] && proc_files+=(/proc/net/tcp6)
+    awk -v target=":${hex_port}" '
+      $2 ~ (target "$") && $4 == "0A" { found = 1 }
+      END { exit found ? 0 : 1 }
+    ' "${proc_files[@]}" 2>/dev/null
+    return
+  fi
+
+  (echo >/dev/tcp/127.0.0.1/"$port") >/dev/null 2>&1
+}
+
+prompt_server_port() {
+  local value
+
+  while true; do
+    read -r -p "服务端口 [8080]: " value
+    value="${value:-8080}"
+
+    if [[ ! "$value" =~ ^[0-9]+$ ]] || ((${#value} > 5)) || ((10#$value < 1 || 10#$value > 65535)); then
+      echo "请输入 1 到 65535 之间的端口号。" >&2
+      continue
+    fi
+
+    value="$((10#$value))"
+    if port_is_in_use "$value"; then
+      echo "端口 $value 已被占用，请输入其他端口。" >&2
+      continue
+    fi
+
+    SERVER_PORT="$value"
+    return
+  done
+}
+
 prompt_admin_email() {
   local value
 
@@ -165,6 +229,7 @@ prompt_overdraft() {
 echo "Sub2API Nova 环境配置初始化"
 echo
 
+prompt_server_port
 prompt_admin_email
 prompt_admin_password
 prompt_overdraft
@@ -183,6 +248,7 @@ ADMIN_PASSWORD_ENV="$(dotenv_single_quote "$ADMIN_PASSWORD")"
 while IFS= read -r line || [[ -n "$line" ]]; do
   line="${line%$'\r'}"
   case "$line" in
+    SERVER_PORT=*) printf 'SERVER_PORT=%s\n' "$SERVER_PORT" ;;
     POSTGRES_PASSWORD=*) printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD" ;;
     REDIS_PASSWORD=*) printf 'REDIS_PASSWORD=%s\n' "$REDIS_PASSWORD" ;;
     ADMIN_EMAIL=*) printf 'ADMIN_EMAIL=%s\n' "$ADMIN_EMAIL" ;;
@@ -204,6 +270,7 @@ mkdir -p "${SCRIPT_DIR}/data" "${SCRIPT_DIR}/postgres_data" "${SCRIPT_DIR}/redis
 
 echo
 echo "配置已生成：$OUTPUT_FILE"
+echo "服务端口：$SERVER_PORT"
 echo "数据库、Redis、JWT 和 TOTP 密钥已自动随机生成。"
 echo "Codex 额度透支：$OVERDRAFT_ENABLED"
 echo

@@ -21,6 +21,7 @@ curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/in
 
 - 安装缺少的基础依赖，并在需要时运行 Docker 官方安装脚本
 - 首次部署时克隆源码并调用 `setup.sh` 生成安全配置
+- 提示选择服务端口，直接回车默认使用 `8080`，并检查端口是否已被占用
 - 重复运行时保留 `.env` 和全部持久化数据
 - 更新前使用 `pg_dump` 备份 PostgreSQL
 - 使用 `git merge --ff-only` 拉取 `main` 分支，拒绝覆盖本地源码修改
@@ -67,6 +68,7 @@ chmod +x setup.sh
 脚本会：
 
 - 根据 `.env.example` 创建 `.env`
+- 提示选择服务端口；直接回车使用 `8080`，端口已被占用时要求重新输入
 - 自动生成 PostgreSQL、Redis、JWT 和 TOTP 密钥
 - 提示输入管理员邮箱和初始密码
 - 通过 Yes/No 选择是否开启 Codex 额度透支
