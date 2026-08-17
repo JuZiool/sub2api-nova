@@ -98,6 +98,14 @@ describe('HomeView compact mode', () => {
 
     expect(wrapper.find('[data-testid="compact-home"]').exists()).toBe(false)
     expect(wrapper.find('.terminal-container').exists()).toBe(true)
+    expect(wrapper.find('footer').exists()).toBe(false)
+    expect(wrapper.find('a[href="https://github.com/Wei-Shaw/sub2api"]').exists()).toBe(false)
+  })
+
+  it('does not render a footer attribution in compact mode', () => {
+    const wrapper = mountHome({ compact_home_enabled: true })
+
+    expect(wrapper.find('footer').exists()).toBe(false)
   })
 
   it('links unauthenticated visitors to login', () => {
