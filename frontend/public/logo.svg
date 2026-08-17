@@ -1,32 +1,57 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">Sub2API</title>
-  <desc id="desc">An interlocking S symbol representing subscription routing into APIs.</desc>
+  <title id="title">Sub2API Nova</title>
+  <desc id="desc">A luminous N-shaped API route with a nova spark.</desc>
   <defs>
-    <linearGradient id="s2a-bg" x1="72" y1="44" x2="442" y2="478" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#142B56"/>
-      <stop offset=".52" stop-color="#0A1A39"/>
-      <stop offset="1" stop-color="#061127"/>
+    <linearGradient id="nova-bg" x1="84" y1="46" x2="430" y2="466" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#18314A"/>
+      <stop offset=".5" stop-color="#0A1B2D"/>
+      <stop offset="1" stop-color="#07111F"/>
     </linearGradient>
-    <radialGradient id="s2a-ambient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(168 92) rotate(51) scale(342 382)">
-      <stop stop-color="#3E68B0" stop-opacity=".28"/>
-      <stop offset="1" stop-color="#3E68B0" stop-opacity="0"/>
+    <radialGradient id="nova-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(377 111) rotate(132) scale(312 300)">
+      <stop stop-color="#31E7D0" stop-opacity=".28"/>
+      <stop offset=".48" stop-color="#3C9CFF" stop-opacity=".1"/>
+      <stop offset="1" stop-color="#3C9CFF" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="s2a-brand" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#79F4BD"/>
-      <stop offset=".48" stop-color="#39D9E7"/>
-      <stop offset="1" stop-color="#3875F6"/>
+    <linearGradient id="nova-route" x1="134" y1="361" x2="383" y2="145" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#74F4B8"/>
+      <stop offset=".46" stop-color="#27DBD5"/>
+      <stop offset="1" stop-color="#56A1FF"/>
     </linearGradient>
-    <filter id="s2a-shadow" x="-25%" y="-25%" width="150%" height="165%" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy=".55" stdDeviation=".65" flood-color="#020817" flood-opacity=".34"/>
+    <linearGradient id="nova-shine" x1="182" y1="138" x2="328" y2="337" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity=".78"/>
+      <stop offset=".45" stop-color="#FFFFFF" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="nova-shadow" x="-30%" y="-30%" width="160%" height="180%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="13" stdDeviation="15" flood-color="#020817" flood-opacity=".54"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#2DE3DB" flood-opacity=".2"/>
+    </filter>
+    <filter id="nova-spark-glow" x="-150%" y="-150%" width="400%" height="400%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
   </defs>
 
-  <rect x="16" y="16" width="480" height="480" rx="120" fill="url(#s2a-bg)"/>
-  <rect x="16" y="16" width="480" height="480" rx="120" fill="url(#s2a-ambient)"/>
-  <rect x="16.75" y="16.75" width="478.5" height="478.5" rx="119.25" fill="none" stroke="#A5BFFF" stroke-opacity=".16" stroke-width="1.5"/>
+  <rect x="16" y="16" width="480" height="480" rx="118" fill="url(#nova-bg)"/>
+  <rect x="16" y="16" width="480" height="480" rx="118" fill="url(#nova-glow)"/>
+  <rect x="17.5" y="17.5" width="477" height="477" rx="116.5" fill="none" stroke="#C8F8FF" stroke-opacity=".16" stroke-width="3"/>
+  <path d="M90 121C154 48 306 31 414 79" fill="none" stroke="#FFFFFF" stroke-opacity=".08" stroke-width="16" stroke-linecap="round"/>
 
-  <g transform="translate(52 52) scale(17)" fill="none" stroke="url(#s2a-brand)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.7" filter="url(#s2a-shadow)">
-    <path d="m19.25 7.65-2.55-3.2a1.33 1.33 0 0 0-1.03-.5H8.58c-.34 0-.67.13-.91.37L4.15 7.65c-.93.88-.6 1.52.65 2.3l9.55 5.97"/>
-    <path d="m4.75 16.35 2.55 3.2c.25.31.63.5 1.03.5h7.09c.34 0 .67-.13.91-.37l3.52-3.33c.93-.88.6-1.52-.65-2.3L9.65 8.08"/>
+  <g filter="url(#nova-shadow)">
+    <path d="M150 348V181c0-21 26-31 40-15l132 158c14 17 40 7 40-15V164" fill="none" stroke="#061424" stroke-opacity=".72" stroke-width="76" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M150 348V181c0-21 26-31 40-15l132 158c14 17 40 7 40-15V164" fill="none" stroke="url(#nova-route)" stroke-width="62" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M158 333V190c0-10 12-15 19-7l132 157" fill="none" stroke="url(#nova-shine)" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <circle cx="150" cy="348" r="12" fill="#D9FFE9"/>
+  <circle cx="362" cy="164" r="12" fill="#E5F4FF"/>
+  <circle cx="255" cy="245" r="7" fill="#FFFFFF" fill-opacity=".78"/>
+
+  <g transform="translate(387 113)" fill="#DFFFFA" filter="url(#nova-spark-glow)">
+    <path d="M0-31C4-10 10-4 31 0 10 4 4 10 0 31-4 10-10 4-31 0-10-4-4-10 0-31Z"/>
+    <circle cx="-27" cy="-24" r="4" fill="#75F5C2"/>
   </g>
 </svg>
