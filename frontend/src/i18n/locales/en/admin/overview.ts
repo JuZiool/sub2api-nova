@@ -81,7 +81,7 @@ export default {
     },
 
     backup: {
-      title: 'Database Backup',
+      title: 'Data Backup & Restore',
       description: 'Full database backup to S3-compatible storage with scheduled backup and restore',
       s3: {
         title: 'S3 Storage Configuration',

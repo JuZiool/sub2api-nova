@@ -585,6 +585,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/backups',
+    name: 'AdminBackups',
+    component: () => import('@/views/admin/BackupRestoreView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Data Backup & Restore',
+      titleKey: 'admin.backup.title',
+      descriptionKey: 'admin.backup.description'
+    }
+  },
+  {
     path: '/admin/risk-control',
     name: 'AdminRiskControl',
     component: () => import('@/views/admin/RiskControlView.vue'),

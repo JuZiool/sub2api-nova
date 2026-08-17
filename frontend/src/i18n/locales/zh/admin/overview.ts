@@ -81,7 +81,7 @@ export default {
     },
 
     backup: {
-      title: '数据库备份',
+      title: '数据备份与恢复',
       description: '全量数据库备份到 S3 兼容存储，支持定时备份与恢复',
       s3: {
         title: 'S3 存储配置',
