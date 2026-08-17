@@ -12,6 +12,7 @@ REPO_URL="${SUB2API_REPO_URL:-$DEFAULT_REPO_URL}"
 INSTALL_DIR="${SUB2API_INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
 BRANCH="${SUB2API_BRANCH:-$DEFAULT_BRANCH}"
 HEALTH_TIMEOUT="${SUB2API_HEALTH_TIMEOUT:-$DEFAULT_HEALTH_TIMEOUT}"
+INSTALL_DIR_EXPLICIT=false
 UPDATE_ONLY=false
 BACKUP_ENABLED=true
 DOCKER_INSTALL_ENABLED=true
@@ -19,6 +20,10 @@ LOCK_FILE="/var/lock/sub2api-nova-install.lock"
 TEMP_FILES=()
 DEPLOY_DIR=""
 ACCESS_PORT=""
+
+if [[ -n "${SUB2API_INSTALL_DIR:-}" ]]; then
+  INSTALL_DIR_EXPLICIT=true
+fi
 
 log() {
   printf '[Sub2API] %s\n' "$*"
@@ -58,7 +63,7 @@ Sub2API Nova Linux 一键安装与更新脚本
   install.sh [选项]
 
 选项：
-  --dir <路径>          安装目录，默认 /opt/sub2api-nova
+  --dir <路径>          安装目录，并跳过交互询问
   --repo <地址>         Git 仓库地址
   --branch <名称>       部署分支，默认 main
   --health-timeout <秒> 健康检查超时，默认 180
@@ -87,6 +92,7 @@ parse_args() {
       --dir)
         require_option_value "$1" "$#"
         INSTALL_DIR="$2"
+        INSTALL_DIR_EXPLICIT=true
         shift 2
         ;;
       --repo)
@@ -125,6 +131,24 @@ parse_args() {
         ;;
     esac
   done
+}
+
+prompt_install_dir() {
+  local value=""
+
+  [[ "$INSTALL_DIR_EXPLICIT" == false ]] || return 0
+
+  if [[ -t 0 ]]; then
+    read -r -p "安装位置（绝对路径）[$DEFAULT_INSTALL_DIR]: " value
+  elif [[ -c /dev/tty ]]; then
+    if ! read -r -p "安装位置（绝对路径）[$DEFAULT_INSTALL_DIR]: " value </dev/tty; then
+      warn "无法从终端读取安装位置，将使用默认路径 $DEFAULT_INSTALL_DIR。"
+    fi
+  else
+    warn "未检测到交互式终端，将使用默认路径 $DEFAULT_INSTALL_DIR。"
+  fi
+
+  INSTALL_DIR="${value:-$DEFAULT_INSTALL_DIR}"
 }
 
 validate_settings() {
@@ -457,8 +481,10 @@ main() {
   local existing_repository=false
 
   parse_args "$@"
-  validate_settings
   require_root
+  prompt_install_dir
+  validate_settings
+  log "安装位置：$INSTALL_DIR"
   ensure_base_dependencies
   git check-ref-format --branch "$BRANCH" >/dev/null 2>&1 || die "无效的 Git 分支名称：$BRANCH"
   acquire_lock

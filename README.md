@@ -20,6 +20,7 @@ curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/in
 脚本会自动完成：
 
 - 安装缺少的基础依赖，并在需要时运行 Docker 官方安装脚本
+- 提示填写安装位置的绝对路径，直接回车默认使用 `/opt/sub2api-nova`
 - 首次部署时克隆源码并调用 `setup.sh` 生成安全配置
 - 提示选择服务端口，直接回车默认使用 `8080`，并检查端口是否已被占用
 - 重复运行时保留 `.env` 和全部持久化数据
@@ -28,9 +29,9 @@ curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/in
 - 构建并启动 Sub2API、PostgreSQL 和 Redis
 - 等待 `/health` 健康检查，失败时输出容器状态和应用日志
 
-默认安装目录为 `/opt/sub2api-nova`。再次执行同一条命令即可更新。
+脚本会提示输入安装位置，直接回车默认使用 `/opt/sub2api-nova`。再次执行同一条命令并选择相同路径即可更新。
 
-向脚本传递参数：
+也可以通过 `--dir` 直接指定路径并跳过安装位置询问：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh | \
