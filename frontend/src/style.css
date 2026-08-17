@@ -3,6 +3,40 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: light;
+    --nova-bg: 248 250 252;
+    --nova-surface: 255 255 255;
+    --nova-surface-muted: 241 245 249;
+    --nova-surface-glass: 255 255 255;
+    --nova-border: 203 213 225;
+    --nova-highlight: 255 255 255;
+    --nova-shadow: 15 23 42;
+    --nova-brand: 13 148 136;
+    --nova-glass-alpha: 0.76;
+    --nova-overlay-alpha: 0.92;
+    --nova-border-alpha: 0.72;
+    --nova-blur: 18px;
+    --nova-radius: 8px;
+    --nova-motion-fast: 160ms;
+    --nova-motion-normal: 240ms;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --nova-bg: 2 6 23;
+    --nova-surface: 15 23 42;
+    --nova-surface-muted: 30 41 59;
+    --nova-surface-glass: 15 23 42;
+    --nova-border: 71 85 105;
+    --nova-highlight: 255 255 255;
+    --nova-shadow: 0 0 0;
+    --nova-brand: 45 212 191;
+    --nova-glass-alpha: 0.78;
+    --nova-overlay-alpha: 0.94;
+    --nova-border-alpha: 0.58;
+  }
+
   * {
     @apply border-gray-200 dark:border-dark-700;
   }
@@ -14,6 +48,7 @@
   body {
     @apply bg-gray-50 text-gray-900 dark:bg-dark-950 dark:text-gray-100;
     @apply min-h-screen;
+    background-color: rgb(var(--nova-bg));
   }
 
   /* 自定义滚动条 - 仅针对 Firefox，避免 Chrome 取消 webkit 的全局定制 */
@@ -206,26 +241,74 @@
   }
 
   /* ============ 玻璃效果 ============ */
+  .nova-surface {
+    position: relative;
+    isolation: isolate;
+    border: 1px solid transparent;
+    border-radius: var(--nova-radius);
+  }
+
+  .surface-solid {
+    background: rgb(var(--nova-surface));
+    border-color: rgb(var(--nova-border) / var(--nova-border-alpha));
+    box-shadow: 0 1px 2px rgb(var(--nova-shadow) / 0.05);
+  }
+
+  .surface-glass,
   .glass {
-    @apply bg-white/80 backdrop-blur-xl dark:bg-dark-800/80;
+    background: rgb(var(--nova-surface-glass) / var(--nova-glass-alpha));
+    border-color: rgb(var(--nova-border) / 0.46);
+    box-shadow:
+      inset 0 1px 0 rgb(var(--nova-highlight) / 0.34),
+      0 8px 24px rgb(var(--nova-shadow) / 0.07);
+    -webkit-backdrop-filter: blur(var(--nova-blur)) saturate(140%);
+    backdrop-filter: blur(var(--nova-blur)) saturate(140%);
+  }
+
+  .surface-overlay {
+    background: rgb(var(--nova-surface-glass) / var(--nova-overlay-alpha));
+    border-color: rgb(var(--nova-border) / var(--nova-border-alpha));
+    box-shadow:
+      inset 0 1px 0 rgb(var(--nova-highlight) / 0.4),
+      0 18px 48px rgb(var(--nova-shadow) / 0.16);
+    -webkit-backdrop-filter: blur(calc(var(--nova-blur) + 6px)) saturate(145%);
+    backdrop-filter: blur(calc(var(--nova-blur) + 6px)) saturate(145%);
+  }
+
+  .surface-interactive {
+    transition:
+      transform var(--nova-motion-fast) ease-out,
+      border-color var(--nova-motion-fast) ease-out,
+      box-shadow var(--nova-motion-normal) ease-out;
+  }
+
+  .surface-interactive:hover {
+    transform: translateY(-1px);
+    border-color: rgb(var(--nova-brand) / 0.34);
+    box-shadow:
+      inset 0 1px 0 rgb(var(--nova-highlight) / 0.42),
+      0 12px 30px rgb(var(--nova-shadow) / 0.1);
   }
 
   .glass-card {
-    @apply bg-white/70 dark:bg-dark-800/70;
-    @apply backdrop-blur-xl;
-    @apply rounded-2xl;
-    @apply border border-white/20 dark:border-dark-700/50;
-    @apply shadow-glass;
-    @apply transition-all duration-300;
+    background: rgb(var(--nova-surface-glass) / var(--nova-glass-alpha));
+    border: 1px solid rgb(var(--nova-border) / 0.46);
+    border-radius: var(--nova-radius);
+    box-shadow:
+      inset 0 1px 0 rgb(var(--nova-highlight) / 0.34),
+      0 8px 24px rgb(var(--nova-shadow) / 0.07);
+    -webkit-backdrop-filter: blur(var(--nova-blur)) saturate(140%);
+    backdrop-filter: blur(var(--nova-blur)) saturate(140%);
+    transition: all var(--nova-motion-normal) ease-out;
   }
 
   /* ============ 卡片样式 ============ */
   .card {
-    @apply bg-white dark:bg-dark-800/50;
-    @apply rounded-2xl;
-    @apply border border-gray-100 dark:border-dark-700/50;
-    @apply shadow-card;
-    @apply transition-all duration-300;
+    background: rgb(var(--nova-surface));
+    border: 1px solid rgb(var(--nova-border) / var(--nova-border-alpha));
+    border-radius: var(--nova-radius);
+    box-shadow: 0 1px 3px rgb(var(--nova-shadow) / 0.06);
+    transition: all var(--nova-motion-normal) ease-out;
   }
 
   .card-hover {
@@ -234,10 +317,13 @@
   }
 
   .card-glass {
-    @apply bg-white/70 dark:bg-dark-800/70;
-    @apply backdrop-blur-xl;
-    @apply border border-white/20 dark:border-dark-700/50;
-    @apply shadow-glass;
+    background: rgb(var(--nova-surface-glass) / var(--nova-glass-alpha));
+    border: 1px solid rgb(var(--nova-border) / 0.46);
+    box-shadow:
+      inset 0 1px 0 rgb(var(--nova-highlight) / 0.34),
+      0 8px 24px rgb(var(--nova-shadow) / 0.07);
+    -webkit-backdrop-filter: blur(var(--nova-blur)) saturate(140%);
+    backdrop-filter: blur(var(--nova-blur)) saturate(140%);
   }
 
   .card-header {
@@ -748,11 +834,6 @@
     @apply bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent;
   }
 
-  /* 玻璃效果 */
-  .glass {
-    @apply bg-white/80 backdrop-blur-xl dark:bg-dark-800/80;
-  }
-
   /* 隐藏滚动条 */
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -769,5 +850,34 @@
 
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .surface-glass,
+  .surface-overlay,
+  .glass,
+  .glass-card,
+  .card-glass {
+    background: rgb(var(--nova-surface));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .surface-interactive:hover {
+    transform: none;
   }
 }
