@@ -163,6 +163,21 @@ func TestHTTPServerGlobalBodyLimit(t *testing.T) {
 	require.Equal(t, http.StatusRequestEntityTooLarge, rec.Code)
 }
 
+func TestHTTPServerAllowsLargerBackupImportBody(t *testing.T) {
+	r := gin.New()
+	r.POST("/api/v1/admin/backups/import", func(c *gin.Context) {
+		_, err := io.ReadAll(c.Request.Body)
+		require.NoError(t, err)
+		c.Status(http.StatusOK)
+	})
+	srv := ProvideHTTPServer(ingressTestConfig(), r)
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/admin/backups/import", strings.NewReader(strings.Repeat("x", 1025)))
+	require.NoError(t, err)
+	rec := httptest.NewRecorder()
+	srv.Handler.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+}
+
 func serveIngressTestServer(t *testing.T, srv *http.Server) (string, func()) {
 	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")

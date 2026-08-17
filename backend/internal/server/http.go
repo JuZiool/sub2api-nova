@@ -26,6 +26,8 @@ var ProviderSet = wire.NewSet(
 	ProvideHTTPServer,
 )
 
+const localBackupImportRequestBodyLimit = 64<<30 + 1<<20 // 64 GiB archive plus multipart framing
+
 // ProvideRouter 提供路由器
 func ProvideRouter(
 	cfg *config.Config,
@@ -129,7 +131,17 @@ func ProvideHTTPServer(cfg *config.Config, router *gin.Engine) *http.Server {
 		globalMaxSize = cfg.Gateway.MaxBodySize
 	}
 	if globalMaxSize > 0 {
-		httpHandler = http.MaxBytesHandler(httpHandler, globalMaxSize)
+		baseHandler := httpHandler
+		httpHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			limit := globalMaxSize
+			// Imported database archives are deliberately larger than normal API
+			// payloads. This route remains protected by admin auth and step-up 2FA;
+			// all other routes keep the configured global limit.
+			if r.Method == http.MethodPost && r.URL.Path == "/api/v1/admin/backups/import" {
+				limit = localBackupImportRequestBodyLimit
+			}
+			http.MaxBytesHandler(baseHandler, limit).ServeHTTP(w, r)
+		})
 		log.Printf("Global max request body size: %d bytes (%.2f MB)", globalMaxSize, float64(globalMaxSize)/(1<<20))
 	}
 

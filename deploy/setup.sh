@@ -12,7 +12,7 @@ usage() {
 用法：./setup.sh [选项]
 
 选项：
-  --force          覆盖已存在的环境配置，不再询问
+  --force          覆盖尚未启动过的环境配置；已有部署数据时会拒绝执行
   --output <路径>  将配置写入指定文件，默认写入 deploy/.env
   -h, --help       显示帮助
 EOF
@@ -53,15 +53,22 @@ if [[ "$OUTPUT_FILE" != /* ]]; then
   OUTPUT_FILE="${SCRIPT_DIR}/${OUTPUT_FILE}"
 fi
 
+has_existing_deployment_data() {
+  [[ -f "${SCRIPT_DIR}/postgres_data/PG_VERSION" ]] || \
+    [[ -f "${SCRIPT_DIR}/data/config.yaml" ]] || \
+    [[ -f "${SCRIPT_DIR}/data/.installed" ]]
+}
+
+if has_existing_deployment_data; then
+  echo "错误：检测到已有部署数据，拒绝运行 setup.sh。" >&2
+  echo "重新生成 PostgreSQL、JWT 或 TOTP 密钥会导致服务无法连接数据库或使现有会话、二次验证失效。" >&2
+  echo "请手工修改现有 .env；不要使用 --output 生成新的运行配置。" >&2
+  exit 1
+fi
+
 if [[ -e "$OUTPUT_FILE" && "$FORCE" != true ]]; then
-  read -r -p "配置文件 ${OUTPUT_FILE} 已存在，是否覆盖？[y/N]: " overwrite
-  case "${overwrite,,}" in
-    y | yes) ;;
-    *)
-      echo "已取消，原配置未修改。"
-      exit 0
-      ;;
-  esac
+  echo "错误：配置文件 ${OUTPUT_FILE} 已存在。使用 --force 仅可覆盖尚未启动过的配置。" >&2
+  exit 1
 fi
 
 generate_hex() {
@@ -107,6 +114,11 @@ prompt_admin_password() {
 
     if [[ -z "$value" ]]; then
       echo "管理员初始密码不能为空。" >&2
+      continue
+    fi
+
+    if ((${#value} < 8)); then
+      echo "管理员初始密码至少需要 8 个字符。" >&2
       continue
     fi
 

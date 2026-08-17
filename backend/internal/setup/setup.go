@@ -425,6 +425,9 @@ func createAdminUser(cfg *SetupConfig) (bool, string, error) {
 		fmt.Printf("Generated admin password (one-time): %s\n", cfg.Admin.Password)
 		fmt.Println("IMPORTANT: Save this password! It will not be shown again.")
 	}
+	if err := validatePassword(cfg.Admin.Password); err != nil {
+		return false, "", fmt.Errorf("invalid admin password: %w", err)
+	}
 
 	admin := &service.User{
 		Email:       cfg.Admin.Email,
@@ -607,6 +610,11 @@ func AutoSetupFromEnv() error {
 		},
 		Timezone:                tz,
 		MigrationTimeoutSeconds: getEnvIntOrDefault("SETUP_MIGRATION_TIMEOUT_SECONDS", 0),
+	}
+	if strings.TrimSpace(cfg.Admin.Password) != "" {
+		if err := validatePassword(cfg.Admin.Password); err != nil {
+			return fmt.Errorf("invalid admin password: %w", err)
+		}
 	}
 
 	// Generate JWT secret if not provided
