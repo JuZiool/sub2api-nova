@@ -164,6 +164,11 @@ remove_previous_image() {
   new_image_id="$(docker image inspect sub2api-nova:local --format '{{.Id}}' 2>/dev/null || true)"
   [[ -n "$new_image_id" && "$new_image_id" != "$OLD_IMAGE_ID" ]] || return 0
 
+  if ! docker image inspect "$OLD_IMAGE_ID" >/dev/null 2>&1; then
+    log "上一版应用镜像已由 Docker 自动回收。"
+    return 0
+  fi
+
   if docker image rm "$OLD_IMAGE_ID" >/dev/null 2>&1; then
     log "已删除被替换的上一版应用镜像。"
   else
