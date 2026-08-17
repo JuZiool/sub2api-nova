@@ -52,11 +52,6 @@ RUN pnpm run build
 # build (emulated networking here was dropping module fetches with EOF).
 FROM --platform=${BUILDPLATFORM} ${GOLANG_IMAGE} AS backend-builder
 
-# Build arguments for version info (set by CI)
-ARG VERSION=
-ARG COMMIT=docker
-ARG DATE
-ARG BUILD_TYPE=source
 ARG GOPROXY
 ARG GOSUMDB
 # Populated by buildx from the --platform target (e.g. linux/amd64).
@@ -87,6 +82,12 @@ COPY --from=frontend-builder /app/backend/internal/web/dist ./internal/web/dist
 
 # Build the binary and embed the frontend. Fork source builds read FORK_VERSION;
 # CI release builds still override VERSION and BUILD_TYPE explicitly.
+# Keep volatile version arguments immediately before the build so a new commit
+# does not invalidate dependency installation and module download layers.
+ARG VERSION=
+ARG COMMIT=docker
+ARG DATE
+ARG BUILD_TYPE=source
 RUN --mount=type=cache,id=sub2api-gomod,target=/go/pkg/mod \
     --mount=type=cache,id=sub2api-gobuild,target=/root/.cache/go-build \
     VERSION_VALUE="${VERSION}" && \
