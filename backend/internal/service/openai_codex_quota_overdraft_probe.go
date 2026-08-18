@@ -555,7 +555,7 @@ func (c *CodexQuotaOverdraftCoordinator) runProbeAttempt(ctx context.Context, ac
 	req.Header.Set("Accept", "text/event-stream")
 	req.Header.Set("OpenAI-Beta", "responses=experimental")
 	req.Header.Set("Originator", openai.CodexDefaultOriginator)
-	req.Header.Set("Version", openAICodexProbeVersion)
+	req.Header.Set("Version", CodexCanonicalClientVersion())
 	req.Header.Set("User-Agent", codexCLIUserAgent)
 
 	if account.IsOpenAIAgentIdentity() {
