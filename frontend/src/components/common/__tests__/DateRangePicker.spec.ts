@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { ref } from 'vue'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { mount, type VueWrapper } from '@vue/test-utils'
+import { nextTick, ref } from 'vue'
 
 import DateRangePicker from '../DateRangePicker.vue'
 
@@ -33,22 +33,39 @@ const formatLocalDate = (date: Date): string => {
   return `${year}-${month}-${day}`
 }
 
+const mountedWrappers: VueWrapper[] = []
+const originalInnerHeight = window.innerHeight
+
+const mountPicker = (startDate: string, endDate: string) => {
+  const wrapper = mount(DateRangePicker, {
+    attachTo: document.body,
+    props: { startDate, endDate },
+    global: {
+      stubs: {
+        Icon: true
+      }
+    }
+  })
+  mountedWrappers.push(wrapper)
+  return wrapper
+}
+
+afterEach(() => {
+  mountedWrappers.splice(0).forEach((wrapper) => wrapper.unmount())
+  document.body.innerHTML = ''
+  Object.defineProperty(window, 'innerHeight', {
+    configurable: true,
+    value: originalInnerHeight
+  })
+  vi.restoreAllMocks()
+})
+
 describe('DateRangePicker', () => {
   it('uses last 24 hours as the default recognized preset', () => {
     const now = new Date()
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
-    const wrapper = mount(DateRangePicker, {
-      props: {
-        startDate: formatLocalDate(yesterday),
-        endDate: formatLocalDate(now)
-      },
-      global: {
-        stubs: {
-          Icon: true
-        }
-      }
-    })
+    const wrapper = mountPicker(formatLocalDate(yesterday), formatLocalDate(now))
 
     expect(wrapper.text()).toContain('Last 24 Hours')
   })
@@ -57,26 +74,20 @@ describe('DateRangePicker', () => {
     const now = new Date()
     const today = formatLocalDate(now)
 
-    const wrapper = mount(DateRangePicker, {
-      props: {
-        startDate: today,
-        endDate: today
-      },
-      global: {
-        stubs: {
-          Icon: true
-        }
-      }
-    })
+    const wrapper = mountPicker(today, today)
 
     await wrapper.find('.date-picker-trigger').trigger('click')
-    const presetButton = wrapper.findAll('.date-picker-preset').find((node) =>
-      node.text().includes('Last 24 Hours')
+    const presetButton = Array.from(
+      document.body.querySelectorAll<HTMLButtonElement>('.date-picker-preset')
+    ).find((node) =>
+      node.textContent?.includes('Last 24 Hours')
     )
     expect(presetButton).toBeDefined()
 
-    await presetButton!.trigger('click')
-    await wrapper.find('.date-picker-apply').trigger('click')
+    presetButton!.click()
+    await nextTick()
+    document.body.querySelector<HTMLButtonElement>('.date-picker-apply')!.click()
+    await nextTick()
 
     const nowAfterClick = new Date()
     const yesterdayAfterClick = new Date(nowAfterClick.getTime() - 24 * 60 * 60 * 1000)
@@ -92,5 +103,38 @@ describe('DateRangePicker', () => {
         preset: 'last24Hours'
       }
     ])
+  })
+
+  it('clamps the teleported dropdown inside a 320px viewport', async () => {
+    const today = formatLocalDate(new Date())
+    const wrapper = mountPicker(today, today)
+    const trigger = wrapper.get<HTMLButtonElement>('.date-picker-trigger')
+
+    vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(320)
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 568
+    })
+    vi.spyOn(trigger.element, 'getBoundingClientRect').mockReturnValue({
+      x: 120,
+      y: 80,
+      top: 80,
+      right: 260,
+      bottom: 120,
+      left: 120,
+      width: 140,
+      height: 40,
+      toJSON: () => ({})
+    })
+
+    await trigger.trigger('click')
+    await nextTick()
+
+    const dropdown = document.body.querySelector<HTMLElement>('.date-picker-dropdown')
+    expect(dropdown).not.toBeNull()
+    expect(dropdown!.style.left).toBe('16px')
+    expect(dropdown!.style.width).toBe('288px')
+    expect(dropdown!.style.top).toBe('128px')
+    expect(parseFloat(dropdown!.style.left) + parseFloat(dropdown!.style.width)).toBeLessThanOrEqual(304)
   })
 })

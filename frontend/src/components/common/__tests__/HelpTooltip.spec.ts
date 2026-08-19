@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'
@@ -14,6 +14,7 @@ function getTooltipElement(): HTMLDivElement {
 describe('HelpTooltip', () => {
   afterEach(() => {
     document.body.innerHTML = ''
+    vi.restoreAllMocks()
   })
 
   it('keeps the existing hover interaction by default', async () => {
@@ -74,6 +75,42 @@ describe('HelpTooltip', () => {
     document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await nextTick()
     expect(tooltip.style.display).toBe('none')
+
+    wrapper.unmount()
+  })
+
+  it('clamps a wide tooltip to the mobile viewport', async () => {
+    const wrapper = mount(HelpTooltip, {
+      attachTo: document.body,
+      props: {
+        content: 'mobile details',
+        widthClass: 'w-80',
+      },
+    })
+
+    const trigger = wrapper.get<HTMLElement>('.group')
+    const tooltip = getTooltipElement()
+    vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(320)
+    vi.spyOn(tooltip, 'offsetWidth', 'get').mockReturnValue(288)
+    vi.spyOn(tooltip, 'offsetHeight', 'get').mockReturnValue(120)
+    vi.spyOn(trigger.element, 'getBoundingClientRect').mockReturnValue({
+      x: 280,
+      y: 200,
+      top: 200,
+      right: 308,
+      bottom: 228,
+      left: 280,
+      width: 28,
+      height: 28,
+      toJSON: () => ({}),
+    })
+
+    await trigger.trigger('mouseenter')
+    await nextTick()
+
+    expect(tooltip.style.left).toBe('16px')
+    expect(tooltip.style.maxWidth).toBe('calc(100vw - 2rem)')
+    expect(parseFloat(tooltip.style.left) + 288).toBeLessThanOrEqual(304)
 
     wrapper.unmount()
   })

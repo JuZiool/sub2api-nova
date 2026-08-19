@@ -7,7 +7,7 @@
   >
     <form id="provider-form" @submit.prevent="handleSave" class="space-y-4">
       <!-- Name + Key -->
-      <div class="grid grid-cols-2 gap-4">
+      <div data-testid="provider-identity-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label class="input-label">
             {{ t('admin.settings.payment.providerName') }}
@@ -71,8 +71,8 @@
       </div>
 
       <div v-if="form.provider_key === 'easypay'" class="space-y-3 rounded-lg border border-gray-100 p-3 dark:border-dark-700">
-        <div class="flex items-center justify-between gap-3">
-          <div>
+        <div class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="min-w-0">
             <h5 class="text-sm font-medium text-gray-900 dark:text-white">
               {{ t('admin.settings.payment.easypayCustomMethods') }}
             </h5>
@@ -80,7 +80,7 @@
               {{ t('admin.settings.payment.easypayCustomMethodsHint') }}
             </p>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" @click="addEasyPayCustomMethod">
+          <button type="button" class="btn btn-secondary btn-sm self-start" @click="addEasyPayCustomMethod">
             {{ t('admin.settings.payment.addCustomMethod') }}
           </button>
         </div>
@@ -88,23 +88,24 @@
           <div
             v-for="(method, index) in easyPayCustomMethods"
             :key="index"
-            class="grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-2"
+            data-testid="easypay-custom-method-row"
+            class="grid grid-cols-1 items-end gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:gap-2"
           >
-            <div>
+            <div class="min-w-0">
               <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.payment.customMethodType') }}</label>
               <input v-model="method.type" type="text" class="input mt-0.5" placeholder="credit_card" />
             </div>
-            <div>
+            <div class="min-w-0">
               <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.payment.customMethodUpstreamType') }}</label>
               <input v-model="method.upstreamType" type="text" class="input mt-0.5" placeholder="credit_card" />
             </div>
-            <div>
+            <div class="min-w-0">
               <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.payment.customMethodDisplayName') }}</label>
               <input v-model="method.displayName" type="text" class="input mt-0.5" :placeholder="t('admin.settings.payment.customMethodDisplayNamePlaceholder')" />
             </div>
             <button
               type="button"
-              class="rounded-lg border border-red-200 px-2.5 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800/60 dark:text-red-300 dark:hover:bg-red-900/20"
+              class="min-h-11 w-full rounded-lg border border-red-200 px-2.5 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800/60 dark:text-red-300 dark:hover:bg-red-900/20 sm:min-h-0 sm:w-auto"
               @click="removeEasyPayCustomMethod(index)"
             >
               {{ t('common.delete') }}
@@ -215,16 +216,16 @@
         <div v-if="callbackPaths" class="mt-4 space-y-3">
           <div v-if="callbackPaths.notifyUrl">
             <label class="input-label">{{ t('admin.settings.payment.field_notifyUrl') }} <span class="text-red-500">*</span></label>
-            <div class="flex">
-              <input v-model="notifyBaseUrl" type="text" class="input min-w-0 flex-1 !rounded-r-none !border-r-0" :placeholder="defaultBaseUrl" />
-              <span class="inline-flex items-center whitespace-nowrap rounded-r-lg border border-gray-300 bg-gray-50 px-3 text-xs text-gray-500 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-400">{{ callbackPaths.notifyUrl }}</span>
+            <div class="flex flex-col gap-1 sm:flex-row sm:gap-0">
+              <input v-model="notifyBaseUrl" type="text" class="input min-w-0 flex-1 sm:!rounded-r-none sm:!border-r-0" :placeholder="defaultBaseUrl" />
+              <span class="inline-flex min-w-0 items-center break-all rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-400 sm:whitespace-nowrap sm:rounded-l-none sm:py-0">{{ callbackPaths.notifyUrl }}</span>
             </div>
           </div>
           <div v-if="callbackPaths.returnUrl">
             <label class="input-label">{{ t('admin.settings.payment.field_returnUrl') }} <span class="text-red-500">*</span></label>
-            <div class="flex">
-              <input v-model="returnBaseUrl" type="text" class="input min-w-0 flex-1 !rounded-r-none !border-r-0" :placeholder="defaultBaseUrl" />
-              <span class="inline-flex items-center whitespace-nowrap rounded-r-lg border border-gray-300 bg-gray-50 px-3 text-xs text-gray-500 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-400">{{ callbackPaths.returnUrl }}</span>
+            <div class="flex flex-col gap-1 sm:flex-row sm:gap-0">
+              <input v-model="returnBaseUrl" type="text" class="input min-w-0 flex-1 sm:!rounded-r-none sm:!border-r-0" :placeholder="defaultBaseUrl" />
+              <span class="inline-flex min-w-0 items-center break-all rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-400 sm:whitespace-nowrap sm:rounded-l-none sm:py-0">{{ callbackPaths.returnUrl }}</span>
             </div>
           </div>
         </div>
@@ -258,7 +259,7 @@
             class="rounded-lg border border-gray-100 p-3 dark:border-dark-700"
           >
             <p class="mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">{{ lt.label }}</p>
-            <div class="grid grid-cols-3 gap-3">
+            <div data-testid="payment-limit-grid" class="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div>
                 <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.payment.limitSingleMin') }}</label>
                 <input

@@ -166,6 +166,45 @@ describe('PaymentProviderDialog payment guide', () => {
     expect(payload.config.accountId).toBe('')
   })
 
+  it('uses mobile-first grids for provider and EasyPay fields', async () => {
+    const provider = providerFactory({
+      provider_key: 'easypay',
+      name: 'EasyPay',
+      config: {
+        pid: 'pid-1',
+        apiBase: 'https://pay.example.com',
+        notifyUrl: 'https://example.com/api/v1/payment/webhook/easypay',
+        returnUrl: 'https://example.com/payment/result',
+      },
+      supported_types: ['alipay', 'wxpay'],
+      payment_mode: 'qrcode',
+    })
+    const wrapper = mountDialog({ editing: provider })
+
+    ;(wrapper.vm as unknown as { loadProvider: (provider: ProviderInstance) => void }).loadProvider(provider)
+    await nextTick()
+    await wrapper.find('button.btn-sm').trigger('click')
+    await nextTick()
+
+    const identityGrid = wrapper.get('[data-testid="provider-identity-grid"]')
+    expect(identityGrid.classes()).toEqual(expect.arrayContaining(['grid-cols-1', 'sm:grid-cols-2']))
+
+    const customMethodRow = wrapper.get('[data-testid="easypay-custom-method-row"]')
+    expect(customMethodRow.classes()).toEqual(expect.arrayContaining([
+      'grid-cols-1',
+      'sm:grid-cols-[1fr_1fr_1fr_auto]',
+    ]))
+    expect(customMethodRow.get('button').classes()).toEqual(expect.arrayContaining([
+      'min-h-11',
+      'w-full',
+      'sm:min-h-0',
+      'sm:w-auto',
+    ]))
+
+    const limitGrid = wrapper.get('[data-testid="payment-limit-grid"]')
+    expect(limitGrid.classes()).toEqual(expect.arrayContaining(['grid-cols-1', 'sm:grid-cols-3']))
+  })
+
   it('serializes EasyPay custom methods and adds them to supported_types', async () => {
     const provider = providerFactory({
       provider_key: 'easypay',

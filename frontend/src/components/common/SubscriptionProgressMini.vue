@@ -2,9 +2,13 @@
   <div v-if="hasActiveSubscriptions" class="relative" ref="containerRef">
     <!-- Mini Progress Display -->
     <button
+      ref="triggerRef"
+      type="button"
       @click="toggleTooltip"
       class="flex cursor-pointer items-center gap-2 rounded-xl bg-purple-50 px-3 py-1.5 transition-colors hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30"
       :title="t('subscriptionProgress.viewDetails')"
+      :aria-expanded="tooltipOpen"
+      aria-haspopup="dialog"
     >
       <Icon name="creditCard" size="sm" class="text-purple-600 dark:text-purple-400" />
       <div class="flex items-center gap-1.5">
@@ -24,11 +28,18 @@
     </button>
 
     <!-- Hover/Click Tooltip -->
-    <transition name="dropdown">
-      <div
-        v-if="tooltipOpen"
-        class="absolute right-0 z-50 mt-2 w-[340px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-dark-700 dark:bg-dark-800"
-      >
+    <Teleport to="body">
+      <transition name="dropdown">
+        <div
+          v-if="tooltipOpen"
+          ref="tooltipRef"
+          data-testid="subscription-progress-panel"
+          class="fixed z-[100] overflow-x-hidden overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-dark-700 dark:bg-dark-800"
+          :style="tooltipStyle"
+          role="dialog"
+          :aria-label="t('subscriptionProgress.title')"
+          @click.stop
+        >
         <div class="border-b border-gray-100 p-3 dark:border-dark-700">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
             {{ t('subscriptionProgress.title') }}
@@ -44,13 +55,13 @@
             :key="subscription.id"
             class="border-b border-gray-50 p-3 last:border-b-0 dark:border-dark-700/50"
           >
-            <div class="mb-2 flex items-center justify-between">
-              <span class="text-sm font-medium text-gray-900 dark:text-white">
+            <div class="mb-2 flex items-center justify-between gap-2">
+              <span class="min-w-0 truncate text-sm font-medium text-gray-900 dark:text-white">
                 {{ subscription.group?.name || `Group #${subscription.group_id}` }}
               </span>
               <span
                 v-if="subscription.expires_at"
-                class="text-xs"
+                class="shrink-0 text-xs"
                 :class="getDaysRemainingClass(subscription.expires_at)"
               >
                 {{ formatDaysRemaining(subscription.expires_at) }}
@@ -172,24 +183,43 @@
             {{ t('subscriptionProgress.viewAll') }}
           </router-link>
         </div>
-      </div>
-    </transition>
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
 import { useSubscriptionStore } from '@/stores'
 import type { UserSubscription } from '@/types'
+import { getFloatingPanelPosition } from '@/utils/floatingPanel'
 
 const { t } = useI18n()
 
 const subscriptionStore = useSubscriptionStore()
 
 const containerRef = ref<HTMLElement | null>(null)
+const triggerRef = ref<HTMLButtonElement | null>(null)
+const tooltipRef = ref<HTMLElement | null>(null)
 const tooltipOpen = ref(false)
+const tooltipPosition = reactive({
+  top: null as number | null,
+  bottom: null as number | null,
+  left: 16,
+  width: 340,
+  maxHeight: 0
+})
+
+const tooltipStyle = computed(() => ({
+  top: tooltipPosition.top == null ? 'auto' : `${tooltipPosition.top}px`,
+  bottom: tooltipPosition.bottom == null ? 'auto' : `${tooltipPosition.bottom}px`,
+  left: `${tooltipPosition.left}px`,
+  width: `${tooltipPosition.width}px`,
+  maxHeight: `${tooltipPosition.maxHeight}px`
+}))
 
 // Use store data instead of local state
 const activeSubscriptions = computed(() => subscriptionStore.activeSubscriptions)
@@ -279,18 +309,51 @@ function getDaysRemainingClass(expiresAt: string): string {
 }
 
 function toggleTooltip() {
-  tooltipOpen.value = !tooltipOpen.value
+  const nextOpen = !tooltipOpen.value
+  if (nextOpen) updateTooltipPosition()
+  tooltipOpen.value = nextOpen
 }
 
 function closeTooltip() {
   tooltipOpen.value = false
 }
 
+function updateTooltipPosition() {
+  const trigger = triggerRef.value
+  if (!trigger) return
+
+  const position = getFloatingPanelPosition(
+    trigger.getBoundingClientRect(),
+    document.documentElement.clientWidth || window.innerWidth,
+    window.innerHeight,
+    { maxWidth: 340 }
+  )
+  Object.assign(tooltipPosition, position)
+}
+
+function handleViewportChange() {
+  if (tooltipOpen.value) updateTooltipPosition()
+}
+
 function handleClickOutside(event: MouseEvent) {
-  if (containerRef.value && !containerRef.value.contains(event.target as Node)) {
+  const target = event.target as Node
+  const isInsideTrigger = containerRef.value?.contains(target)
+  const isInsideTooltip = tooltipRef.value?.contains(target)
+  if (!isInsideTrigger && !isInsideTooltip) {
     closeTooltip()
   }
 }
+
+watch(tooltipOpen, (open) => {
+  if (open) {
+    void nextTick(updateTooltipPosition)
+    window.addEventListener('scroll', handleViewportChange, true)
+    window.addEventListener('resize', handleViewportChange)
+  } else {
+    window.removeEventListener('scroll', handleViewportChange, true)
+    window.removeEventListener('resize', handleViewportChange)
+  }
+})
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
@@ -303,6 +366,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('scroll', handleViewportChange, true)
+  window.removeEventListener('resize', handleViewportChange)
 })
 </script>
 
