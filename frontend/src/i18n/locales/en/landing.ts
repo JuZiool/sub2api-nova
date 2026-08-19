@@ -14,9 +14,45 @@ export default {
     login: 'Login',
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
+    freeRegister: 'Sign Up Free',
+    viewModels: 'Explore Models',
+    heroEyebrow: 'Your Personal AI Service Hub',
     // User-focused value proposition
     heroSubtitle: 'One Key, All AI Models',
     heroDescription: 'No need to manage multiple subscriptions. Access Claude, GPT, Gemini and more with a single API key',
+    mascotGreeting: 'Welcome back. Which AI shall we work with today?',
+    mascotAlt: 'Sub2API Nova virtual assistant',
+    modelReady: 'Models are ready',
+    serviceOnline: 'All systems online',
+    modelsEyebrow: 'MODEL COLLECTION',
+    modelsDescription: 'Your favorite AI models in one place, without jumping between platforms.',
+    startEyebrow: 'QUICK START',
+    nav: {
+      models: 'Models',
+      howItWorks: 'How It Works'
+    },
+    benefits: {
+      multiModel: 'One Account, More Models',
+      multiModelDesc: 'Choose the right AI freely',
+      stable: 'Reliable Service',
+      stableDesc: 'Smart routing keeps you moving',
+      transparent: 'Clear Usage',
+      transparentDesc: 'Every cost is easy to track'
+    },
+    steps: {
+      register: {
+        title: 'Create Account',
+        description: 'Sign up and enter your personal AI workspace.'
+      },
+      key: {
+        title: 'Get Your Key',
+        description: 'Choose a service and create one unified access key.'
+      },
+      use: {
+        title: 'Start Creating',
+        description: 'Pick your favorite model and bring your next idea to life.'
+      }
+    },
     tags: {
       subscriptionToApi: 'Subscription to API',
       stickySession: 'Session Persistence',

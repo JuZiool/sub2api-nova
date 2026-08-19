@@ -14,9 +14,45 @@ export default {
     login: '登录',
     getStarted: '立即开始',
     goToDashboard: '进入控制台',
+    freeRegister: '免费注册',
+    viewModels: '查看模型',
+    heroEyebrow: '你的专属 AI 服务站',
     // 新增：面向用户的价值主张
     heroSubtitle: '一个密钥，畅用多个 AI 模型',
     heroDescription: '无需管理多个订阅账号，一站式接入 Claude、GPT、Gemini 等主流 AI 服务',
+    mascotGreeting: '欢迎回来，今天想和哪个 AI 一起完成任务？',
+    mascotAlt: 'Sub2API Nova 看板娘',
+    modelReady: '多模型已就绪',
+    serviceOnline: '服务运行正常',
+    modelsEyebrow: 'MODEL COLLECTION',
+    modelsDescription: '不用在多个平台之间来回切换，你熟悉的主流模型都在这里。',
+    startEyebrow: 'QUICK START',
+    nav: {
+      models: '模型广场',
+      howItWorks: '快速上手'
+    },
+    benefits: {
+      multiModel: '一个账号，多种模型',
+      multiModelDesc: '自由选择适合的 AI',
+      stable: '稳定可用',
+      stableDesc: '智能调度保障体验',
+      transparent: '用量清晰',
+      transparentDesc: '每一笔消耗都可查'
+    },
+    steps: {
+      register: {
+        title: '创建账号',
+        description: '完成注册，进入你的专属 AI 工作空间。'
+      },
+      key: {
+        title: '获取密钥',
+        description: '按需选择服务，快速创建统一访问密钥。'
+      },
+      use: {
+        title: '开始使用',
+        description: '选择喜欢的模型，让灵感立即开始流动。'
+      }
+    },
     tags: {
       subscriptionToApi: '订阅转 API',
       stickySession: '会话保持',

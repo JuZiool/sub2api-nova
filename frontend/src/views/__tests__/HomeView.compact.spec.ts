@@ -97,7 +97,9 @@ describe('HomeView compact mode', () => {
     const wrapper = mountHome(settings)
 
     expect(wrapper.find('[data-testid="compact-home"]').exists()).toBe(false)
-    expect(wrapper.find('.terminal-container').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="default-home"]').exists()).toBe(true)
+    expect(wrapper.find('.hero-visual').exists()).toBe(true)
+    expect(wrapper.find('.terminal-container').exists()).toBe(false)
     expect(wrapper.find('footer').exists()).toBe(false)
     expect(wrapper.find('a[href="https://github.com/Wei-Shaw/sub2api"]').exists()).toBe(false)
   })
