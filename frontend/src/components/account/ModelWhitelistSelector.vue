@@ -6,13 +6,13 @@
         @click="toggleDropdown"
         class="cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-dark-500 dark:bg-dark-700"
       >
-        <div class="grid grid-cols-2 gap-1.5">
+        <div class="grid min-w-0 grid-cols-2 gap-1.5">
           <span
             v-for="model in modelValue"
             :key="model"
-            class="inline-flex items-center justify-between gap-1 rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-dark-600 dark:text-gray-300"
+            class="inline-flex min-w-0 items-center justify-between gap-1 rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-dark-600 dark:text-gray-300"
           >
-            <span class="flex items-center gap-1 truncate">
+            <span class="min-w-0 flex items-center gap-1 truncate">
               <ModelIcon :model="model" size="14px" />
               <span class="truncate">{{ model }}</span>
             </span>
@@ -122,11 +122,11 @@
     <!-- Custom Model Input -->
     <div class="mb-3">
       <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.accounts.customModelName') }}</label>
-      <div class="flex gap-2">
+      <div class="flex flex-col gap-2 sm:flex-row">
         <input
           v-model="customModel"
           type="text"
-          class="input flex-1"
+          class="input min-w-0 flex-1"
           :placeholder="t('admin.accounts.enterCustomModelName')"
           @keydown.enter.prevent="handleEnter"
           @compositionstart="isComposing = true"
@@ -135,7 +135,7 @@
         <button
           type="button"
           @click="addCustom"
-          class="rounded-lg bg-primary-50 px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
+          class="w-full rounded-lg bg-primary-50 px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 sm:w-auto"
         >
           {{ t('admin.accounts.addModel') }}
         </button>

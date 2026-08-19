@@ -16,7 +16,10 @@
       <button
         v-if="hiddenCount > 0"
         ref="moreButtonRef"
-        @click.stop="showPopover = !showPopover"
+        data-testid="account-groups-more"
+        :aria-expanded="showPopover"
+        aria-haspopup="dialog"
+        @click.stop="togglePopover"
         class="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-600 dark:text-gray-300 dark:hover:bg-dark-500 transition-colors cursor-pointer whitespace-nowrap"
       >
         <span>+{{ hiddenCount }}</span>
@@ -36,8 +39,11 @@
         <div
           v-if="showPopover"
           ref="popoverRef"
-          class="fixed z-50 min-w-48 max-w-96 rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-dark-600 dark:bg-dark-800"
+          data-testid="account-groups-popover"
+          class="fixed z-50 min-w-0 max-w-[calc(100vw-2rem)] overflow-x-hidden overflow-y-auto rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-dark-600 dark:bg-dark-800"
           :style="popoverStyle"
+          role="dialog"
+          :aria-label="t('admin.accounts.groupCountTotal', { count: groups.length })"
         >
           <div class="mb-2 flex items-center justify-between">
             <span class="text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -78,10 +84,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import GroupBadge from '@/components/common/GroupBadge.vue'
 import type { Group } from '@/types'
+import { getFloatingPanelPosition } from '@/utils/floatingPanel'
 
 interface Props {
   groups: Group[] | null | undefined
@@ -97,6 +104,13 @@ const { t } = useI18n()
 const moreButtonRef = ref<HTMLElement | null>(null)
 const popoverRef = ref<HTMLElement | null>(null)
 const showPopover = ref(false)
+const popoverPosition = reactive({
+  top: null as number | null,
+  bottom: null as number | null,
+  left: 16,
+  width: 384,
+  maxHeight: 0
+})
 
 // 显示的分组（最多显示 maxDisplay 个）
 const displayGroups = computed(() => {
@@ -115,31 +129,36 @@ const hiddenCount = computed(() => {
   return props.groups.length - (props.maxDisplay - 1)
 })
 
-// Popover 位置样式
-const popoverStyle = computed(() => {
-  if (!moreButtonRef.value) return {}
-  const rect = moreButtonRef.value.getBoundingClientRect()
-  const viewportHeight = window.innerHeight
-  const viewportWidth = window.innerWidth
+const popoverStyle = computed(() => ({
+  top: popoverPosition.top == null ? 'auto' : `${popoverPosition.top}px`,
+  bottom: popoverPosition.bottom == null ? 'auto' : `${popoverPosition.bottom}px`,
+  left: `${popoverPosition.left}px`,
+  width: `${popoverPosition.width}px`,
+  maxHeight: `${popoverPosition.maxHeight}px`
+}))
 
-  let top = rect.bottom + 8
-  let left = rect.left
+const updatePopoverPosition = () => {
+  const trigger = moreButtonRef.value
+  if (!trigger) return
 
-  // 如果下方空间不足，显示在上方
-  if (top + 280 > viewportHeight) {
-    top = Math.max(8, rect.top - 280)
-  }
+  const position = getFloatingPanelPosition(
+    trigger.getBoundingClientRect(),
+    document.documentElement.clientWidth || window.innerWidth,
+    window.innerHeight,
+    { maxWidth: 384, minComfortableHeight: 280, align: 'start' }
+  )
+  Object.assign(popoverPosition, position)
+}
 
-  // 如果右侧空间不足，向左偏移
-  if (left + 384 > viewportWidth) {
-    left = Math.max(8, viewportWidth - 392)
-  }
+const togglePopover = () => {
+  const nextOpen = !showPopover.value
+  if (nextOpen) updatePopoverPosition()
+  showPopover.value = nextOpen
+}
 
-  return {
-    top: `${top}px`,
-    left: `${left}px`
-  }
-})
+const handleViewportChange = () => {
+  if (showPopover.value) updatePopoverPosition()
+}
 
 // 关闭 popover 的键盘事件
 const handleKeydown = (e: KeyboardEvent) => {
@@ -148,11 +167,24 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
+watch(showPopover, (open) => {
+  if (open) {
+    void nextTick(updatePopoverPosition)
+    window.addEventListener('scroll', handleViewportChange, true)
+    window.addEventListener('resize', handleViewportChange)
+  } else {
+    window.removeEventListener('scroll', handleViewportChange, true)
+    window.removeEventListener('resize', handleViewportChange)
+  }
+})
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('scroll', handleViewportChange, true)
+  window.removeEventListener('resize', handleViewportChange)
 })
 </script>

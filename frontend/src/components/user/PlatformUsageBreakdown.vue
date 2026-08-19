@@ -1,24 +1,25 @@
 <template>
-  <div class="group/usage relative text-sm">
-    <div class="flex items-center gap-1.5">
-      <span class="text-gray-500 dark:text-gray-400">{{ t('admin.users.today') }}:</span>
-      <span class="font-medium text-gray-900 dark:text-white">${{ today.toFixed(4) }}</span>
-      <Icon
-        v-if="hasBreakdown"
-        name="infoCircle"
-        size="xs"
-        class="text-gray-400 dark:text-gray-500"
-      />
-    </div>
-    <div class="mt-0.5 flex items-center gap-1.5">
-      <span class="text-gray-500 dark:text-gray-400">{{ t('admin.users.total') }}:</span>
-      <span class="font-medium text-gray-900 dark:text-white">${{ total.toFixed(4) }}</span>
-    </div>
+  <HelpTooltip
+    v-if="hasBreakdown"
+    class="!ml-0"
+    trigger="click"
+    width-class="w-max max-w-[calc(100vw-2rem)]"
+  >
+    <template #trigger>
+      <div class="text-sm">
+        <div class="flex items-center gap-1.5">
+          <span class="text-gray-500 dark:text-gray-400">{{ t('admin.users.today') }}:</span>
+          <span class="font-medium text-gray-900 dark:text-white">${{ today.toFixed(4) }}</span>
+          <Icon name="infoCircle" size="xs" class="text-gray-400 dark:text-gray-500" />
+        </div>
+        <div class="mt-0.5 flex items-center gap-1.5">
+          <span class="text-gray-500 dark:text-gray-400">{{ t('admin.users.total') }}:</span>
+          <span class="font-medium text-gray-900 dark:text-white">${{ total.toFixed(4) }}</span>
+        </div>
+      </div>
+    </template>
 
-    <div
-      v-if="hasBreakdown"
-      class="pointer-events-none absolute left-full top-0 z-50 ml-2 min-w-[220px] whitespace-nowrap rounded-md bg-gray-900 px-3 py-2 text-xs text-white opacity-0 shadow-xl transition-opacity duration-100 group-hover/usage:opacity-100 dark:bg-dark-600"
-    >
+    <div class="max-w-full text-xs text-white">
       <div class="mb-1.5 flex items-center justify-between gap-3 border-b border-white/10 pb-1 text-[11px] opacity-80">
         <span>{{ t('admin.users.platformBreakdown') }}</span>
         <span class="font-mono">{{ t('admin.users.today') }} / {{ t('admin.users.total') }}</span>
@@ -39,12 +40,24 @@
         </span>
       </div>
     </div>
+  </HelpTooltip>
+
+  <div v-else class="text-sm">
+    <div class="flex items-center gap-1.5">
+      <span class="text-gray-500 dark:text-gray-400">{{ t('admin.users.today') }}:</span>
+      <span class="font-medium text-gray-900 dark:text-white">${{ today.toFixed(4) }}</span>
+    </div>
+    <div class="mt-0.5 flex items-center gap-1.5">
+      <span class="text-gray-500 dark:text-gray-400">{{ t('admin.users.total') }}:</span>
+      <span class="font-medium text-gray-900 dark:text-white">${{ total.toFixed(4) }}</span>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import Icon from '@/components/icons/Icon.vue'
 import type { PlatformUsage } from '@/api/admin/dashboard'
 

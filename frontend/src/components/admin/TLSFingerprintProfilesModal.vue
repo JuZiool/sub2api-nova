@@ -153,7 +153,7 @@
         <hr class="border-gray-200 dark:border-dark-600" />
 
         <!-- Basic Info -->
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label class="input-label">{{ t('admin.tlsFingerprintProfiles.form.name') }}</label>
             <input
@@ -203,7 +203,7 @@
         </div>
 
         <!-- TLS Array Fields - 2 column grid -->
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label class="input-label text-xs">{{ t('admin.tlsFingerprintProfiles.form.cipherSuites') }}</label>
             <textarea

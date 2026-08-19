@@ -29,6 +29,18 @@ describe('getFloatingPanelPosition', () => {
     expect(position.width).toBe(320)
   })
 
+  it('支持桌面端从触发器左边缘展开并保持视口安全边距', () => {
+    const position = getFloatingPanelPosition(
+      { top: 100, left: 100, right: 140, bottom: 140 },
+      1280,
+      900,
+      { align: 'start' }
+    )
+
+    expect(position.left).toBe(100)
+    expect(position.left + position.width).toBeLessThanOrEqual(1264)
+  })
+
   it('按钮下方空间不足时改为向上展开', () => {
     const position = getFloatingPanelPosition(
       { top: 700, right: 1000, bottom: 740 },

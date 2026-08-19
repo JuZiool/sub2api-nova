@@ -204,6 +204,20 @@ describe('KeyUsageView daily detail', () => {
     expect(text).toContain('10')
     expect(text).toContain('$0.12')
 
+    const customButton = wrapper.findAll('button').find(button => button.text() === 'Custom')
+    expect(customButton).toBeDefined()
+    await customButton!.trigger('click')
+    await nextTick()
+
+    const dateInputs = wrapper.findAll('input[type="date"]')
+    expect(dateInputs).toHaveLength(2)
+    const customDateControls = dateInputs[0].element.parentElement
+    expect(customDateControls?.classList.contains('flex-col')).toBe(true)
+    expect(customDateControls?.classList.contains('sm:flex-row')).toBe(true)
+    expect(dateInputs[0].classes()).toEqual(expect.arrayContaining(['w-full', 'min-w-0', 'sm:w-auto']))
+    const applyButton = wrapper.findAll('button').find(button => button.text() === 'Apply')
+    expect(applyButton?.classes()).toEqual(expect.arrayContaining(['w-full', 'sm:w-auto']))
+
     wrapper.unmount()
   })
 

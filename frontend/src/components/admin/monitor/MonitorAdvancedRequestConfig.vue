@@ -7,14 +7,14 @@
         <div
           v-for="(row, i) in headerRows"
           :key="i"
-          class="flex items-center gap-2"
+          class="flex flex-col gap-2 sm:flex-row sm:items-center"
         >
           <input
             v-model="row.name"
             type="text"
             spellcheck="false"
             :placeholder="t('admin.channelMonitor.advanced.headerNamePlaceholder')"
-            class="input w-52 flex-none font-mono text-xs"
+            class="input w-full font-mono text-xs sm:w-52 sm:flex-none"
             @blur="commitHeaders"
           />
           <input
@@ -22,12 +22,12 @@
             type="text"
             spellcheck="false"
             :placeholder="t('admin.channelMonitor.advanced.headerValuePlaceholder')"
-            class="input flex-1 font-mono text-xs"
+            class="input w-full min-w-0 flex-1 font-mono text-xs"
             @blur="commitHeaders"
           />
           <button
             type="button"
-            class="flex-none rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+            class="flex-none self-end rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 sm:self-auto dark:hover:bg-red-500/10 dark:hover:text-red-400"
             :title="t('common.delete')"
             @click="removeRow(i)"
           >
@@ -56,7 +56,7 @@
     <!-- Body mode radio -->
     <div>
       <label class="input-label">{{ t('admin.channelMonitor.advanced.bodyMode') }}</label>
-      <div class="grid grid-cols-3 gap-3">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <button
           v-for="opt in bodyModeOptions"
           :key="opt.value"

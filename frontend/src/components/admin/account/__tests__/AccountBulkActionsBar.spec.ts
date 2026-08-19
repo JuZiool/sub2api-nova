@@ -44,6 +44,8 @@ describe('AccountBulkActionsBar', () => {
     )
 
     expect(button).toBeDefined()
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['flex-col', 'sm:flex-row']))
+    expect(button!.element.parentElement?.classList.contains('flex-wrap')).toBe(true)
     await button!.trigger('click')
     expect(wrapper.emitted('probe-upstream-billing')).toHaveLength(1)
   })

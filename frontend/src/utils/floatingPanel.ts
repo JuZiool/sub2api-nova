@@ -13,13 +13,15 @@ export interface FloatingPanelOptions {
   maxHeightRatio?: number
   mobileBreakpoint?: number
   minComfortableHeight?: number
+  /** Desktop alignment relative to the trigger; mobile always uses viewport padding. */
+  align?: 'start' | 'end'
 }
 
 /**
  * 计算挂载到 body 的浮层位置，避免触发按钮靠近视口边缘时浮层被挤到屏幕外。
  */
 export const getFloatingPanelPosition = (
-  triggerRect: Pick<DOMRect, 'top' | 'right' | 'bottom'>,
+  triggerRect: Pick<DOMRect, 'top' | 'right' | 'bottom'> & Partial<Pick<DOMRect, 'left'>>,
   viewportWidth: number,
   viewportHeight: number,
   options: FloatingPanelOptions = {}
@@ -33,11 +35,14 @@ export const getFloatingPanelPosition = (
 
   const availableWidth = Math.max(0, viewportWidth - viewportPadding * 2)
   const width = Math.min(maxWidth, availableWidth)
+  const preferredLeft = options.align === 'start' && triggerRect.left != null
+    ? triggerRect.left
+    : triggerRect.right - width
   const left = viewportWidth < mobileBreakpoint
     ? viewportPadding
     : Math.max(
         viewportPadding,
-        Math.min(triggerRect.right - width, viewportWidth - width - viewportPadding)
+        Math.min(preferredLeft, viewportWidth - width - viewportPadding)
       )
 
   const preferredMaxHeight = Math.max(0, Math.floor(viewportHeight * maxHeightRatio))

@@ -130,7 +130,7 @@
               <label class="input-label text-center block mb-3">
                 {{ t('profile.totp.enterCode') }}
               </label>
-              <div class="flex justify-center gap-2">
+              <div class="mx-auto grid max-w-[280px] grid-cols-6 gap-1 sm:gap-2">
                 <input
                   v-for="(_, index) in 6"
                   :key="index"
@@ -139,7 +139,7 @@
                   maxlength="1"
                   inputmode="numeric"
                   pattern="[0-9]"
-                  class="h-12 w-10 rounded-lg border border-gray-300 text-center text-lg font-semibold focus:border-primary-500 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                  class="h-12 w-full min-w-0 rounded-lg border border-gray-300 text-center text-lg font-semibold focus:border-primary-500 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
                   @input="handleCodeInput($event, index)"
                   @keydown="handleKeydown($event, index)"
                   @paste="handlePaste"

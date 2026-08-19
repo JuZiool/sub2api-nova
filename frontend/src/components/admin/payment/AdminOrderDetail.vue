@@ -6,7 +6,7 @@
     @close="emit('close')"
   >
     <div v-if="order" class="space-y-4">
-      <div class="grid grid-cols-2 gap-4">
+      <div data-testid="admin-order-summary-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderId') }}</p>
           <p class="font-mono text-sm font-medium text-gray-900 dark:text-white">#{{ order.id }}</p>
@@ -74,12 +74,12 @@
         <h4 class="mb-2 text-sm font-semibold text-red-700 dark:text-red-400">
           {{ t('payment.admin.refundInfo') }}
         </h4>
-        <div class="grid grid-cols-2 gap-2 text-sm">
+        <div class="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
           <div>
             <span class="text-red-600 dark:text-red-400">{{ t('payment.admin.refundAmount') }}:</span>
             <span class="ml-1 font-medium text-red-700 dark:text-red-300">{{ creditedAmountSymbol }}{{ order.refund_amount.toFixed(2) }}</span>
           </div>
-          <div v-if="order.refund_reason" class="col-span-2">
+          <div v-if="order.refund_reason" class="sm:col-span-2">
             <span class="text-red-600 dark:text-red-400">{{ t('payment.admin.refundReason') }}:</span>
             <span class="ml-1 text-red-700 dark:text-red-300">{{ order.refund_reason }}</span>
           </div>

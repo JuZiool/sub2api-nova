@@ -98,9 +98,9 @@
 
       <div v-if="usesProbePart">
         <label class="input-label">{{ t('admin.channelMonitor.form.endpoint') }} <span class="text-red-500">*</span></label>
-        <div class="flex gap-2">
-          <input v-model="form.endpoint" data-testid="monitor-endpoint" type="text" required class="input flex-1" :placeholder="t('admin.channelMonitor.form.endpointPlaceholder')" />
-          <button type="button" @click="useCurrentDomain" class="btn btn-secondary whitespace-nowrap">
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <input v-model="form.endpoint" data-testid="monitor-endpoint" type="text" required class="input min-w-0 flex-1" :placeholder="t('admin.channelMonitor.form.endpointPlaceholder')" />
+          <button type="button" @click="useCurrentDomain" class="btn btn-secondary w-full whitespace-nowrap sm:w-auto">
             {{ t('admin.channelMonitor.form.useCurrentDomain') }}
           </button>
         </div>
@@ -110,15 +110,15 @@
         <label class="input-label">
           {{ t('admin.channelMonitor.form.apiKey') }}<span v-if="!editing" class="text-red-500"> *</span>
         </label>
-        <div class="flex gap-2">
+        <div class="flex flex-col gap-2 sm:flex-row">
           <input
             v-model="form.api_key"
             type="password"
             :required="!editing"
-            class="input flex-1"
+            class="input min-w-0 flex-1"
             :placeholder="editing ? t('admin.channelMonitor.form.apiKeyEditPlaceholder') : t('admin.channelMonitor.form.apiKeyPlaceholder')"
           />
-          <button type="button" @click="openMyKeyPicker" class="btn btn-secondary whitespace-nowrap">
+          <button type="button" @click="openMyKeyPicker" class="btn btn-secondary w-full whitespace-nowrap sm:w-auto">
             {{ t('admin.channelMonitor.form.useMyKey') }}
           </button>
         </div>

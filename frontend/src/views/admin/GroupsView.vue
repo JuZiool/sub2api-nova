@@ -515,28 +515,10 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.copyAccounts.title") }}
             </label>
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <div
-                class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-              >
-                <div
-                  class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800"
-                >
-                  <p class="text-xs leading-relaxed text-gray-300">
-                    {{ t("admin.groups.copyAccounts.tooltip") }}
-                  </p>
-                  <div
-                    class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <HelpTooltip
+              :content="t('admin.groups.copyAccounts.tooltip')"
+              width-class="w-72"
+            />
           </div>
           <!-- 已选分组标签 -->
           <div
@@ -641,44 +623,23 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.form.exclusive") }}
             </label>
-            <!-- Help Tooltip -->
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <!-- Tooltip Popover -->
-              <div
-                class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-              >
-                <div
-                  class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800"
-                >
-                  <p class="mb-2 text-xs font-medium">
-                    {{ t("admin.groups.exclusiveTooltip.title") }}
-                  </p>
-                  <p class="mb-2 text-xs leading-relaxed text-gray-300">
-                    {{ t("admin.groups.exclusiveTooltip.description") }}
-                  </p>
-                  <div class="rounded bg-gray-800 p-2 dark:bg-gray-700">
-                    <p class="text-xs leading-relaxed text-gray-300">
-                      <span
-                        class="inline-flex items-center gap-1 text-primary-400"
-                        ><Icon name="lightbulb" size="xs" />
-                        {{ t("admin.groups.exclusiveTooltip.example") }}</span
-                      >
-                      {{ t("admin.groups.exclusiveTooltip.exampleContent") }}
-                    </p>
-                  </div>
-                  <!-- Arrow -->
-                  <div
-                    class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"
-                  ></div>
-                </div>
+            <HelpTooltip width-class="w-72">
+              <p class="mb-2 font-medium">
+                {{ t("admin.groups.exclusiveTooltip.title") }}
+              </p>
+              <p class="mb-2 text-gray-300">
+                {{ t("admin.groups.exclusiveTooltip.description") }}
+              </p>
+              <div class="rounded bg-gray-800 p-2 dark:bg-gray-700">
+                <p class="text-gray-300">
+                  <span class="inline-flex items-center gap-1 text-primary-400">
+                    <Icon name="lightbulb" size="xs" />
+                    {{ t("admin.groups.exclusiveTooltip.example") }}
+                  </span>
+                  {{ t("admin.groups.exclusiveTooltip.exampleContent") }}
+                </p>
               </div>
-            </div>
+            </HelpTooltip>
           </div>
           <div class="flex items-center gap-3">
             <button
@@ -924,7 +885,7 @@
               placeholder="1"
             />
           </div>
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <label class="input-label">1K ($)</label>
               <input
@@ -966,7 +927,7 @@
             <div class="mb-1 font-medium">
               {{ t(imagePricingI18nKey(createForm.platform, "finalPricePreview")) }}
             </div>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <div
                 v-for="item in createImageFinalPricePreview"
                 :key="item.label"
@@ -1068,7 +1029,7 @@
               placeholder="1"
             />
           </div>
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <label class="input-label">480p ($/s)</label>
               <input
@@ -1149,7 +1110,7 @@
             <div class="mb-1 font-medium">
               {{ t(videoPricingI18nKey("finalPricePreview")) }}
             </div>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <div
                 v-for="item in createVideoFinalPricePreview"
                 :key="item.label"
@@ -1263,29 +1224,10 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.supportedScopes.title") }}
             </label>
-            <!-- Help Tooltip -->
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <div
-                class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-              >
-                <div
-                  class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800"
-                >
-                  <p class="text-xs leading-relaxed text-gray-300">
-                    {{ t("admin.groups.supportedScopes.tooltip") }}
-                  </p>
-                  <div
-                    class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <HelpTooltip
+              :content="t('admin.groups.supportedScopes.tooltip')"
+              width-class="w-72"
+            />
           </div>
           <div class="space-y-2">
             <label class="flex items-center gap-2 cursor-pointer">
@@ -1337,28 +1279,10 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.mcpXml.title") }}
             </label>
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <div
-                class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-              >
-                <div
-                  class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800"
-                >
-                  <p class="text-xs leading-relaxed text-gray-300">
-                    {{ t("admin.groups.mcpXml.tooltip") }}
-                  </p>
-                  <div
-                    class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <HelpTooltip
+              :content="t('admin.groups.mcpXml.tooltip')"
+              width-class="w-72"
+            />
           </div>
           <div class="flex items-center gap-3">
             <button
@@ -1394,29 +1318,10 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.claudeCode.title") }}
             </label>
-            <!-- Help Tooltip -->
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <div
-                class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-              >
-                <div
-                  class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800"
-                >
-                  <p class="text-xs leading-relaxed text-gray-300">
-                    {{ t("admin.groups.claudeCode.tooltip") }}
-                  </p>
-                  <div
-                    class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <HelpTooltip
+              :content="t('admin.groups.claudeCode.tooltip')"
+              width-class="w-72"
+            />
           </div>
           <div class="flex items-center gap-3">
             <button
@@ -1956,29 +1861,10 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.modelRouting.title") }}
             </label>
-            <!-- Help Tooltip -->
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <div
-                class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-80 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-              >
-                <div
-                  class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800"
-                >
-                  <p class="text-xs leading-relaxed text-gray-300">
-                    {{ t("admin.groups.modelRouting.tooltip") }}
-                  </p>
-                  <div
-                    class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <HelpTooltip
+              :content="t('admin.groups.modelRouting.tooltip')"
+              width-class="w-80"
+            />
           </div>
           <!-- 启用开关 -->
           <div class="flex items-center gap-3 mb-3">
@@ -2238,28 +2124,10 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.copyAccounts.title") }}
             </label>
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <div
-                class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-              >
-                <div
-                  class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800"
-                >
-                  <p class="text-xs leading-relaxed text-gray-300">
-                    {{ t("admin.groups.copyAccounts.tooltipEdit") }}
-                  </p>
-                  <div
-                    class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <HelpTooltip
+              :content="t('admin.groups.copyAccounts.tooltipEdit')"
+              width-class="w-72"
+            />
           </div>
           <!-- 已选分组标签 -->
           <div
@@ -2362,44 +2230,23 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.form.exclusive") }}
             </label>
-            <!-- Help Tooltip -->
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <!-- Tooltip Popover -->
-              <div
-                class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-              >
-                <div
-                  class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800"
-                >
-                  <p class="mb-2 text-xs font-medium">
-                    {{ t("admin.groups.exclusiveTooltip.title") }}
-                  </p>
-                  <p class="mb-2 text-xs leading-relaxed text-gray-300">
-                    {{ t("admin.groups.exclusiveTooltip.description") }}
-                  </p>
-                  <div class="rounded bg-gray-800 p-2 dark:bg-gray-700">
-                    <p class="text-xs leading-relaxed text-gray-300">
-                      <span
-                        class="inline-flex items-center gap-1 text-primary-400"
-                        ><Icon name="lightbulb" size="xs" />
-                        {{ t("admin.groups.exclusiveTooltip.example") }}</span
-                      >
-                      {{ t("admin.groups.exclusiveTooltip.exampleContent") }}
-                    </p>
-                  </div>
-                  <!-- Arrow -->
-                  <div
-                    class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"
-                  ></div>
-                </div>
+            <HelpTooltip width-class="w-72">
+              <p class="mb-2 font-medium">
+                {{ t("admin.groups.exclusiveTooltip.title") }}
+              </p>
+              <p class="mb-2 text-gray-300">
+                {{ t("admin.groups.exclusiveTooltip.description") }}
+              </p>
+              <div class="rounded bg-gray-800 p-2 dark:bg-gray-700">
+                <p class="text-gray-300">
+                  <span class="inline-flex items-center gap-1 text-primary-400">
+                    <Icon name="lightbulb" size="xs" />
+                    {{ t("admin.groups.exclusiveTooltip.example") }}
+                  </span>
+                  {{ t("admin.groups.exclusiveTooltip.exampleContent") }}
+                </p>
               </div>
-            </div>
+            </HelpTooltip>
           </div>
           <div class="flex items-center gap-3">
             <button
@@ -2650,7 +2497,7 @@
               placeholder="1"
             />
           </div>
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <label class="input-label">1K ($)</label>
               <input
@@ -2692,7 +2539,7 @@
             <div class="mb-1 font-medium">
               {{ t(imagePricingI18nKey(editForm.platform, "finalPricePreview")) }}
             </div>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <div
                 v-for="item in editImageFinalPricePreview"
                 :key="item.label"
@@ -2794,7 +2641,7 @@
               placeholder="1"
             />
           </div>
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <label class="input-label">480p ($/s)</label>
               <input
@@ -2875,7 +2722,7 @@
             <div class="mb-1 font-medium">
               {{ t(videoPricingI18nKey("finalPricePreview")) }}
             </div>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <div
                 v-for="item in editVideoFinalPricePreview"
                 :key="item.label"
@@ -2989,29 +2836,10 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.supportedScopes.title") }}
             </label>
-            <!-- Help Tooltip -->
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <div
-                class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-              >
-                <div
-                  class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800"
-                >
-                  <p class="text-xs leading-relaxed text-gray-300">
-                    {{ t("admin.groups.supportedScopes.tooltip") }}
-                  </p>
-                  <div
-                    class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <HelpTooltip
+              :content="t('admin.groups.supportedScopes.tooltip')"
+              width-class="w-72"
+            />
           </div>
           <div class="space-y-2">
             <label class="flex items-center gap-2 cursor-pointer">
@@ -3063,28 +2891,10 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.mcpXml.title") }}
             </label>
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <div
-                class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-              >
-                <div
-                  class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800"
-                >
-                  <p class="text-xs leading-relaxed text-gray-300">
-                    {{ t("admin.groups.mcpXml.tooltip") }}
-                  </p>
-                  <div
-                    class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <HelpTooltip
+              :content="t('admin.groups.mcpXml.tooltip')"
+              width-class="w-72"
+            />
           </div>
           <div class="flex items-center gap-3">
             <button
@@ -3120,29 +2930,10 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.claudeCode.title") }}
             </label>
-            <!-- Help Tooltip -->
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <div
-                class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-              >
-                <div
-                  class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800"
-                >
-                  <p class="text-xs leading-relaxed text-gray-300">
-                    {{ t("admin.groups.claudeCode.tooltip") }}
-                  </p>
-                  <div
-                    class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <HelpTooltip
+              :content="t('admin.groups.claudeCode.tooltip')"
+              width-class="w-72"
+            />
           </div>
           <div class="flex items-center gap-3">
             <button
@@ -3678,29 +3469,10 @@
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.modelRouting.title") }}
             </label>
-            <!-- Help Tooltip -->
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <div
-                class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-80 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-              >
-                <div
-                  class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800"
-                >
-                  <p class="text-xs leading-relaxed text-gray-300">
-                    {{ t("admin.groups.modelRouting.tooltip") }}
-                  </p>
-                  <div
-                    class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <HelpTooltip
+              :content="t('admin.groups.modelRouting.tooltip')"
+              width-class="w-80"
+            />
           </div>
           <!-- 启用开关 -->
           <div class="flex items-center gap-3 mb-3">
@@ -4432,6 +4204,7 @@ import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 import EmptyState from "@/components/common/EmptyState.vue";
 import Select from "@/components/common/Select.vue";
 import PlatformIcon from "@/components/common/PlatformIcon.vue";
+import HelpTooltip from "@/components/common/HelpTooltip.vue";
 import Icon from "@/components/icons/Icon.vue";
 import GroupRateMultipliersModal from "@/components/admin/group/GroupRateMultipliersModal.vue";
 import GroupRPMOverridesModal from "@/components/admin/group/GroupRPMOverridesModal.vue";

@@ -212,7 +212,7 @@
           </template>
 
           <template #cell-usage="{ row }">
-            <div class="min-w-[280px] space-y-2">
+            <div class="w-full min-w-0 space-y-2 md:min-w-[280px]">
               <!-- Daily Usage -->
               <div v-if="row.group?.daily_limit_usd" class="usage-row">
                 <div class="flex items-center gap-2">

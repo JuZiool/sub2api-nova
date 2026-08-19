@@ -1,7 +1,8 @@
 <template>
   <Teleport to="body">
     <div
-      class="pointer-events-none fixed right-4 top-4 z-[9999] space-y-3"
+      class="pointer-events-none fixed inset-x-4 top-4 z-[9999] flex flex-col items-end gap-3 sm:left-auto"
+      data-testid="toast-region"
       aria-live="polite"
       aria-atomic="true"
     >
@@ -16,8 +17,9 @@
         <div
           v-for="toast in toasts"
           :key="toast.id"
+          data-testid="toast-item"
           :class="[
-            'pointer-events-auto min-w-[320px] max-w-md overflow-hidden rounded-lg shadow-lg',
+            'pointer-events-auto w-full min-w-0 max-w-md overflow-hidden rounded-lg shadow-lg sm:min-w-[320px]',
             'bg-white dark:bg-dark-800',
             'border-l-4',
             getBorderColor(toast.type)

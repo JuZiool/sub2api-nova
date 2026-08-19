@@ -562,7 +562,7 @@
             {{ t('admin.accounts.gemini.helpButton') }}
           </button>
         </div>
-        <div class="mt-2 grid grid-cols-3 gap-3" data-tour="account-form-type">
+        <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3" data-tour="account-form-type">
           <button
             type="button"
             @click="accountCategory = 'oauth-based'"
@@ -583,7 +583,7 @@
             >
               <Icon name="key" size="sm" />
             </div>
-            <div>
+            <div class="min-w-0">
               <span class="block text-sm font-medium text-gray-900 dark:text-white">
                 {{ t('admin.accounts.gemini.accountType.oauthTitle') }}
               </span>
@@ -625,7 +625,7 @@
                 />
               </svg>
             </div>
-            <div>
+            <div class="min-w-0">
               <span class="block text-sm font-medium text-gray-900 dark:text-white">
                 {{ t('admin.accounts.gemini.accountType.apiKeyTitle') }}
               </span>
@@ -655,7 +655,7 @@
             >
               <Icon name="cloud" size="sm" />
             </div>
-            <div>
+            <div class="min-w-0">
               <span class="block text-sm font-medium text-gray-900 dark:text-white">
                 Vertex
               </span>
@@ -819,7 +819,7 @@
           </div>
 
           <!-- Custom OAuth Client (Advanced) -->
-          <div v-if="showAdvancedOAuth" class="mt-3 group relative">
+          <div v-if="showAdvancedOAuth" class="mt-3">
             <button
               type="button"
               :disabled="!geminiAIStudioOAuthEnabled"
@@ -877,19 +877,25 @@
                   </span>
                 </div>
               </div>
-              <span
-                v-if="!geminiAIStudioOAuthEnabled"
-                class="ml-auto shrink-0 rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-              >
-                {{ t('admin.accounts.oauth.gemini.aiStudioNotConfiguredShort') }}
-              </span>
             </button>
 
             <div
               v-if="!geminiAIStudioOAuthEnabled"
-              class="pointer-events-none absolute right-0 top-full z-50 mt-2 w-80 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-200"
+              class="mt-2 flex justify-end"
             >
-              {{ t('admin.accounts.oauth.gemini.aiStudioNotConfiguredTip') }}
+              <HelpTooltip trigger="click" width-class="w-80">
+                <template #trigger>
+                  <button
+                    type="button"
+                    class="rounded bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                  >
+                    {{ t('admin.accounts.oauth.gemini.aiStudioNotConfiguredShort') }}
+                  </button>
+                </template>
+                <p class="pr-5 text-amber-100">
+                  {{ t('admin.accounts.oauth.gemini.aiStudioNotConfiguredTip') }}
+                </p>
+              </HelpTooltip>
             </div>
           </div>
         </div>
@@ -1149,24 +1155,24 @@
               :key="getAntigravityModelMappingKey(mapping)"
               class="space-y-1"
             >
-              <div class="flex items-center gap-2">
+              <div class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                 <input
                   v-model="mapping.from"
                   type="text"
                   :class="[
-                    'input flex-1',
+                    'input min-w-0 flex-1',
                     !isValidWildcardPattern(mapping.from) ? 'border-red-500 dark:border-red-500' : ''
                   ]"
                   :placeholder="t('admin.accounts.requestModel')"
                 />
-                <svg class="h-4 w-4 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="h-4 w-4 flex-shrink-0 self-center text-gray-400 sm:self-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
                 <input
                   v-model="mapping.to"
                   type="text"
                   :class="[
-                    'input flex-1',
+                    'input min-w-0 flex-1',
                     mapping.to.includes('*') ? 'border-red-500 dark:border-red-500' : ''
                   ]"
                   :placeholder="t('admin.accounts.actualModel')"
@@ -1174,7 +1180,7 @@
                 <button
                   type="button"
                   @click="removeAntigravityModelMapping(index)"
-                  class="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                  class="self-end rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 sm:self-auto"
                 >
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
@@ -1418,16 +1424,16 @@
               <div
                 v-for="(mapping, index) in modelMappings"
                 :key="getModelMappingKey(mapping)"
-                class="flex items-center gap-2"
+                class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center"
               >
                 <input
                   v-model="mapping.from"
                   type="text"
-                  class="input flex-1"
+                  class="input min-w-0 flex-1"
                   :placeholder="t('admin.accounts.requestModel')"
                 />
                 <svg
-                  class="h-4 w-4 flex-shrink-0 text-gray-400"
+                  class="h-4 w-4 flex-shrink-0 self-center text-gray-400 sm:self-auto"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -1442,13 +1448,13 @@
                 <input
                   v-model="mapping.to"
                   type="text"
-                  class="input flex-1"
+                  class="input min-w-0 flex-1"
                   :placeholder="t('admin.accounts.actualModel')"
                 />
                 <button
                   type="button"
                   @click="removeModelMapping(index)"
-                  class="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                  class="self-end rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 sm:self-auto"
                 >
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
@@ -1616,17 +1622,17 @@
             </div>
 
             <!-- Manual input -->
-            <div class="flex items-center gap-2">
+            <div class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
               <input
                 v-model.number="customErrorCodeInput"
                 type="number"
                 min="100"
                 max="599"
-                class="input flex-1"
+                class="input min-w-0 flex-1"
                 :placeholder="t('admin.accounts.enterErrorCode')"
                 @keyup.enter="addCustomErrorCode"
               />
-              <button type="button" @click="addCustomErrorCode" class="btn btn-secondary px-3">
+              <button type="button" @click="addCustomErrorCode" class="btn btn-secondary w-full px-3 sm:w-auto">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     stroke-linecap="round"
@@ -1874,11 +1880,11 @@
 
           <!-- Mapping Mode -->
           <div v-else class="space-y-3">
-            <div v-for="(mapping, index) in modelMappings" :key="index" class="flex items-center gap-2">
-              <input v-model="mapping.from" type="text" class="input flex-1" :placeholder="t('admin.accounts.fromModel')" />
-              <span class="text-gray-400">→</span>
-              <input v-model="mapping.to" type="text" class="input flex-1" :placeholder="t('admin.accounts.toModel')" />
-              <button type="button" @click="modelMappings.splice(index, 1)" class="text-red-500 hover:text-red-700">
+            <div v-for="(mapping, index) in modelMappings" :key="index" class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+              <input v-model="mapping.from" type="text" class="input min-w-0 flex-1" :placeholder="t('admin.accounts.fromModel')" />
+              <span class="self-center text-gray-400 sm:self-auto">→</span>
+              <input v-model="mapping.to" type="text" class="input min-w-0 flex-1" :placeholder="t('admin.accounts.toModel')" />
+              <button type="button" @click="modelMappings.splice(index, 1)" class="self-end text-red-500 hover:text-red-700 sm:self-auto">
                 <Icon name="trash" size="sm" />
               </button>
             </div>
@@ -2222,16 +2228,16 @@
               <div
                 v-for="(mapping, index) in modelMappings"
                 :key="'oauth-' + getModelMappingKey(mapping)"
-                class="flex items-center gap-2"
+                class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center"
               >
                 <input
                   v-model="mapping.from"
                   type="text"
-                  class="input flex-1"
+                  class="input min-w-0 flex-1"
                   :placeholder="t('admin.accounts.requestModel')"
                 />
                 <svg
-                  class="h-4 w-4 flex-shrink-0 text-gray-400"
+                  class="h-4 w-4 flex-shrink-0 self-center text-gray-400 sm:self-auto"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -2246,13 +2252,13 @@
                 <input
                   v-model="mapping.to"
                   type="text"
-                  class="input flex-1"
+                  class="input min-w-0 flex-1"
                   :placeholder="t('admin.accounts.actualModel')"
                 />
                 <button
                   type="button"
                   @click="removeModelMapping(index)"
-                  class="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                  class="self-end rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 sm:self-auto"
                 >
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
@@ -3173,12 +3179,12 @@
             <div
               v-for="(mapping, index) in openAICompactModelMappings"
               :key="getOpenAICompactModelMappingKey(mapping)"
-              class="flex items-center gap-2"
+              class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center"
             >
-              <input v-model="mapping.from" type="text" class="input flex-1" :placeholder="t('admin.accounts.fromModel')" />
-              <span class="text-gray-400">→</span>
-              <input v-model="mapping.to" type="text" class="input flex-1" :placeholder="t('admin.accounts.toModel')" />
-              <button type="button" @click="removeOpenAICompactModelMapping(index)" class="text-red-500 hover:text-red-700">
+              <input v-model="mapping.from" type="text" class="input min-w-0 flex-1" :placeholder="t('admin.accounts.fromModel')" />
+              <span class="self-center text-gray-400 sm:self-auto">→</span>
+              <input v-model="mapping.to" type="text" class="input min-w-0 flex-1" :placeholder="t('admin.accounts.toModel')" />
+              <button type="button" @click="removeOpenAICompactModelMapping(index)" class="self-end text-red-500 hover:text-red-700 sm:self-auto">
                 <Icon name="trash" size="sm" />
               </button>
             </div>
@@ -3280,22 +3286,15 @@
               {{ t('admin.accounts.mixedScheduling') }}
             </span>
           </label>
-          <div class="group relative">
-            <span
-              class="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-gray-200 text-xs text-gray-500 hover:bg-gray-300 dark:bg-dark-600 dark:text-gray-400 dark:hover:bg-dark-500"
-            >
-              ?
-            </span>
-            <!-- Tooltip（向下显示避免被弹窗裁剪） -->
-            <div
-              class="pointer-events-none absolute left-0 top-full z-[100] mt-1.5 w-72 rounded bg-gray-900 px-3 py-2 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 dark:bg-gray-700"
-            >
-              {{ t('admin.accounts.mixedSchedulingTooltip') }}
-              <div
-                class="absolute bottom-full left-3 border-4 border-transparent border-b-gray-900 dark:border-b-gray-700"
-              ></div>
-            </div>
-          </div>
+          <HelpTooltip :content="t('admin.accounts.mixedSchedulingTooltip')" width-class="w-72">
+            <template #trigger>
+              <span
+                class="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-gray-200 text-xs text-gray-500 hover:bg-gray-300 dark:bg-dark-600 dark:text-gray-400 dark:hover:bg-dark-500"
+              >
+                ?
+              </span>
+            </template>
+          </HelpTooltip>
         </div>
         <div v-if="form.platform === 'antigravity'" class="mt-3 flex items-center gap-2">
           <label class="flex cursor-pointer items-center gap-2">
@@ -3308,21 +3307,15 @@
               {{ t('admin.accounts.allowOverages') }}
             </span>
           </label>
-          <div class="group relative">
-            <span
-              class="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-gray-200 text-xs text-gray-500 hover:bg-gray-300 dark:bg-dark-600 dark:text-gray-400 dark:hover:bg-dark-500"
-            >
-              ?
-            </span>
-            <div
-              class="pointer-events-none absolute left-0 top-full z-[100] mt-1.5 w-72 rounded bg-gray-900 px-3 py-2 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 dark:bg-gray-700"
-            >
-              {{ t('admin.accounts.allowOveragesTooltip') }}
-              <div
-                class="absolute bottom-full left-3 border-4 border-transparent border-b-gray-900 dark:border-b-gray-700"
-              ></div>
-            </div>
-          </div>
+          <HelpTooltip :content="t('admin.accounts.allowOveragesTooltip')" width-class="w-72">
+            <template #trigger>
+              <span
+                class="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-gray-200 text-xs text-gray-500 hover:bg-gray-300 dark:bg-dark-600 dark:text-gray-400 dark:hover:bg-dark-500"
+              >
+                ?
+              </span>
+            </template>
+          </HelpTooltip>
         </div>
 
         <!-- Group Selection - 仅标准模式显示 -->
@@ -3728,6 +3721,7 @@ import type {
 } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import Select from '@/components/common/Select.vue'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
 import Icon from '@/components/icons/Icon.vue'

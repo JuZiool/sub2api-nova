@@ -21,8 +21,8 @@
         <h4 class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
           {{ t('admin.groups.addUserRate') }}
         </h4>
-        <div class="flex items-end gap-2">
-          <div class="relative flex-1">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div class="relative min-w-0 flex-1">
             <input
               v-model="searchQuery"
               type="text"
@@ -49,7 +49,7 @@
               </button>
             </div>
           </div>
-          <div class="w-24">
+          <div class="w-full sm:w-24">
             <input
               v-model.number="newRate"
               type="number"
@@ -62,7 +62,7 @@
           </div>
           <button
             type="button"
-            class="btn btn-primary shrink-0"
+            class="btn btn-primary w-full shrink-0 sm:w-auto"
             :disabled="!selectedUser || !newRate"
             @click="handleAddLocal"
           >
@@ -71,9 +71,9 @@
         </div>
 
         <!-- 批量调整 + 全部清空 -->
-        <div v-if="localEntries.length > 0" class="mt-3 flex items-center gap-3 border-t border-gray-100 pt-3 dark:border-dark-600">
+        <div v-if="localEntries.length > 0" class="mt-3 flex flex-col items-stretch gap-3 border-t border-gray-100 pt-3 sm:flex-row sm:items-center dark:border-dark-600">
           <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.groups.batchAdjust') }}</span>
-          <div class="flex items-center gap-1.5">
+          <div class="flex w-full min-w-0 items-center gap-1.5 sm:w-auto">
             <span class="text-xs text-gray-400">×</span>
             <input
               v-model.number="batchFactor"
@@ -81,7 +81,7 @@
               step="0.1"
               min="0"
               autocomplete="off"
-              class="hide-spinner w-20 rounded border border-gray-200 bg-white px-2 py-1 text-center text-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/20 dark:border-dark-500 dark:bg-dark-700 dark:focus:border-primary-500"
+              class="hide-spinner min-w-0 flex-1 rounded border border-gray-200 bg-white px-2 py-1 text-center text-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/20 sm:w-20 sm:flex-none dark:border-dark-500 dark:bg-dark-700 dark:focus:border-primary-500"
               placeholder="0.5"
             />
             <button
@@ -93,10 +93,10 @@
               {{ t('admin.groups.applyMultiplier') }}
             </button>
           </div>
-          <div class="ml-auto">
+          <div class="sm:ml-auto">
             <button
               type="button"
-              class="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+              class="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 sm:w-auto dark:border-red-800 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
               @click="clearAllLocal"
             >
               {{ t('admin.groups.clearAll') }}

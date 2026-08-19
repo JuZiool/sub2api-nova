@@ -35,59 +35,59 @@
         <!-- Order Info -->
         <div v-if="order" class="rounded-xl bg-white p-5 shadow-sm dark:bg-dark-800">
           <div class="space-y-3 text-sm">
-            <div v-if="hasOrderId(order)" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderId') }}</span>
-              <span class="font-medium text-gray-900 dark:text-white">#{{ order.id }}</span>
+            <div v-if="hasOrderId(order)" class="flex min-w-0 items-start justify-between gap-3">
+              <span class="min-w-0 text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderId') }}</span>
+              <span class="min-w-0 break-all text-right font-medium text-gray-900 dark:text-white">#{{ order.id }}</span>
             </div>
-            <div v-if="order.out_trade_no" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderNo') }}</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ order.out_trade_no }}</span>
+            <div v-if="order.out_trade_no" data-testid="payment-order-number-row" class="flex min-w-0 items-start justify-between gap-3">
+              <span class="min-w-0 text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderNo') }}</span>
+              <span class="min-w-0 break-all text-right font-medium text-gray-900 dark:text-white">{{ order.out_trade_no }}</span>
             </div>
-            <div v-if="hasAmountFields(order)" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.baseAmount') }}</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ formatGatewayAmount(baseAmount) }}</span>
+            <div v-if="hasAmountFields(order)" class="flex min-w-0 items-start justify-between gap-3">
+              <span class="min-w-0 text-gray-500 dark:text-gray-400">{{ t('payment.orders.baseAmount') }}</span>
+              <span class="min-w-0 break-all text-right font-medium text-gray-900 dark:text-white">{{ formatGatewayAmount(baseAmount) }}</span>
             </div>
-            <div v-if="hasAmountFields(order) && order.fee_rate > 0" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.fee') }} ({{ order.fee_rate }}%)</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ formatGatewayAmount(feeAmount) }}</span>
+            <div v-if="hasAmountFields(order) && order.fee_rate > 0" class="flex min-w-0 items-start justify-between gap-3">
+              <span class="min-w-0 text-gray-500 dark:text-gray-400">{{ t('payment.orders.fee') }} ({{ order.fee_rate }}%)</span>
+              <span class="min-w-0 break-all text-right font-medium text-gray-900 dark:text-white">{{ formatGatewayAmount(feeAmount) }}</span>
             </div>
-            <div v-if="hasAmountFields(order)" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.payAmount') }}</span>
-              <span class="font-bold text-primary-600 dark:text-primary-400">{{ formatGatewayAmount(order.pay_amount) }}</span>
+            <div v-if="hasAmountFields(order)" class="flex min-w-0 items-start justify-between gap-3">
+              <span class="min-w-0 text-gray-500 dark:text-gray-400">{{ t('payment.orders.payAmount') }}</span>
+              <span class="min-w-0 break-all text-right font-bold text-primary-600 dark:text-primary-400">{{ formatGatewayAmount(order.pay_amount) }}</span>
             </div>
-            <div v-if="hasAmountFields(order) && order.amount !== order.pay_amount" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.creditedAmount') }}</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ order.order_type === 'balance' ? '$' + order.amount.toFixed(2) : formatGatewayAmount(order.amount) }}</span>
+            <div v-if="hasAmountFields(order) && order.amount !== order.pay_amount" class="flex min-w-0 items-start justify-between gap-3">
+              <span class="min-w-0 text-gray-500 dark:text-gray-400">{{ t('payment.orders.creditedAmount') }}</span>
+              <span class="min-w-0 break-all text-right font-medium text-gray-900 dark:text-white">{{ order.order_type === 'balance' ? '$' + order.amount.toFixed(2) : formatGatewayAmount(order.amount) }}</span>
             </div>
-            <div v-if="hasPaymentType(order)" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.paymentMethod') }}</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ t(paymentMethodI18nKey(order.payment_type), normalizedOrderPaymentType(order.payment_type)) }}</span>
+            <div v-if="hasPaymentType(order)" class="flex min-w-0 items-start justify-between gap-3">
+              <span class="min-w-0 text-gray-500 dark:text-gray-400">{{ t('payment.orders.paymentMethod') }}</span>
+              <span class="min-w-0 break-all text-right font-medium text-gray-900 dark:text-white">{{ t(paymentMethodI18nKey(order.payment_type), normalizedOrderPaymentType(order.payment_type)) }}</span>
             </div>
-            <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.status') }}</span>
-              <OrderStatusBadge :status="displayOrderStatus(order.status)" />
+            <div class="flex min-w-0 items-start justify-between gap-3">
+              <span class="min-w-0 text-gray-500 dark:text-gray-400">{{ t('payment.orders.status') }}</span>
+              <OrderStatusBadge :status="displayOrderStatus(order.status)" class="shrink-0" />
             </div>
           </div>
         </div>
         <!-- EasyPay return info (when no order loaded) -->
         <div v-else-if="returnInfo" class="rounded-xl bg-white p-5 shadow-sm dark:bg-dark-800">
           <div class="space-y-3 text-sm">
-            <div v-if="returnInfo.outTradeNo" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderId') }}</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ returnInfo.outTradeNo }}</span>
+            <div v-if="returnInfo.outTradeNo" data-testid="payment-order-number-row" class="flex min-w-0 items-start justify-between gap-3">
+              <span class="min-w-0 text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderId') }}</span>
+              <span class="min-w-0 break-all text-right font-medium text-gray-900 dark:text-white">{{ returnInfo.outTradeNo }}</span>
             </div>
-            <div v-if="returnInfo.money" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.payAmount') }}</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ formatGatewayAmount(Number(returnInfo.money) || 0) }}</span>
+            <div v-if="returnInfo.money" class="flex min-w-0 items-start justify-between gap-3">
+              <span class="min-w-0 text-gray-500 dark:text-gray-400">{{ t('payment.orders.payAmount') }}</span>
+              <span class="min-w-0 break-all text-right font-medium text-gray-900 dark:text-white">{{ formatGatewayAmount(Number(returnInfo.money) || 0) }}</span>
             </div>
-            <div v-if="returnInfo.type" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.paymentMethod') }}</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ t(paymentMethodI18nKey(returnInfo.type), normalizedOrderPaymentType(returnInfo.type)) }}</span>
+            <div v-if="returnInfo.type" class="flex min-w-0 items-start justify-between gap-3">
+              <span class="min-w-0 text-gray-500 dark:text-gray-400">{{ t('payment.orders.paymentMethod') }}</span>
+              <span class="min-w-0 break-all text-right font-medium text-gray-900 dark:text-white">{{ t(paymentMethodI18nKey(returnInfo.type), normalizedOrderPaymentType(returnInfo.type)) }}</span>
             </div>
           </div>
         </div>
         <!-- Actions -->
-        <div class="flex gap-3">
+        <div data-testid="payment-result-actions" class="flex flex-col gap-3 sm:flex-row">
           <button class="btn btn-secondary flex-1" @click="router.push('/purchase')">{{ t('payment.result.backToRecharge') }}</button>
           <button class="btn btn-primary flex-1" @click="router.push('/orders')">{{ t('payment.result.viewOrders') }}</button>
         </div>

@@ -382,6 +382,15 @@ describe('PaymentResultView', () => {
     expect(wrapper.text()).toContain('payment.result.success')
     expect(wrapper.text()).toContain('legacy-minimal')
     expect(wrapper.text()).not.toContain('payment.orders.paymentMethod')
+
+    const orderNumberRow = wrapper.get('[data-testid="payment-order-number-row"]')
+    expect(orderNumberRow.classes()).toEqual(expect.arrayContaining(['min-w-0', 'gap-3']))
+    expect(orderNumberRow.findAll('span')[1].classes()).toEqual(
+      expect.arrayContaining(['min-w-0', 'break-all', 'text-right']),
+    )
+    expect(wrapper.get('[data-testid="payment-result-actions"]').classes()).toEqual(
+      expect.arrayContaining(['flex-col', 'sm:flex-row']),
+    )
   })
 
   it('prefers authenticated order verification before falling back to public lookup', async () => {

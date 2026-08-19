@@ -143,25 +143,25 @@
       <!-- Options (for select/multi_select) -->
       <div v-if="form.type === 'select' || form.type === 'multi_select'" class="space-y-2">
         <label class="input-label">{{ t('admin.users.attributes.options') }}</label>
-        <div v-for="(option, index) in form.options" :key="getOptionKey(option)" class="flex items-center gap-2">
+        <div v-for="(option, index) in form.options" :key="getOptionKey(option)" class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
           <input
             v-model="option.value"
             type="text"
-            class="input flex-1 font-mono text-sm"
+            class="input min-w-0 flex-1 font-mono text-sm"
             :placeholder="t('admin.users.attributes.optionValue')"
             required
           />
           <input
             v-model="option.label"
             type="text"
-            class="input flex-1 text-sm"
+            class="input min-w-0 flex-1 text-sm"
             :placeholder="t('admin.users.attributes.optionLabel')"
             required
           />
           <button
             type="button"
             @click="removeOption(index)"
-            class="rounded-lg p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600"
+            class="self-end rounded-lg p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600 sm:self-auto"
           >
             <Icon name="x" size="sm" :stroke-width="2" />
           </button>

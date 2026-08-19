@@ -3,23 +3,23 @@
     <div
       v-for="(row, index) in rows"
       :key="getHeaderOverrideRowKey(row)"
-      class="flex items-center gap-2"
+      class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center"
     >
       <input
         v-model="row.name"
         type="text"
-        class="input flex-1"
+        class="input min-w-0 flex-1"
         :placeholder="t('admin.accounts.headerOverride.namePlaceholder')"
       />
       <input
         v-model="row.value"
         type="text"
-        class="input flex-1"
+        class="input min-w-0 flex-1"
         :placeholder="t('admin.accounts.headerOverride.valuePlaceholder')"
       />
       <button
         type="button"
-        class="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+        class="self-end rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 sm:self-auto"
         @click="removeRow(index)"
       >
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

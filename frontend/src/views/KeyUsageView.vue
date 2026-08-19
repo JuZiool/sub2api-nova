@@ -106,21 +106,24 @@
                 ? 'bg-primary-500 text-white border-primary-500'
                 : 'border-gray-200 bg-white text-gray-700 dark:border-dark-700 dark:bg-dark-900 dark:text-dark-200 hover:border-primary-300 dark:hover:border-dark-600'"
             >{{ range.label }}</button>
-            <div v-if="currentRange === 'custom'" class="flex items-center gap-2 ml-1">
+            <div
+              v-if="currentRange === 'custom'"
+              class="flex w-full flex-col items-stretch gap-2 sm:ml-1 sm:w-auto sm:flex-row sm:items-center"
+            >
               <input
                 v-model="customStartDate"
                 type="date"
-                class="input-ring text-xs px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-900 dark:border-dark-700 dark:bg-dark-900 dark:text-white"
+                class="input-ring w-full min-w-0 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-900 sm:w-auto dark:border-dark-700 dark:bg-dark-900 dark:text-white"
               />
-              <span class="text-xs text-gray-400">-</span>
+              <span class="hidden text-xs text-gray-400 sm:inline">-</span>
               <input
                 v-model="customEndDate"
                 type="date"
-                class="input-ring text-xs px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-900 dark:border-dark-700 dark:bg-dark-900 dark:text-white"
+                class="input-ring w-full min-w-0 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-900 sm:w-auto dark:border-dark-700 dark:bg-dark-900 dark:text-white"
               />
               <button
                 @click="queryKey"
-                class="text-xs px-3 py-1.5 rounded-lg bg-primary-500 text-white hover:bg-primary-600"
+                class="w-full rounded-lg bg-primary-500 px-3 py-1.5 text-xs text-white hover:bg-primary-600 sm:w-auto"
               >{{ t('keyUsage.apply') }}</button>
             </div>
           </div>

@@ -315,7 +315,7 @@
     <Teleport to="body">
       <div
         v-if="promptPopover.visible"
-        class="batch-prompt-popover fixed z-[9999] rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-800 shadow-xl ring-1 ring-black/5 dark:border-dark-700 dark:bg-dark-900 dark:text-gray-100 dark:ring-white/10"
+        class="batch-prompt-popover fixed z-[9999] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-800 shadow-xl ring-1 ring-black/5 dark:border-dark-700 dark:bg-dark-900 dark:text-gray-100 dark:ring-white/10"
         :style="promptPopover.style"
         @mouseenter="cancelPromptPopoverClose"
         @mouseleave="schedulePromptPopoverClose"
@@ -488,15 +488,15 @@
       </div>
 
       <template #footer>
-        <div class="flex justify-end gap-3">
-	          <button type="button" class="btn btn-secondary" :disabled="!currentJob || !canCancel(currentJob) || cancelling" @click="cancelSelected">
+        <div data-testid="batch-detail-actions" class="flex w-full flex-col gap-3 sm:flex-row sm:justify-end">
+	          <button type="button" class="btn btn-secondary w-full justify-center sm:w-auto" :disabled="!currentJob || !canCancel(currentJob) || cancelling" @click="cancelSelected">
 	            <Icon v-if="cancelling" name="refresh" size="sm" class="mr-2 animate-spin" />
 	            {{ t('batchImage.actions.cancelJob') }}
 	          </button>
 	          <button
 	            v-if="currentJob && currentDisplayJob && canRetry(currentDisplayJob)"
 	            type="button"
-	            class="btn btn-secondary inline-flex min-w-[116px] items-center justify-center"
+	            class="btn btn-secondary inline-flex w-full min-w-[116px] items-center justify-center sm:w-auto"
 	            :disabled="retryingBatchId === currentJob.id"
 	            @click="retrySelected"
 	          >
@@ -505,7 +505,7 @@
 	          </button>
 	          <button
             type="button"
-            class="btn btn-primary inline-flex min-w-[112px] items-center justify-center"
+            class="btn btn-primary inline-flex w-full min-w-[112px] items-center justify-center sm:w-auto"
             :disabled="!currentJob || !canDownload(currentJob) || downloading"
             @click="downloadSelected"
           >
@@ -1473,7 +1473,7 @@ function openPromptPopover(target: HTMLElement, value: string) {
   if (!rect) return
   const viewportWidth = window.innerWidth || 1280
   const viewportHeight = window.innerHeight || 720
-  const width = Math.min(440, Math.max(320, viewportWidth - 32))
+  const width = Math.max(0, Math.min(440, viewportWidth - 32))
   const left = Math.max(16, Math.min(rect.left, viewportWidth - width - 16))
   const estimatedHeight = 178
   const preferredTop = rect.bottom + 8

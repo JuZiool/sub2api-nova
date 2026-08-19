@@ -28,18 +28,18 @@
           <!-- Email verification -->
           <div v-if="verificationMethod === 'email'">
             <label class="input-label">{{ t('profile.totp.emailCode') }}</label>
-            <div class="flex gap-2">
+            <div class="flex flex-col gap-2 sm:flex-row">
               <input
                 v-model="form.emailCode"
                 type="text"
                 maxlength="6"
                 inputmode="numeric"
-                class="input flex-1"
+                class="input min-w-0 flex-1"
                 :placeholder="t('profile.totp.enterEmailCode')"
               />
               <button
                 type="button"
-                class="btn btn-secondary whitespace-nowrap"
+                class="btn btn-secondary w-full whitespace-nowrap sm:w-auto"
                 :disabled="sendingCode || codeCooldown > 0"
                 @click="handleSendCode"
               >

@@ -22,6 +22,9 @@
               <span>{{ t('admin.users.group') }}:</span>
               <button
                 :ref="(el) => setGroupButtonRef(key.id, el)"
+                data-testid="api-key-group-trigger"
+                :aria-expanded="groupSelectorKeyId === key.id"
+                aria-haspopup="listbox"
                 @click="openGroupSelector(key)"
                 class="-mx-1 -my-0.5 flex cursor-pointer items-center gap-1 rounded-md px-1 py-0.5 transition-colors hover:bg-gray-100 dark:hover:bg-dark-700"
                 :disabled="updatingKeyIds.has(key.id)"
@@ -54,13 +57,17 @@
     <div
       v-if="groupSelectorKeyId !== null && dropdownPosition"
       ref="dropdownRef"
-      class="animate-in fade-in slide-in-from-top-2 fixed z-[100000020] w-64 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5 duration-200 dark:bg-dark-800 dark:ring-white/10"
-      :style="{ top: dropdownPosition.top + 'px', left: dropdownPosition.left + 'px' }"
+      data-testid="api-key-group-dropdown"
+      class="animate-in fade-in slide-in-from-top-2 fixed z-[100000020] min-w-0 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5 duration-200 dark:bg-dark-800 dark:ring-white/10"
+      :style="dropdownStyle"
+      role="listbox"
     >
-      <div class="max-h-64 overflow-y-auto p-1.5">
+      <div class="overflow-y-auto p-1.5" :style="{ maxHeight: dropdownPosition.maxHeight + 'px' }">
         <!-- Unbind option -->
         <button
           @click="changeGroup(selectedKeyForGroup!, null)"
+          role="option"
+          :aria-selected="!selectedKeyForGroup?.group_id"
           :class="[
             'flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors',
             !selectedKeyForGroup?.group_id
@@ -80,6 +87,8 @@
           v-for="group in allGroups"
           :key="group.id"
           @click="changeGroup(selectedKeyForGroup!, group.id)"
+          role="option"
+          :aria-selected="selectedKeyForGroup?.group_id === group.id"
           :class="[
             'flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors',
             selectedKeyForGroup?.group_id === group.id
@@ -106,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
@@ -115,6 +124,7 @@ import type { AdminUser, AdminGroup, ApiKey } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import GroupBadge from '@/components/common/GroupBadge.vue'
 import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
+import { getFloatingPanelPosition, type FloatingPanelPosition } from '@/utils/floatingPanel'
 
 const props = defineProps<{ show: boolean; user: AdminUser | null }>()
 const emit = defineEmits(['close'])
@@ -126,10 +136,22 @@ const allGroups = ref<AdminGroup[]>([])
 const loading = ref(false)
 const updatingKeyIds = ref(new Set<number>())
 const groupSelectorKeyId = ref<number | null>(null)
-const dropdownPosition = ref<{ top: number; left: number } | null>(null)
+const dropdownPosition = ref<FloatingPanelPosition | null>(null)
 const dropdownRef = ref<HTMLElement | null>(null)
 const scrollContainerRef = ref<HTMLElement | null>(null)
 const groupButtonRefs = ref<Map<number, HTMLElement>>(new Map())
+
+const dropdownStyle = computed(() => {
+  const position = dropdownPosition.value
+  if (!position) return {}
+
+  return {
+    top: position.top == null ? 'auto' : `${position.top}px`,
+    bottom: position.bottom == null ? 'auto' : `${position.bottom}px`,
+    left: `${position.left}px`,
+    width: `${position.width}px`
+  }
+})
 
 const selectedKeyForGroup = computed(() => {
   if (groupSelectorKeyId.value === null) return null
@@ -178,22 +200,36 @@ const loadGroups = async () => {
 
 const DROPDOWN_HEIGHT = 272 // max-h-64 = 16rem = 256px + padding
 const DROPDOWN_GAP = 4
+const DROPDOWN_WIDTH = 256
+
+const updateDropdownPosition = (keyId: number | null = groupSelectorKeyId.value) => {
+  if (keyId === null) return
+  const buttonEl = groupButtonRefs.value.get(keyId)
+  if (!buttonEl) return
+
+  const position = getFloatingPanelPosition(
+    buttonEl.getBoundingClientRect(),
+    document.documentElement.clientWidth || window.innerWidth,
+    window.innerHeight,
+    {
+      gap: DROPDOWN_GAP,
+      maxWidth: DROPDOWN_WIDTH,
+      minComfortableHeight: DROPDOWN_HEIGHT,
+      align: 'start'
+    }
+  )
+  dropdownPosition.value = {
+    ...position,
+    maxHeight: Math.min(position.maxHeight, DROPDOWN_HEIGHT)
+  }
+}
 
 const openGroupSelector = (key: ApiKey) => {
   if (groupSelectorKeyId.value === key.id) {
     closeGroupSelector()
   } else {
-    const buttonEl = groupButtonRefs.value.get(key.id)
-    if (buttonEl) {
-      const rect = buttonEl.getBoundingClientRect()
-      const spaceBelow = window.innerHeight - rect.bottom
-      const openUpward = spaceBelow < DROPDOWN_HEIGHT && rect.top > spaceBelow
-      dropdownPosition.value = {
-        top: openUpward ? rect.top - DROPDOWN_HEIGHT - DROPDOWN_GAP : rect.bottom + DROPDOWN_GAP,
-        left: rect.left
-      }
-    }
     groupSelectorKeyId.value = key.id
+    updateDropdownPosition(key.id)
   }
 }
 
@@ -233,6 +269,21 @@ const handleKeyDown = (event: KeyboardEvent) => {
   }
 }
 
+const handleViewportChange = () => {
+  if (groupSelectorKeyId.value !== null) updateDropdownPosition()
+}
+
+watch(groupSelectorKeyId, (keyId) => {
+  if (keyId !== null) {
+    void nextTick(() => updateDropdownPosition(keyId))
+    window.addEventListener('scroll', handleViewportChange, true)
+    window.addEventListener('resize', handleViewportChange)
+  } else {
+    window.removeEventListener('scroll', handleViewportChange, true)
+    window.removeEventListener('resize', handleViewportChange)
+  }
+})
+
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement
   if (dropdownRef.value && !dropdownRef.value.contains(target)) {
@@ -257,5 +308,7 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleKeyDown, true)
+  window.removeEventListener('scroll', handleViewportChange, true)
+  window.removeEventListener('resize', handleViewportChange)
 })
 </script>

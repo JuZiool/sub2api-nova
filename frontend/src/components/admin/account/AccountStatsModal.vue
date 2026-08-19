@@ -43,7 +43,7 @@
 
       <template v-else-if="stats">
         <!-- Row 1: Main Stats Cards -->
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div data-testid="account-stats-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <!-- 30-Day Total Cost -->
           <div
             class="card border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 dark:border-emerald-800/30 dark:from-emerald-900/10 dark:to-dark-700"

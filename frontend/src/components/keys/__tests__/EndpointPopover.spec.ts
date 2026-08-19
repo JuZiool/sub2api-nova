@@ -45,10 +45,31 @@ describe('EndpointPopover', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('自定义说明')
-    expect(wrapper.text()).toContain('点击可复制此端点')
+    expect(document.body.textContent).toContain('自定义说明')
+    expect(document.body.textContent).toContain('点击可复制此端点')
     expect(wrapper.find('[role="button"]').attributes('title')).toBeUndefined()
     expect(wrapper.find('[title="自定义说明"]').exists()).toBe(false)
+  })
+
+  it('允许长端点在手机宽度内收缩，并将提示层限制在视口内', () => {
+    const wrapper = mount(EndpointPopover, {
+      props: {
+        apiBaseUrl: 'https://default.example.com/a/very/long/path/that/must/not/stretch/the/page',
+        customEndpoints: [],
+      },
+    })
+
+    expect(wrapper.find('[class~="group/endpoint"]').classes()).toEqual(
+      expect.arrayContaining(['min-w-0', 'max-w-full', 'flex-1']),
+    )
+    expect(wrapper.find('code').classes()).toEqual(
+      expect.arrayContaining(['min-w-0', 'break-all', 'sm:truncate']),
+    )
+    expect(wrapper.findComponent({ name: 'HelpTooltip' }).props('widthClass')).toBe(
+      'w-max max-w-[calc(100vw-2rem)]',
+    )
+    expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+    expect(wrapper.html()).not.toContain('right-0')
   })
 
   it('点击 URL 后会复制并切换为已复制提示', async () => {
@@ -63,7 +84,6 @@ describe('EndpointPopover', () => {
     await flushPromises()
 
     expect(copyToClipboard).toHaveBeenCalledWith('https://default.example.com/v1', '已复制')
-    expect(wrapper.text()).toContain('已复制到剪贴板')
     expect(wrapper.find('button[aria-label="已复制到剪贴板"]').exists()).toBe(true)
   })
 })

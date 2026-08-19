@@ -603,6 +603,16 @@ async function openUsersTab(wrapper: ReturnType<typeof mountView>) {
   await flushPromises();
 }
 
+async function openEmailTab(wrapper: ReturnType<typeof mountView>) {
+  const emailTabButton = wrapper
+    .findAll("button")
+    .find((node) => node.text().includes("admin.settings.tabs.email"));
+
+  expect(emailTabButton).toBeDefined();
+  await emailTabButton?.trigger("click");
+  await flushPromises();
+}
+
 describe("admin SettingsView email domain quota copy", () => {
   it("documents the email domain quota and empty-whitelist behavior in both locales", () => {
     expect(zhCommon.auth.emailDomainRegistrationLimit).toContain("主流邮箱");
@@ -717,6 +727,61 @@ describe("admin SettingsView payment visible method controls", () => {
     });
     fetchPublicSettings.mockResolvedValue(undefined);
     adminSettingsFetch.mockResolvedValue(undefined);
+  });
+
+  it("stacks the empty admin API-key row below the sm breakpoint", async () => {
+    const wrapper = mountView();
+    await flushPromises();
+    await openSecurityTab(wrapper);
+
+    const row = wrapper.get('[data-testid="admin-api-key-empty-row"]');
+    expect(row.classes()).toEqual(
+      expect.arrayContaining(["flex-col", "sm:flex-row", "sm:items-center"]),
+    );
+    expect(row.get("button").classes()).toEqual(
+      expect.arrayContaining(["w-full", "sm:w-auto"]),
+    );
+  });
+
+  it("stacks configured admin API-key actions below the sm breakpoint", async () => {
+    getAdminApiKey.mockResolvedValueOnce({
+      exists: true,
+      masked_key: "sub2api_abc...1234",
+    });
+
+    const wrapper = mountView();
+    await flushPromises();
+    await openSecurityTab(wrapper);
+
+    const row = wrapper.get('[data-testid="admin-api-key-current-row"]');
+    expect(row.classes()).toEqual(
+      expect.arrayContaining(["flex-col", "sm:flex-row", "sm:items-center"]),
+    );
+
+    const actions = wrapper.get('[data-testid="admin-api-key-actions"]');
+    expect(actions.classes()).toEqual(expect.arrayContaining(["flex-col", "sm:flex-row"]));
+    for (const button of actions.findAll("button")) {
+      expect(button.classes()).toEqual(expect.arrayContaining(["w-full", "sm:w-auto"]));
+    }
+  });
+
+  it("stacks the test-email input and action below the sm breakpoint", async () => {
+    getSettings.mockResolvedValueOnce({
+      ...baseSettingsResponse,
+      email_verify_enabled: true,
+    });
+
+    const wrapper = mountView();
+    await flushPromises();
+    await openEmailTab(wrapper);
+
+    const row = wrapper.get('[data-testid="test-email-row"]');
+    expect(row.classes()).toEqual(
+      expect.arrayContaining(["flex-col", "sm:flex-row", "sm:items-end"]),
+    );
+    expect(row.get("button").classes()).toEqual(
+      expect.arrayContaining(["w-full", "sm:w-auto"]),
+    );
   });
 
   it("submits the compact home page toggle", async () => {

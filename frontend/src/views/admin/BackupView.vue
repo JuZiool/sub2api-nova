@@ -347,7 +347,7 @@
                 {{ t('admin.backup.r2Guide.step3.title') }}
               </h3>
               <p class="ml-8 text-sm text-gray-600 dark:text-gray-300">{{ t('admin.backup.r2Guide.step3.desc') }}</p>
-              <code class="ml-8 mt-1 block rounded bg-gray-100 px-3 py-2 text-xs text-gray-800 dark:bg-dark-700 dark:text-gray-200">https://&lt;{{ t('admin.backup.r2Guide.step3.accountId') }}&gt;.r2.cloudflarestorage.com</code>
+              <code data-testid="r2-endpoint-example" class="mt-1 block max-w-full break-all rounded bg-gray-100 px-3 py-2 text-xs text-gray-800 sm:ml-8 dark:bg-dark-700 dark:text-gray-200">https://&lt;{{ t('admin.backup.r2Guide.step3.accountId') }}&gt;.r2.cloudflarestorage.com</code>
             </div>
 
             <!-- Step 4: Fill form -->
@@ -356,8 +356,8 @@
                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">4</span>
                 {{ t('admin.backup.r2Guide.step4.title') }}
               </h3>
-              <div class="ml-8 overflow-hidden rounded-lg border border-gray-200 dark:border-dark-600">
-                <table class="w-full text-sm">
+              <div data-testid="r2-config-table-scroll" class="overflow-x-auto rounded-lg border border-gray-200 sm:ml-8 dark:border-dark-600">
+                <table class="w-full min-w-[480px] text-sm">
                   <tbody>
                     <tr v-for="(row, i) in r2ConfigRows" :key="i" class="border-b border-gray-100 dark:border-dark-700 last:border-0">
                       <td class="whitespace-nowrap bg-gray-50 px-3 py-2 font-medium text-gray-700 dark:bg-dark-700 dark:text-gray-300">{{ row.field }}</td>

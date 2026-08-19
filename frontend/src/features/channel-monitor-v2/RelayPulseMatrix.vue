@@ -147,6 +147,7 @@
     <Teleport to="body">
       <div
         v-if="floatingTooltip.visible"
+        ref="floatingTooltipRef"
         class="matrix-floating-tooltip"
         :style="{ left: `${floatingTooltip.x}px`, top: `${floatingTooltip.y}px` }"
         role="tooltip"
@@ -166,7 +167,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import type {
   LatencyMetric,
   MonitorCoverage,
@@ -221,6 +222,7 @@ const floatingTooltip = reactive({
 })
 
 const scrollRef = ref<HTMLElement | null>(null)
+const floatingTooltipRef = ref<HTMLElement | null>(null)
 const zoom = ref<ZoomState>(resetZoom())
 const zoomed = computed(() => isZoomed(zoom.value))
 
@@ -406,6 +408,7 @@ function showTooltip(event: MouseEvent | FocusEvent, slot: AlignedSlot) {
   floatingTooltip.lines = slot.bucket ? bucketTooltipLines(slot.bucket) : emptyTooltipLines(slot.start)
   floatingTooltip.visible = true
   positionTooltip(event)
+  nextTick(() => positionTooltip(event))
 }
 
 function moveTooltip(event: MouseEvent) {
@@ -418,15 +421,21 @@ function hideTooltip() {
 }
 
 function positionTooltip(event: MouseEvent | FocusEvent) {
+  const viewportPadding = 12
+  const availableWidth = Math.max(0, window.innerWidth - viewportPadding * 2)
+  const tooltipWidth = Math.min(floatingTooltipRef.value?.offsetWidth || 288, availableWidth)
+  const minCenter = viewportPadding + tooltipWidth / 2
+  const maxCenter = Math.max(minCenter, window.innerWidth - viewportPadding - tooltipWidth / 2)
+
   if ('clientX' in event) {
-    floatingTooltip.x = Math.min(window.innerWidth - 12, Math.max(12, event.clientX))
-    floatingTooltip.y = Math.min(window.innerHeight - 12, Math.max(12, event.clientY)) - 12
+    floatingTooltip.x = Math.min(maxCenter, Math.max(minCenter, event.clientX))
+    floatingTooltip.y = Math.min(window.innerHeight - viewportPadding, Math.max(viewportPadding, event.clientY)) - viewportPadding
     return
   }
   const target = event.target as HTMLElement | null
   const rect = target?.getBoundingClientRect()
   if (!rect) return
-  floatingTooltip.x = rect.left + rect.width / 2
+  floatingTooltip.x = Math.min(maxCenter, Math.max(minCenter, rect.left + rect.width / 2))
   floatingTooltip.y = rect.top - 10
 }
 

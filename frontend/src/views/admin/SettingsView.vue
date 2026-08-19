@@ -89,7 +89,8 @@
               <!-- No Key Configured -->
               <div
                 v-else-if="!adminApiKeyExists"
-                class="flex items-center justify-between"
+                class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between"
+                data-testid="admin-api-key-empty-row"
               >
                 <span class="text-gray-500 dark:text-gray-400">
                   {{ t("admin.settings.adminApiKey.notConfigured") }}
@@ -98,7 +99,7 @@
                   type="button"
                   @click="createAdminApiKey"
                   :disabled="adminApiKeyOperating"
-                  class="btn btn-primary btn-sm"
+                  class="btn btn-primary btn-sm w-full sm:w-auto"
                 >
                   <svg
                     v-if="adminApiKeyOperating"
@@ -130,25 +131,28 @@
 
               <!-- Key Exists -->
               <div v-else class="space-y-4">
-                <div class="flex items-center justify-between">
-                  <div>
+                <div
+                  class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between"
+                  data-testid="admin-api-key-current-row"
+                >
+                  <div class="min-w-0">
                     <label
                       class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
                     >
                       {{ t("admin.settings.adminApiKey.currentKey") }}
                     </label>
                     <code
-                      class="rounded bg-gray-100 px-2 py-1 font-mono text-sm text-gray-900 dark:bg-dark-700 dark:text-gray-100"
+                      class="block max-w-full break-all rounded bg-gray-100 px-2 py-1 font-mono text-sm text-gray-900 dark:bg-dark-700 dark:text-gray-100"
                     >
                       {{ adminApiKeyMasked }}
                     </code>
                   </div>
-                  <div class="flex gap-2">
+                  <div class="flex flex-col gap-2 sm:flex-row" data-testid="admin-api-key-actions">
                     <button
                       type="button"
                       @click="regenerateAdminApiKey"
                       :disabled="adminApiKeyOperating"
-                      class="btn btn-secondary btn-sm"
+                      class="btn btn-secondary btn-sm w-full sm:w-auto"
                     >
                       {{
                         adminApiKeyOperating
@@ -160,7 +164,7 @@
                       type="button"
                       @click="deleteAdminApiKey"
                       :disabled="adminApiKeyOperating"
-                      class="btn btn-secondary btn-sm text-red-600 hover:text-red-700 dark:text-red-400"
+                      class="btn btn-secondary btn-sm w-full text-red-600 hover:text-red-700 sm:w-auto dark:text-red-400"
                     >
                       {{ t("admin.settings.adminApiKey.delete") }}
                     </button>
@@ -177,16 +181,19 @@
                   >
                     {{ t("admin.settings.adminApiKey.keyWarning") }}
                   </p>
-                  <div class="flex items-center gap-2">
+                  <div
+                    class="flex flex-col gap-2 sm:flex-row sm:items-center"
+                    data-testid="admin-api-key-new-row"
+                  >
                     <code
-                      class="flex-1 select-all break-all rounded border border-green-300 bg-white px-3 py-2 font-mono text-sm dark:border-green-700 dark:bg-dark-800"
+                      class="min-w-0 flex-1 select-all break-all rounded border border-green-300 bg-white px-3 py-2 font-mono text-sm dark:border-green-700 dark:bg-dark-800"
                     >
                       {{ newAdminApiKey }}
                     </code>
                     <button
                       type="button"
                       @click="copyNewKey"
-                      class="btn btn-primary btn-sm flex-shrink-0"
+                      class="btn btn-primary btn-sm w-full flex-shrink-0 sm:w-auto"
                     >
                       {{ t("admin.settings.adminApiKey.copyKey") }}
                     </button>
@@ -1502,7 +1509,7 @@
                     </span>
 
                     <div
-                      class="flex min-w-[220px] flex-1 items-center gap-1 rounded border border-transparent px-2 py-1 focus-within:border-primary-300 dark:focus-within:border-primary-700"
+                      class="flex min-w-0 flex-1 items-center gap-1 rounded border border-transparent px-2 py-1 focus-within:border-primary-300 sm:min-w-[220px] dark:focus-within:border-primary-700"
                     >
                       <input
                         v-model="registrationEmailSuffixWhitelistDraft"
@@ -1818,7 +1825,7 @@
                       </button>
                     </span>
                     <div
-                      class="flex min-w-[220px] flex-1 items-center gap-1 rounded border border-transparent px-2 py-1 focus-within:border-primary-300 dark:focus-within:border-primary-700"
+                      class="flex min-w-0 flex-1 items-center gap-1 rounded border border-transparent px-2 py-1 focus-within:border-primary-300 sm:min-w-[220px] dark:focus-within:border-primary-700"
                     >
                       <input
                         id="forwarded-client-ip-headers"
@@ -8411,8 +8418,11 @@
               </p>
             </div>
             <div class="p-6">
-              <div class="flex items-end gap-4">
-                <div class="flex-1">
+              <div
+                class="flex flex-col gap-4 sm:flex-row sm:items-end"
+                data-testid="test-email-row"
+              >
+                <div class="min-w-0 flex-1">
                   <label
                     class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
@@ -8433,7 +8443,7 @@
                   :disabled="
                     sendingTestEmail || !testEmailAddress || loadFailed
                   "
-                  class="btn btn-secondary"
+                  class="btn btn-secondary w-full sm:w-auto"
                 >
                   <svg
                     v-if="sendingTestEmail"

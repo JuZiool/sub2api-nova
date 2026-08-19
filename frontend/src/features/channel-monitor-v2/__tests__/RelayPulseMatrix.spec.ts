@@ -45,8 +45,8 @@ vi.mock('vue-i18n', async (importOriginal) => {
   }
 })
 
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import RelayPulseMatrix from '../RelayPulseMatrix.vue'
 import type { MonitorHealth, MonitorMetric } from '@/api/channelMonitorV2'
 
@@ -61,6 +61,11 @@ const health: MonitorHealth = {
   cache_score: 50,
   minimum_sample: 20,
 }
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  document.body.innerHTML = ''
+})
 
 function metrics(requestCount: number): MonitorMetric {
   return {
@@ -139,6 +144,43 @@ describe('RelayPulseMatrix', () => {
     // No click-to-open modal
     await cells[0].trigger('click')
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+  })
+
+  it('keeps the floating tooltip inside a narrow viewport', async () => {
+    vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(320)
+    const wrapper = mount(RelayPulseMatrix, {
+      props: {
+        rows: [{
+          platform: 'openai',
+          group_id: 7,
+          group_name: '默认组',
+          model: 'gpt-5',
+          metrics: metrics(10),
+          health,
+          buckets: [
+            { bucket_start: '2026-08-01T00:00:00Z', metrics: metrics(10), health },
+          ],
+        }],
+        coverage: {
+          requested_start: '2026-08-01T00:00:00Z',
+          requested_end: '2026-08-01T00:01:00Z',
+          coverage_start: '2026-08-01T00:00:00Z',
+          data_through: '2026-08-01T00:01:00Z',
+          computed_at: '2026-08-01T00:01:00Z',
+          aggregation_lag_seconds: 0,
+          coverage_complete: true,
+          bucket_seconds: 60,
+        },
+        healthMode: 'overall',
+      },
+    })
+
+    await wrapper.find('.pulse-cell').trigger('mouseenter', { clientX: 2, clientY: 100 })
+    await flushPromises()
+
+    const tooltip = document.body.querySelector('.matrix-floating-tooltip') as HTMLElement
+    expect(Number.parseFloat(tooltip.style.left)).toBeGreaterThanOrEqual(156)
+    expect(Number.parseFloat(tooltip.style.left)).toBeLessThanOrEqual(164)
   })
 })
 

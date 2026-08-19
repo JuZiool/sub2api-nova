@@ -217,7 +217,7 @@
     >
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <!-- Basic Info -->
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label class="input-label">{{ t('admin.errorPassthrough.form.name') }}</label>
             <input
@@ -256,7 +256,7 @@
             {{ t('admin.errorPassthrough.form.matchConditions') }}
           </h4>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="input-label text-xs">{{ t('admin.errorPassthrough.form.errorCodes') }}</label>
               <input
@@ -328,7 +328,7 @@
             {{ t('admin.errorPassthrough.form.responseBehavior') }}
           </h4>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="flex items-center gap-1.5">
                 <input

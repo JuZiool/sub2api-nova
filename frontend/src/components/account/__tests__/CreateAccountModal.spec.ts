@@ -160,6 +160,23 @@ describe('CreateAccountModal OpenAI long-context billing', () => {
     createOpenAICodexPATMock.mockReset().mockResolvedValue({})
   })
 
+  it('stacks Gemini account type cards until the sm breakpoint', async () => {
+    const wrapper = mountModal()
+    await selectButtonByText(wrapper, 'Gemini')
+
+    const accountTypeGrid = wrapper.get('[data-tour="account-form-type"]')
+    expect(accountTypeGrid.classes()).toEqual(
+      expect.arrayContaining(['grid-cols-1', 'sm:grid-cols-3']),
+    )
+    expect(accountTypeGrid.classes()).not.toContain('grid-cols-3')
+
+    const cards = accountTypeGrid.findAll('button')
+    expect(cards).toHaveLength(3)
+    for (const card of cards) {
+      expect(card.find('.min-w-0').exists()).toBe(true)
+    }
+  })
+
   it('sends false explicitly for normal OpenAI account creation by default', async () => {
     await submitApiKeyAccount('openai')
 

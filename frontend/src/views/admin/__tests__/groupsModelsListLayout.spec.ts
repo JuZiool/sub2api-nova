@@ -16,4 +16,11 @@ describe("groups models list layout", () => {
     expect(groupsViewSource).toContain("max-h-64 space-y-2 overflow-y-auto p-2");
     expect(groupsViewSource).not.toContain("sticky top-0");
   });
+
+  it("stacks image and video pricing fields on narrow screens", () => {
+    expect(groupsViewSource.match(/grid grid-cols-1 gap-3 sm:grid-cols-3/g)).toHaveLength(6);
+    expect(groupsViewSource.match(/grid grid-cols-1 gap-2 sm:grid-cols-3/g)).toHaveLength(4);
+    expect(groupsViewSource).not.toContain('class="grid grid-cols-3 gap-3"');
+    expect(groupsViewSource).not.toContain('class="grid grid-cols-3 gap-2"');
+  });
 });

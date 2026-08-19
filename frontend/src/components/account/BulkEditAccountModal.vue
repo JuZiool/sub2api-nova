@@ -380,16 +380,16 @@
                 <div
                   v-for="(mapping, index) in modelMappings"
                   :key="index"
-                  class="flex items-center gap-2"
+                  class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center"
                 >
                   <input
                     v-model="mapping.from"
                     type="text"
-                    class="input flex-1"
+                    class="input min-w-0 flex-1"
                     :placeholder="t('admin.accounts.requestModel')"
                   />
                   <svg
-                    class="h-4 w-4 flex-shrink-0 text-gray-400"
+                    class="h-4 w-4 flex-shrink-0 self-center text-gray-400 sm:self-auto"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -404,12 +404,12 @@
                   <input
                     v-model="mapping.to"
                     type="text"
-                    class="input flex-1"
+                    class="input min-w-0 flex-1"
                     :placeholder="t('admin.accounts.actualModel')"
                   />
                   <button
                     type="button"
-                    class="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                    class="self-end rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 sm:self-auto"
                     @click="removeModelMapping(index)"
                   >
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -513,19 +513,19 @@
           </div>
 
           <!-- Manual input -->
-          <div class="flex items-center gap-2">
+          <div class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             <input
               v-model="customErrorCodeInput"
               id="bulk-edit-custom-error-code-input"
               type="number"
               min="100"
               max="599"
-              class="input flex-1"
+              class="input min-w-0 flex-1"
               :placeholder="t('admin.accounts.enterErrorCode')"
               aria-labelledby="bulk-edit-custom-error-codes-label"
               @keyup.enter="addCustomErrorCode"
             />
-            <button type="button" class="btn btn-secondary px-3" @click="addCustomErrorCode">
+            <button type="button" class="btn btn-secondary w-full px-3 sm:w-auto" @click="addCustomErrorCode">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   stroke-linecap="round"
@@ -1229,12 +1229,12 @@
             <div
               v-for="(mapping, index) in openAICompactModelMappings"
               :key="index"
-              class="flex items-center gap-2"
+              class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center"
             >
               <input
                 v-model="mapping.from"
                 type="text"
-                class="input flex-1"
+                class="input min-w-0 flex-1"
                 :placeholder="t('admin.accounts.fromModel')"
                 data-testid="bulk-edit-openai-compact-model-mapping-input"
               />
@@ -1242,13 +1242,13 @@
               <input
                 v-model="mapping.to"
                 type="text"
-                class="input flex-1"
+                class="input min-w-0 flex-1"
                 :placeholder="t('admin.accounts.toModel')"
                 data-testid="bulk-edit-openai-compact-model-mapping-input"
               />
               <button
                 type="button"
-                class="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                class="self-end rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 sm:self-auto"
                 @click="removeOpenAICompactModelMapping(index)"
               >
                 <Icon name="trash" size="sm" />

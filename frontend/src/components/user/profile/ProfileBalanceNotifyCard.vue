@@ -32,7 +32,7 @@
               type="number"
               min="0"
               step="0.01"
-              class="input flex-1"
+              class="input min-w-0 flex-1"
               :placeholder="systemDefaultThreshold > 0 ? `${t('profile.balanceNotify.systemDefault')} $${systemDefaultThreshold}` : t('profile.balanceNotify.thresholdPlaceholder')"
             />
             <button
@@ -52,16 +52,20 @@
 
           <!-- Saved email entries -->
           <div v-if="emailEntries.length > 0" class="space-y-2 mb-3">
-            <div v-for="(entry, idx) in emailEntries" :key="idx"
-              class="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-dark-700 rounded-lg">
-              <div class="flex items-center gap-2 min-w-0 flex-1">
+            <div
+              v-for="(entry, idx) in emailEntries"
+              :key="idx"
+              data-testid="saved-email-row"
+              class="flex flex-col items-stretch gap-2 rounded-lg bg-gray-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between dark:bg-dark-700"
+            >
+              <div class="flex min-w-0 flex-1 items-center gap-2">
                 <label class="relative inline-flex items-center cursor-pointer shrink-0">
                   <input type="checkbox" :checked="!entry.disabled" @change="handleEmailToggle(entry)" class="sr-only peer" />
                   <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:after:border-gray-500 peer-checked:bg-primary-600"></div>
                 </label>
                 <span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ entry.email }}</span>
               </div>
-              <div class="flex items-center gap-2 shrink-0">
+              <div data-testid="saved-email-actions" class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0 sm:justify-end">
                 <template v-if="!entry.verified">
                   <!-- Inline verify flow for saved unverified emails -->
                   <template v-if="verifyingEmail === entry.email">
@@ -100,10 +104,14 @@
 
           <!-- Pending (unverified) emails in verification flow -->
           <div v-if="pendingEmails.length > 0" class="space-y-2 mb-3">
-            <div v-for="(pe, idx) in pendingEmails" :key="pe.email"
-              class="flex items-center gap-2 px-3 py-2 bg-yellow-50 dark:bg-yellow-900/10 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <span class="flex-1 text-sm text-gray-700 dark:text-gray-300">{{ pe.email }}</span>
-              <div v-if="!pe.codeSent" class="flex items-center gap-1">
+            <div
+              v-for="(pe, idx) in pendingEmails"
+              :key="pe.email"
+              data-testid="pending-email-row"
+              class="flex flex-col items-stretch gap-2 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 sm:flex-row sm:items-center dark:border-yellow-800 dark:bg-yellow-900/10"
+            >
+              <span class="w-full min-w-0 break-all text-sm text-gray-700 sm:w-auto sm:flex-1 dark:text-gray-300">{{ pe.email }}</span>
+              <div v-if="!pe.codeSent" data-testid="pending-email-actions" class="flex w-full flex-wrap items-center gap-x-2 gap-y-1 sm:w-auto sm:justify-end">
                 <button @click="sendCodeFor(idx)" :disabled="pe.sending" class="text-xs text-primary-600 hover:text-primary-700">
                   {{ t('profile.balanceNotify.sendCode') }}
                 </button>
@@ -111,7 +119,7 @@
                   {{ t('profile.balanceNotify.removeEmail') }}
                 </button>
               </div>
-              <div v-else class="flex items-center gap-1">
+              <div v-else data-testid="pending-email-actions" class="flex w-full flex-wrap items-center gap-x-2 gap-y-1 sm:w-auto sm:justify-end">
                 <input
                   v-model="pe.code"
                   type="text"
@@ -131,18 +139,18 @@
           </div>
 
           <!-- Add new email input (hidden when at limit) -->
-          <div v-if="canAddMore" class="flex gap-2">
+          <div v-if="canAddMore" data-testid="add-email-controls" class="flex flex-col gap-2 sm:flex-row">
             <input
               v-model="newEmail"
               type="email"
-              class="input flex-1"
+              class="input min-w-0 flex-1"
               :placeholder="t('profile.balanceNotify.emailPlaceholder')"
               @keyup.enter="addPendingEmail"
             />
             <button
               @click="addPendingEmail"
               :disabled="!newEmail"
-              class="btn btn-secondary whitespace-nowrap"
+              class="btn btn-secondary w-full whitespace-nowrap sm:w-auto"
             >
               {{ t('common.add') }}
             </button>

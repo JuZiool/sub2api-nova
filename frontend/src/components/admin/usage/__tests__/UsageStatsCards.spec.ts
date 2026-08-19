@@ -44,6 +44,27 @@ const stats = {
 }
 
 describe('UsageStatsCards', () => {
+  it('uses a single-column grid on mobile and allows every card body to shrink', () => {
+    const wrapper = mount(UsageStatsCards, {
+      props: {
+        stats,
+      },
+      global: {
+        stubs: {
+          Icon: true,
+        },
+      },
+    })
+
+    expect(wrapper.get('[data-testid="usage-stats-grid"]').classes()).toEqual(expect.arrayContaining([
+      'grid-cols-1',
+      'sm:grid-cols-2',
+      'lg:grid-cols-4',
+    ]))
+    expect(wrapper.findAll('.card')).toHaveLength(4)
+    expect(wrapper.findAll('.card > .min-w-0.flex-1')).toHaveLength(4)
+  })
+
   it('shows cache token breakdown values', () => {
     const wrapper = mount(UsageStatsCards, {
       props: {

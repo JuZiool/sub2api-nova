@@ -204,4 +204,24 @@ describe('admin BackupView 分卷备份', () => {
     expect(wrapper.find('tbody tr td:nth-child(5)').text()).toBe('-')
     expect(wrapper.findAll('button').some(button => button.text() === 'common.delete')).toBe(false)
   })
+
+  it('R2 配置指南在窄屏内断行 endpoint 并独立滚动配置表', async () => {
+    listBackups.mockResolvedValue({ items: [] })
+
+    const wrapper = mountBackupView()
+    await flushPromises()
+    const guideButton = wrapper.findAll('button').find(button => button.text() === 'Cloudflare R2')
+    expect(guideButton).toBeDefined()
+    await guideButton!.trigger('click')
+
+    const endpoint = document.body.querySelector('[data-testid="r2-endpoint-example"]')
+    const tableScroll = document.body.querySelector('[data-testid="r2-config-table-scroll"]')
+    const table = tableScroll?.querySelector('table')
+
+    expect(endpoint?.classList.contains('break-all')).toBe(true)
+    expect(endpoint?.classList.contains('sm:ml-8')).toBe(true)
+    expect(tableScroll?.classList.contains('overflow-x-auto')).toBe(true)
+    expect(tableScroll?.classList.contains('overflow-hidden')).toBe(false)
+    expect(table?.classList.contains('min-w-[480px]')).toBe(true)
+  })
 })

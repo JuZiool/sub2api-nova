@@ -139,6 +139,21 @@ function mountDialog({
 }
 
 describe('PlanEditDialog', () => {
+  it('uses single-column form grids until the sm breakpoint', async () => {
+    const wrapper = mountDialog({
+      groups: [groupFixture({ id: 10, subscription_type: 'subscription' })],
+    })
+
+    await wrapper.get('select').setValue('10')
+
+    const grids = wrapper.findAll('.grid')
+    expect(grids).toHaveLength(5)
+    for (const grid of grids) {
+      expect(grid.classes()).toEqual(expect.arrayContaining(['grid-cols-1', 'sm:grid-cols-2']))
+      expect(grid.classes()).not.toContain('grid-cols-2')
+    }
+  })
+
   it('shows CNY channel charge using the configured subscription rate and fee', async () => {
     const wrapper = mountDialog({
       paymentConfig: {

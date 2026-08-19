@@ -20,8 +20,8 @@
         <h4 class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
           {{ t('admin.groups.addUserRpm') }}
         </h4>
-        <div class="flex items-end gap-2">
-          <div class="relative flex-1">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div class="relative min-w-0 flex-1">
             <input
               v-model="searchQuery"
               type="text"
@@ -48,7 +48,7 @@
               </button>
             </div>
           </div>
-          <div class="w-24">
+          <div class="w-full sm:w-24">
             <input
               v-model.number="newRpm"
               type="number"
@@ -61,7 +61,7 @@
           </div>
           <button
             type="button"
-            class="btn btn-primary shrink-0"
+            class="btn btn-primary w-full shrink-0 sm:w-auto"
             :disabled="!selectedUser || newRpm == null || newRpm < 0"
             @click="handleAddLocal"
           >

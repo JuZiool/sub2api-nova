@@ -441,7 +441,7 @@
           <label class="input-label">{{ t('admin.proxies.protocol') }}</label>
           <Select v-model="createForm.protocol" :options="protocolSelectOptions" />
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label class="input-label">{{ t('admin.proxies.host') }}</label>
             <input
@@ -681,7 +681,7 @@
           <label class="input-label">{{ t('admin.proxies.protocol') }}</label>
           <Select v-model="editForm.protocol" :options="protocolSelectOptions" />
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label class="input-label">{{ t('admin.proxies.host') }}</label>
             <input v-model="editForm.host" type="text" required class="input" />
