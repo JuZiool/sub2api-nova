@@ -145,10 +145,11 @@ describe('admin DashboardView', () => {
 
     for (const testId of ['admin-dashboard-core-stats', 'admin-dashboard-token-stats']) {
       expect(wrapper.get(`[data-testid="${testId}"]`).classes()).toEqual(expect.arrayContaining([
-        'grid-cols-1',
-        'sm:grid-cols-2',
+        'grid-cols-2',
         'lg:grid-cols-4'
       ]))
+      expect(wrapper.get(`[data-testid="${testId}"]`).classes()).not.toContain('grid-cols-1')
+      expect(wrapper.get(`[data-testid="${testId}"]`).classes()).not.toContain('sm:grid-cols-2')
     }
   })
 })
