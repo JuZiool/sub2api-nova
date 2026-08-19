@@ -117,9 +117,9 @@
 
     <main>
       <section class="hero-section relative">
-        <div class="mx-auto grid min-h-screen max-w-7xl items-center gap-8 px-4 pb-14 pt-10 sm:px-6 sm:pb-16 sm:pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.86fr)] lg:gap-6 lg:px-8 lg:py-12">
-          <div class="relative z-10 mx-auto max-w-2xl text-center lg:mx-0 lg:text-left">
-            <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white px-4 py-2 text-sm font-semibold text-primary-700 shadow-sm">
+        <div class="hero-shell mx-auto grid min-h-screen max-w-7xl items-center gap-2 px-4 pb-0 pt-6 sm:gap-8 sm:px-6 sm:pb-16 sm:pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.86fr)] lg:gap-6 lg:px-8 lg:py-12">
+          <div class="hero-copy relative z-10 mx-auto max-w-2xl text-center lg:mx-0 lg:text-left">
+            <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white px-3 py-2 text-xs font-semibold text-primary-700 shadow-sm sm:mb-6 sm:px-4 sm:text-sm">
               <Icon name="sparkles" size="sm" />
               <span>{{ t('home.heroEyebrow') }}</span>
             </div>
@@ -127,42 +127,46 @@
             <h1 class="hidden">
               {{ siteName }}
             </h1>
-            <p class="mt-5 text-2xl font-semibold leading-snug text-rose-900 sm:text-3xl">
-              {{ t('home.heroSubtitle') }}
+            <p class="text-[1.75rem] font-semibold leading-[1.35] text-rose-900 sm:mt-5 sm:text-3xl sm:leading-snug">
+              <span class="sm:hidden">
+                <span class="block">{{ t('home.heroSubtitleLead') }}</span>
+                <span class="block">{{ t('home.heroSubtitleTail') }}</span>
+              </span>
+              <span class="hidden sm:inline">{{ t('home.heroSubtitle') }}</span>
             </p>
-            <p class="mx-auto mt-5 max-w-xl text-base leading-8 text-rose-900/65 sm:text-lg lg:mx-0">
+            <p class="mx-auto mt-3 max-w-xl [text-wrap:balance] text-[15px] leading-7 text-rose-900/70 sm:mt-5 sm:text-lg sm:leading-8 lg:mx-0">
               {{ t('home.heroDescription') }}
             </p>
 
-            <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
+            <div data-testid="hero-actions" class="mt-5 grid grid-cols-2 gap-3 sm:mt-8 sm:flex sm:flex-row sm:justify-center lg:justify-start">
               <router-link
                 :to="primaryActionPath"
-                class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 text-base font-semibold text-white shadow-lg shadow-primary-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                class="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-lg shadow-primary-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 sm:gap-2 sm:px-6 sm:text-base"
               >
                 {{ primaryActionLabel }}
                 <Icon name="arrowRight" size="sm" :stroke-width="2" />
               </router-link>
               <router-link
                 to="/model-plaza"
-                class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-rose-200 bg-white px-6 text-base font-semibold text-rose-900 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                class="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 text-sm font-semibold text-rose-900 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 sm:gap-2 sm:px-6 sm:text-base"
               >
                 <Icon name="grid" size="sm" />
                 {{ t('home.viewModels') }}
               </router-link>
             </div>
 
-            <div class="mt-9 grid grid-cols-3 gap-2 border-t border-rose-100 pt-6 sm:gap-4">
-              <div v-for="benefit in benefits" :key="benefit.label" class="min-w-0 text-left">
-                <div class="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
+            <div class="mt-6 grid grid-cols-3 gap-2 border-t border-rose-100 pt-4 sm:mt-9 sm:gap-4 sm:pt-6">
+              <div v-for="benefit in benefits" :key="benefit.label" class="min-w-0 text-center sm:text-left">
+                <div class="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary-50 text-primary-600 sm:mx-0">
                   <Icon :name="benefit.icon" size="sm" :stroke-width="2" />
                 </div>
-                <p class="text-xs font-semibold text-rose-950 sm:text-sm">{{ benefit.label }}</p>
+                <p class="text-[11px] font-semibold leading-4 text-rose-950 sm:text-sm">{{ benefit.label }}</p>
                 <p class="mt-1 hidden text-xs text-rose-900/55 sm:block">{{ benefit.detail }}</p>
               </div>
             </div>
           </div>
 
-          <div class="hero-visual relative mx-auto h-[470px] w-full max-w-[560px] sm:h-[560px] lg:h-[650px]">
+          <div class="hero-visual relative mx-auto h-[300px] w-full max-w-[560px] sm:h-[560px] lg:h-[650px]">
             <div class="absolute inset-x-[8%] bottom-[4%] top-[5%] rounded-[32%_32%_10%_10%/22%_22%_8%_8%] border border-primary-100 bg-primary-50/70"></div>
 
             <div class="message-bubble absolute left-0 top-[13%] z-20 max-w-[210px] rounded-lg border border-rose-100 bg-white px-4 py-3 shadow-lg shadow-rose-200/30 sm:left-[2%] lg:-left-[7%]">
@@ -350,15 +354,38 @@ onMounted(() => {
 }
 
 @media (max-width: 639px) {
+  .hero-shell {
+    min-height: 100svh;
+    grid-template-rows: auto minmax(280px, 1fr);
+    padding-top: max(1.5rem, env(safe-area-inset-top));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   .message-bubble {
     top: auto;
-    bottom: 23%;
-    max-width: 175px;
+    bottom: 21%;
+    max-width: 160px;
+    padding: 0.625rem 0.75rem;
   }
 
   .model-badge {
     top: auto;
-    bottom: 7%;
+    bottom: 6%;
+    padding: 0.5rem 0.625rem;
+  }
+
+  .hero-visual::before {
+    inset: 7% 5% 2%;
+  }
+
+  .mascot-image {
+    height: 100%;
+  }
+}
+
+@media (max-width: 639px) and (max-height: 700px) {
+  .hero-shell {
+    grid-template-rows: auto 240px;
   }
 }
 

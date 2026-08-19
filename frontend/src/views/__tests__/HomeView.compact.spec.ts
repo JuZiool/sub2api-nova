@@ -104,6 +104,14 @@ describe('HomeView compact mode', () => {
     expect(wrapper.find('a[href="https://github.com/Wei-Shaw/sub2api"]').exists()).toBe(false)
   })
 
+  it('keeps both primary actions available in the mobile hero', () => {
+    const wrapper = mountHome()
+    const actions = wrapper.get('[data-testid="hero-actions"]').findAllComponents(RouterLinkStub)
+
+    expect(actions).toHaveLength(2)
+    expect(actions.map((action) => action.props('to'))).toEqual(['/register', '/model-plaza'])
+  })
+
   it('does not render a footer attribution in compact mode', () => {
     const wrapper = mountHome({ compact_home_enabled: true })
 

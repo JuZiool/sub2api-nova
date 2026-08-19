@@ -19,6 +19,8 @@ export default {
     heroEyebrow: 'Your Personal AI Service Hub',
     // User-focused value proposition
     heroSubtitle: 'One Key, All AI Models',
+    heroSubtitleLead: 'One Key',
+    heroSubtitleTail: 'All AI Models',
     heroDescription: 'No need to manage multiple subscriptions. Access Claude, GPT, Gemini and more with a single API key',
     mascotGreeting: 'Welcome back. Which AI shall we work with today?',
     mascotAlt: 'Nove virtual assistant',
