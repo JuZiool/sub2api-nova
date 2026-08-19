@@ -182,6 +182,34 @@ describe('admin AccountsView usage windows hint', () => {
     expect(hint.text()).toBe('admin.accounts.usageWindowsHint')
   })
 
+  it('restores usage windows for layouts saved before the visible-by-default migration', async () => {
+    localStorage.setItem('account-hidden-columns', JSON.stringify(['usage', 'today_stats']))
+    localStorage.setItem('account-hidden-columns-version', 'scheduler-score-hidden-by-default')
+
+    const wrapper = mountView()
+    await flushPromises()
+
+    const columns = wrapper.getComponent(DataTableStub).props('columns') as Array<{ key: string }>
+    expect(columns.some(column => column.key === 'usage')).toBe(true)
+
+    const savedColumns = JSON.parse(localStorage.getItem('account-hidden-columns') || '[]') as string[]
+    expect(savedColumns).not.toContain('usage')
+    expect(savedColumns).toContain('scheduler_score')
+    expect(localStorage.getItem('account-hidden-columns-version')).toBe('usage-visible-by-default')
+  })
+
+  it('preserves an explicitly hidden usage window after the migration', async () => {
+    localStorage.setItem('account-hidden-columns', JSON.stringify(['usage', 'today_stats']))
+    localStorage.setItem('account-hidden-columns-version', 'usage-visible-by-default')
+
+    const wrapper = mountView()
+    await flushPromises()
+
+    const columns = wrapper.getComponent(DataTableStub).props('columns') as Array<{ key: string }>
+    expect(columns.some(column => column.key === 'usage')).toBe(false)
+    expect(JSON.parse(localStorage.getItem('account-hidden-columns') || '[]')).toContain('usage')
+  })
+
   it('keeps Ollama Cloud in the single usage column and ignores legacy column preferences', async () => {
     localStorage.setItem('account-hidden-columns', JSON.stringify(['ollama_cloud_usage']))
     const wrapper = mountView()
