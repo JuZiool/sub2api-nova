@@ -23,7 +23,7 @@ export default {
     heroSubtitleTail: 'All AI Models',
     heroDescription: 'No need to manage multiple subscriptions. Access Claude, GPT, Gemini and more with a single API key',
     mascotGreeting: 'Welcome back. Which AI shall we work with today?',
-    mascotAlt: 'Nove virtual assistant',
+    mascotAlt: 'Nova virtual assistant',
     modelReady: 'Models are ready',
     serviceOnline: 'All systems online',
     modelsEyebrow: 'MODEL COLLECTION',

@@ -88,7 +88,7 @@ import { useAppStore } from '@/stores'
 
 const appStore = useAppStore()
 
-const siteName = computed(() => appStore.siteName || 'Nove')
+const siteName = computed(() => appStore.siteName || 'Nova')
 const currentYear = computed(() => new Date().getFullYear())
 
 onMounted(() => {

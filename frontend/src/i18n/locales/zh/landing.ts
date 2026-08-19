@@ -23,7 +23,7 @@ export default {
     heroSubtitleTail: '畅用多个 AI 模型',
     heroDescription: '无需管理多个订阅账号，一站式接入 Claude、GPT、Gemini 等主流 AI 服务',
     mascotGreeting: '欢迎回来，今天想和哪个 AI 一起完成任务？',
-    mascotAlt: 'Nove 看板娘',
+    mascotAlt: 'Nova 看板娘',
     modelReady: '多模型已就绪',
     serviceOnline: '服务运行正常',
     modelsEyebrow: 'MODEL COLLECTION',

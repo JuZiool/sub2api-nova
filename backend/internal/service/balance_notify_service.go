@@ -22,7 +22,7 @@ const (
 	quotaDimWeekly = "weekly"
 	quotaDimTotal  = "total"
 
-	defaultSiteName = "Nove"
+	defaultSiteName = "Nova"
 )
 
 // quotaDimLabels maps dimension names to display labels.
