@@ -36,7 +36,7 @@ const stats: UserDashboardStatsData = {
 }
 
 describe('UserDashboardStats', () => {
-  it('uses one-column stat grids below the small breakpoint', () => {
+  it('keeps two stat columns on narrow screens', () => {
     const wrapper = mount(UserDashboardStats, {
       props: {
         stats,
@@ -52,10 +52,11 @@ describe('UserDashboardStats', () => {
 
     for (const testId of ['user-dashboard-core-stats', 'user-dashboard-token-stats']) {
       expect(wrapper.get(`[data-testid="${testId}"]`).classes()).toEqual(expect.arrayContaining([
-        'grid-cols-1',
-        'sm:grid-cols-2',
+        'grid-cols-2',
         'lg:grid-cols-4'
       ]))
+      expect(wrapper.get(`[data-testid="${testId}"]`).classes()).not.toContain('grid-cols-1')
+      expect(wrapper.get(`[data-testid="${testId}"]`).classes()).not.toContain('sm:grid-cols-2')
     }
   })
 })
