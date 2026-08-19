@@ -16,6 +16,17 @@ export function updateFavicon(logoUrl: string): void {
     document.head.appendChild(link)
   }
 
-  link.type = sanitizedLogoUrl.endsWith('.svg') ? 'image/svg+xml' : 'image/x-icon'
+  const cleanUrl = sanitizedLogoUrl.split(/[?#]/, 1)[0].toLowerCase()
+  if (cleanUrl.endsWith('.svg')) {
+    link.type = 'image/svg+xml'
+  } else if (cleanUrl.endsWith('.png')) {
+    link.type = 'image/png'
+  } else if (cleanUrl.endsWith('.webp')) {
+    link.type = 'image/webp'
+  } else if (cleanUrl.endsWith('.jpg') || cleanUrl.endsWith('.jpeg')) {
+    link.type = 'image/jpeg'
+  } else {
+    link.type = 'image/x-icon'
+  }
   link.href = sanitizedLogoUrl
 }

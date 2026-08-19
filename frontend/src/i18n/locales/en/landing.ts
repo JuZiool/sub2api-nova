@@ -21,7 +21,7 @@ export default {
     heroSubtitle: 'One Key, All AI Models',
     heroDescription: 'No need to manage multiple subscriptions. Access Claude, GPT, Gemini and more with a single API key',
     mascotGreeting: 'Welcome back. Which AI shall we work with today?',
-    mascotAlt: 'Sub2API Nova virtual assistant',
+    mascotAlt: 'Nove virtual assistant',
     modelReady: 'Models are ready',
     serviceOnline: 'All systems online',
     modelsEyebrow: 'MODEL COLLECTION',

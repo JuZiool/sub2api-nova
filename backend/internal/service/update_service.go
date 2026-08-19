@@ -468,7 +468,7 @@ func (s *UpdateService) fetchLatestSourceVersion(ctx context.Context) (*UpdateIn
 		LatestVersion:  latestVersion,
 		HasUpdate:      compareVersions(s.currentVersion, latestVersion) < 0,
 		ReleaseInfo: &ReleaseInfo{
-			Name:    "Sub2API Nova " + latestVersion,
+			Name:    "Nove " + latestVersion,
 			HTMLURL: githubSourceUpdateURL,
 		},
 		Cached:    false,
