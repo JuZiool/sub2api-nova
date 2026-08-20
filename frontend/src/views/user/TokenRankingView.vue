@@ -13,16 +13,6 @@
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          class="btn btn-secondary inline-flex items-center gap-2"
-          :disabled="loading"
-          :title="t('tokenRanking.refresh')"
-          @click="load"
-        >
-          <Icon name="refresh" size="sm" :class="loading ? 'animate-spin' : ''" />
-          <span>{{ t('common.refresh') }}</span>
-        </button>
       </header>
 
       <div v-if="errorMessage" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
