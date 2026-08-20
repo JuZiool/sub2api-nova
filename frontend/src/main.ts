@@ -6,6 +6,7 @@ import i18n, { initI18n } from './i18n'
 import { useAppStore } from '@/stores/app'
 import { updateFavicon } from '@/utils/branding'
 import { isIOSDevice } from '@/utils/device'
+import { initializeTheme } from '@/utils/theme'
 import './style.css'
 
 function initIOSViewportZoomFix() {
@@ -22,14 +23,8 @@ function initIOSViewportZoomFix() {
   viewport.setAttribute('content', `${content}, maximum-scale=1.0`)
 }
 
-function initThemeClass() {
-  document.documentElement.classList.remove('dark')
-  localStorage.setItem('theme', 'light')
-}
-
 async function bootstrap() {
-  // The Sakura theme is intentionally light-only for this release.
-  initThemeClass()
+  initializeTheme()
   initIOSViewportZoomFix()
 
   const app = createApp(App)

@@ -51,6 +51,18 @@
         <!-- Language Switcher -->
         <LocaleSwitcher />
 
+        <!-- Theme Switcher -->
+        <button
+          type="button"
+          class="btn-ghost btn-icon"
+          :aria-label="isDark ? t('nav.lightMode') : t('nav.darkMode')"
+          :title="isDark ? t('nav.lightMode') : t('nav.darkMode')"
+          @click="handleToggleTheme"
+        >
+          <Icon v-if="isDark" name="sun" size="sm" />
+          <Icon v-else name="moon" size="sm" />
+        </button>
+
         <!-- Subscription Progress (for users with active subscriptions) -->
         <SubscriptionProgressMini v-if="user" />
 
@@ -261,6 +273,7 @@ import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeUrl } from '@/utils/url'
 import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
+import { useTheme } from '@/utils/theme'
 
 const router = useRouter()
 const route = useRoute()
@@ -269,6 +282,7 @@ const appStore = useAppStore()
 const authStore = useAuthStore()
 const adminSettingsStore = useAdminSettingsStore()
 const onboardingStore = useOnboardingStore()
+const { isDark, toggleTheme } = useTheme()
 
 const user = computed(() => authStore.user)
 const dropdownOpen = ref(false)
@@ -332,6 +346,10 @@ const pageDescription = computed(() => {
   }
   return (route.meta.description as string) || ''
 })
+
+function handleToggleTheme() {
+  toggleTheme()
+}
 
 function toggleMobileSidebar() {
   appStore.toggleMobileSidebar()
