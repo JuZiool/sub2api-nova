@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#fff9fc]">
+  <div class="min-h-screen bg-[#fff9fc] dark:bg-dark-950">
     <!-- Sidebar -->
     <AppSidebar />
 
