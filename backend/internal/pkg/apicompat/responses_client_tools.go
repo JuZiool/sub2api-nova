@@ -173,6 +173,8 @@ func rewriteClientToolHistory(value any, adapter *ResponsesClientToolMapping) bo
 				if adapter.ToolSearch {
 					typed["type"] = "function_call_output"
 					normalizeClientToolOutput(typed)
+					dropInvalidLoweredFunctionItemID(typed)
+					normalizeToolSearchOutput(typed)
 					changed = true
 				}
 			}
@@ -203,6 +205,20 @@ func normalizeClientToolOutput(item map[string]any) {
 		return
 	}
 	item["output"] = string(encoded)
+}
+
+func normalizeToolSearchOutput(item map[string]any) {
+	if _, exists := item["output"]; !exists {
+		if tools, hasTools := item["tools"]; hasTools {
+			item["output"] = tools
+		} else {
+			return
+		}
+	}
+	normalizeClientToolOutput(item)
+	delete(item, "tools")
+	delete(item, "status")
+	delete(item, "execution")
 }
 
 func rewriteClientToolChoice(req map[string]any, adapter *ResponsesClientToolMapping) bool {
