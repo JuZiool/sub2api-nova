@@ -116,6 +116,23 @@ func StartOfWeek(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day()-weekday+1, 0, 0, 0, 0, loc)
 }
 
+// StartOfWeekInUserLocation returns Monday 00:00 in the user's timezone.
+// Invalid or empty timezones fall back to the configured server timezone.
+func StartOfWeekInUserLocation(t time.Time, userTZ string) time.Time {
+	loc := Location()
+	if userTZ != "" {
+		if userLoc, err := time.LoadLocation(userTZ); err == nil {
+			loc = userLoc
+		}
+	}
+	t = t.In(loc)
+	weekday := int(t.Weekday())
+	if weekday == 0 {
+		weekday = 7
+	}
+	return time.Date(t.Year(), t.Month(), t.Day()-weekday+1, 0, 0, 0, 0, loc)
+}
+
 // StartOfMonth returns the start of the month (1st day 00:00:00) for the given time.
 func StartOfMonth(t time.Time) time.Time {
 	loc := Location()

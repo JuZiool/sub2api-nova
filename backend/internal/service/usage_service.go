@@ -307,6 +307,15 @@ func (s *UsageService) GetAPIKeyDashboardStats(ctx context.Context, apiKeyID int
 	return stats, nil
 }
 
+// GetGlobalTokenRanking returns the public leaderboard rows for the current week and day.
+func (s *UsageService) GetGlobalTokenRanking(ctx context.Context, weekStart, dayStart, dayEnd time.Time) ([]usagestats.TokenRankingRow, error) {
+	rows, err := s.usageRepo.GetGlobalTokenRanking(ctx, weekStart, dayStart, dayEnd)
+	if err != nil {
+		return nil, fmt.Errorf("get global token ranking: %w", err)
+	}
+	return rows, nil
+}
+
 // GetUserUsageTrendByUserID returns per-user usage trend.
 func (s *UsageService) GetUserUsageTrendByUserID(ctx context.Context, userID int64, startTime, endTime time.Time, granularity string) ([]usagestats.TrendDataPoint, error) {
 	trend, err := s.usageRepo.GetUserUsageTrendByUserID(ctx, userID, startTime, endTime, granularity)

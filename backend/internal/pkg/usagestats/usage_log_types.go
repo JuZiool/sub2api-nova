@@ -178,6 +178,20 @@ type UserBreakdownItem struct {
 	AccountCost  float64 `json:"account_cost"`  // 账号成本
 }
 
+// TokenRankingRow is a server-side row for the public token leaderboard.
+// Email is masked by the handler before it is returned to users.
+type TokenRankingRow struct {
+	Period       string `json:"-"`
+	Rank         int64  `json:"-"`
+	UserID       int64  `json:"user_id"`
+	Email        string `json:"email"`
+	Requests     int64  `json:"requests"`
+	InputTokens  int64  `json:"input_tokens"`
+	OutputTokens int64  `json:"output_tokens"`
+	CacheTokens  int64  `json:"cache_tokens"`
+	TotalTokens  int64  `json:"total_tokens"`
+}
+
 // UserBreakdownDimension specifies the dimension to filter for user breakdown.
 type UserBreakdownDimension struct {
 	GroupID      int64  // filter by group_id (>0 to enable)

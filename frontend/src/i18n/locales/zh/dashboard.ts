@@ -1,4 +1,23 @@
 export default {
+  tokenRanking: {
+    title: 'Token 排行榜',
+    description: '按 Token 使用量查看全站用户排行',
+    weeklyTitle: '周榜前三名',
+    dailyTitle: '日榜前十名',
+    topThree: '本周 Token 使用量最高的 3 位用户',
+    topTen: '今日 Token 使用量最高的 10 位用户',
+    dateRange: '{start} 至 {end}',
+    user: '用户',
+    requests: '请求',
+    input: '输入',
+    output: '输出',
+    cache: '缓存',
+    totalTokens: '总 Token',
+    noData: '暂无排行数据',
+    failedToLoad: '排行榜加载失败，请稍后重试',
+    refresh: '刷新排行榜'
+  },
+
   dashboard: {
     title: '仪表盘',
     welcomeMessage: '欢迎回来！这是您账户的概览。',

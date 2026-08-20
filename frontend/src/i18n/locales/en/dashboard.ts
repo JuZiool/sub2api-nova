@@ -1,4 +1,23 @@
 export default {
+  tokenRanking: {
+    title: 'Token Ranking',
+    description: 'Global user ranking by token usage',
+    weeklyTitle: 'Weekly Top 3',
+    dailyTitle: 'Daily Top 10',
+    topThree: 'The three users with the highest token usage this week',
+    topTen: 'The ten users with the highest token usage today',
+    dateRange: '{start} to {end}',
+    user: 'User',
+    requests: 'Requests',
+    input: 'Input',
+    output: 'Output',
+    cache: 'Cache',
+    totalTokens: 'Total Tokens',
+    noData: 'No ranking data',
+    failedToLoad: 'Failed to load the ranking. Please try again later.',
+    refresh: 'Refresh ranking'
+  },
+
   dashboard: {
     title: 'Dashboard',
     welcomeMessage: "Welcome back! Here's an overview of your account.",

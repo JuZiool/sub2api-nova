@@ -1924,6 +1924,31 @@ export interface GroupStat {
   account_cost?: number // 账号成本（仅管理员接口返回）
 }
 
+export interface TokenRankingItem {
+  rank: number
+  user_id: number
+  email: string
+  requests: number
+  input_tokens: number
+  output_tokens: number
+  cache_tokens: number
+  total_tokens: number
+}
+
+export interface TokenRankingResponse {
+  weekly: {
+    start_date: string
+    end_date: string
+    items: TokenRankingItem[]
+  }
+  daily: {
+    date: string
+    start_date: string
+    end_date: string
+    items: TokenRankingItem[]
+  }
+}
+
 export interface UserBreakdownItem {
   user_id: number
   email: string

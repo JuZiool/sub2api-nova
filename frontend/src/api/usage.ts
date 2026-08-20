@@ -368,6 +368,36 @@ export async function getMyErrorDetail(id: number): Promise<UserErrorRequestDeta
   return data
 }
 
+export interface TokenRankingItem {
+  rank: number
+  user_id: number
+  email: string
+  requests: number
+  input_tokens: number
+  output_tokens: number
+  cache_tokens: number
+  total_tokens: number
+}
+
+export interface TokenRankingResponse {
+  weekly: {
+    start_date: string
+    end_date: string
+    items: TokenRankingItem[]
+  }
+  daily: {
+    date: string
+    start_date: string
+    end_date: string
+    items: TokenRankingItem[]
+  }
+}
+
+export async function getTokenRanking(): Promise<TokenRankingResponse> {
+  const { data } = await apiClient.get<TokenRankingResponse>('/usage/ranking')
+  return data
+}
+
 export const usageAPI = {
   list,
   query,
@@ -382,6 +412,7 @@ export const usageAPI = {
   getMyApiKeyDailyUsage,
   getDashboardSnapshotV2,
   getDashboardApiKeysUsage,
+  getTokenRanking,
   // Error requests
   listMyErrorRequests,
   getMyErrorDetail
