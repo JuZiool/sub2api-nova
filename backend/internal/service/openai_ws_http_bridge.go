@@ -23,6 +23,57 @@ const (
 	openAIWSHTTPBridgeErrorBodyLimitBytes         = 64 * 1024
 )
 
+const openAIWSHTTPBridgeToolStateContextKey = "openai_ws_http_bridge_tool_state"
+
+type openAIWSHTTPBridgeToolState struct {
+	ClientMapping apicompat.ResponsesClientToolMapping
+	LoweredTools  json.RawMessage
+}
+
+func openAIWSHTTPBridgeToolStateFromContext(c *gin.Context) (openAIWSHTTPBridgeToolState, bool) {
+	if c == nil {
+		return openAIWSHTTPBridgeToolState{}, false
+	}
+	value, ok := c.Get(openAIWSHTTPBridgeToolStateContextKey)
+	state, typed := value.(openAIWSHTTPBridgeToolState)
+	return state, ok && typed
+}
+
+func setOpenAIWSHTTPBridgeToolState(c *gin.Context, state openAIWSHTTPBridgeToolState) {
+	if c == nil {
+		return
+	}
+	state.LoweredTools = append(json.RawMessage(nil), state.LoweredTools...)
+	c.Set(openAIWSHTTPBridgeToolStateContextKey, state)
+}
+
+func decodeOpenAIWSHTTPBridgeLoweredTools(raw json.RawMessage) []any {
+	if len(raw) == 0 {
+		return nil
+	}
+	var tools []any
+	if err := json.Unmarshal(raw, &tools); err != nil {
+		return nil
+	}
+	return tools
+}
+
+func openAIWSHTTPBridgeRawField(body []byte, name string) (json.RawMessage, bool) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(body, &fields); err != nil {
+		return nil, false
+	}
+	raw, present := fields[name]
+	return append(json.RawMessage(nil), raw...), present
+}
+
+func openAIWSHTTPBridgeToolUpstreamName(account *Account) string {
+	if account != nil && account.Platform == PlatformGrok {
+		return "Grok WS HTTP bridge"
+	}
+	return "OpenAI WS HTTP bridge"
+}
+
 // ResolveOpenAIWSClientFirstMessageTimeout returns the effective client ingress deadline.
 func ResolveOpenAIWSClientFirstMessageTimeout(cfg *config.Config) time.Duration {
 	seconds := config.DefaultOpenAIWSClientFirstMessageTimeoutSeconds
@@ -224,12 +275,45 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 	if err != nil {
 		return nil, fmt.Errorf("prepare http bridge body: %w", err)
 	}
+	grokIntentSourceBody := append([]byte(nil), body...)
+	_, grokExplicitToolsField := openAIWSHTTPBridgeRawField(grokIntentSourceBody, "tools")
+	grokExplicitToolIntent := account.Platform == PlatformGrok && hasGrokResponsesToolIntent(grokIntentSourceBody)
 	var clientToolMapping apicompat.ResponsesClientToolMapping
-	if account.Platform == PlatformOpenAI && account.Type == AccountTypeAPIKey {
-		body, clientToolMapping, err = adaptResponsesClientToolsForFunctionUpstream(body, "OpenAI WS HTTP bridge")
-		if err != nil {
-			return nil, fmt.Errorf("adapt OpenAI WS HTTP bridge client tools: %w", err)
+	functionToolUpstream := (account.Platform == PlatformOpenAI && account.Type == AccountTypeAPIKey) || account.Platform == PlatformGrok
+	if functionToolUpstream {
+		if account.Platform == PlatformGrok {
+			body, err = sanitizeGrokResponsesInput(body)
+			if err != nil {
+				return nil, fmt.Errorf("sanitize Grok WS HTTP bridge input: %w", err)
+			}
 		}
+		inheritedState, _ := openAIWSHTTPBridgeToolStateFromContext(c)
+		inheritedLoweredTools := decodeOpenAIWSHTTPBridgeLoweredTools(inheritedState.LoweredTools)
+		body, clientToolMapping, err = adaptResponsesClientToolsForFunctionUpstreamWithMapping(
+			body,
+			openAIWSHTTPBridgeToolUpstreamName(account),
+			inheritedState.ClientMapping,
+			inheritedLoweredTools,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("adapt %s client tools: %w", openAIWSHTTPBridgeToolUpstreamName(account), err)
+		}
+		if account.Platform == PlatformGrok && !grokExplicitToolsField && !grokExplicitToolIntent && len(inheritedLoweredTools) > 0 && hasGrokResponsesToolIntent(body) {
+			// This continuation omitted tools, so the pre-adapter source cannot
+			// represent the effective inherited declarations. Cache routing must
+			// see the rehydrated tool intent or it will replace client functions
+			// with the native-search tool-free route. Explicit current-turn tool
+			// intent still uses the original pre-sanitization source above.
+			grokIntentSourceBody = append(grokIntentSourceBody[:0], body...)
+		}
+		loweredTools := inheritedState.LoweredTools
+		if currentTools, present := openAIWSHTTPBridgeRawField(body, "tools"); present {
+			loweredTools = currentTools
+		}
+		setOpenAIWSHTTPBridgeToolState(c, openAIWSHTTPBridgeToolState{
+			ClientMapping: clientToolMapping,
+			LoweredTools:  loweredTools,
+		})
 	}
 
 	buildUpstreamRequest := func(requestBody []byte) (*http.Request, error) {
@@ -252,7 +336,6 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 	}
 	if account.Platform == PlatformGrok {
 		upstreamModel := resolveGrokWSUpstreamModel(account, body, originalModel)
-		grokIntentSourceBody := body
 		body, err = patchGrokResponsesBody(body, upstreamModel)
 		if err != nil {
 			return nil, err
