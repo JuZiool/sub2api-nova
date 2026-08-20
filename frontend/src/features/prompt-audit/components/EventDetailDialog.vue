@@ -1,6 +1,6 @@
 <template>
   <BaseDialog :show="show" :title="t('admin.promptAudit.events.detailTitle')" width="extra-wide" @close="$emit('close')">
-    <div v-if="loading" class="py-12 text-center text-sm text-gray-500" aria-busy="true">{{ t('common.loading') }}</div>
+    <div v-if="loading" class="py-12 text-center text-sm text-gray-500 dark:text-dark-400" aria-busy="true">{{ t('common.loading') }}</div>
     <div v-else-if="event" class="flex flex-col">
       <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-3 dark:border-dark-700" role="tablist">
         <button v-for="tab in tabs" :key="tab" type="button" role="tab" :aria-selected="activeTab === tab" class="rounded-md px-3 py-1.5 text-sm" :class="activeTab === tab ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300' : 'text-gray-600 dark:text-dark-300'" @click="activeTab = tab">
@@ -16,13 +16,13 @@
             <pre class="mt-2 max-h-[min(46vh,26rem)] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-4 text-sm text-gray-700 dark:bg-dark-900 dark:text-dark-200" data-test="summary-prompt-full">{{ displayPrompt(event) }}</pre>
           </div>
           <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-            <dt class="text-gray-500">{{ t('admin.promptAudit.events.decision') }}</dt><dd class="font-medium text-gray-900 dark:text-white">{{ formatDecisionAction(event.decision, event.action) }}</dd>
-            <dt class="text-gray-500">{{ t('admin.promptAudit.events.user') }}</dt><dd>{{ event.snapshot.username || '—' }}</dd>
-            <dt class="text-gray-500">{{ t('admin.promptAudit.events.email') }}</dt><dd>{{ event.snapshot.user_email || '—' }}</dd>
-            <dt class="text-gray-500">{{ t('admin.promptAudit.events.apiKey') }}</dt><dd>{{ event.snapshot.api_key_name || '—' }}</dd>
-            <dt class="text-gray-500">{{ t('admin.promptAudit.events.group') }}</dt><dd>{{ event.snapshot.group_name || '—' }}</dd>
-            <dt class="text-gray-500">{{ t('admin.promptAudit.events.model') }}</dt><dd>{{ event.snapshot.model || '—' }}</dd>
-            <dt class="text-gray-500">{{ t('admin.promptAudit.events.categories') }}</dt><dd>{{ formatCategories(event.categories) }}</dd>
+            <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.decision') }}</dt><dd class="font-medium text-gray-900 dark:text-white">{{ formatDecisionAction(event.decision, event.action) }}</dd>
+            <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.user') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ event.snapshot.username || '—' }}</dd>
+            <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.email') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ event.snapshot.user_email || '—' }}</dd>
+            <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.apiKey') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ event.snapshot.api_key_name || '—' }}</dd>
+            <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.group') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ event.snapshot.group_name || '—' }}</dd>
+            <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.model') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ event.snapshot.model || '—' }}</dd>
+            <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.categories') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ formatCategories(event.categories) }}</dd>
           </dl>
         </div>
 
@@ -54,21 +54,21 @@
                 <div class="sm:col-span-2"><dt class="inline text-gray-400">{{ t('admin.promptAudit.events.evidence') }} · </dt><dd class="inline break-words">{{ issue.evidence ? translateEvidence(issue.evidence) : '—' }}</dd></div>
               </dl>
             </article>
-            <p v-if="event.issue_summaries.length === 0" class="py-6 text-center text-sm text-gray-500">{{ t('admin.promptAudit.events.noRisks') }}</p>
+            <p v-if="event.issue_summaries.length === 0" class="py-6 text-center text-sm text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.noRisks') }}</p>
           </div>
         </div>
 
         <dl v-show="activeTab === 'technical'" class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm" role="tabpanel">
-          <dt class="text-gray-500">{{ t('admin.promptAudit.events.requestId') }}</dt><dd class="break-all font-mono">{{ event.snapshot.request_id || '—' }}</dd>
-          <dt class="text-gray-500">{{ t('admin.promptAudit.events.promptHash') }}</dt><dd class="break-all font-mono">{{ event.snapshot.prompt_hash }}</dd>
-          <dt class="text-gray-500">{{ t('admin.promptAudit.events.technical.scanner') }}</dt><dd>{{ event.scanner_backend }} · {{ event.scanner_version }}</dd>
-          <dt class="text-gray-500">{{ t('admin.promptAudit.events.technical.policy') }}</dt><dd>{{ event.policy_id }} · v{{ event.policy_version }}</dd>
-          <dt class="text-gray-500">{{ t('admin.promptAudit.events.technical.guardEndpoint') }}</dt><dd>{{ event.guard_endpoint_id }}</dd>
-          <dt class="text-gray-500">{{ t('admin.promptAudit.events.technical.config') }}</dt><dd>v{{ event.config_version }}</dd>
-          <dt class="text-gray-500">{{ t('admin.promptAudit.events.technical.chunks') }}</dt><dd>{{ event.chunk_total }}</dd>
-          <dt class="text-gray-500">{{ t('admin.promptAudit.events.technical.latency') }}</dt><dd>{{ event.latency_ms }} ms</dd>
-          <dt class="text-gray-500">{{ t('admin.promptAudit.events.stage') }}</dt><dd>{{ event.snapshot.stage || 'http' }}</dd>
-          <dt class="text-gray-500">{{ t('admin.promptAudit.events.technical.protocol') }}</dt><dd>{{ event.snapshot.protocol }} · {{ event.snapshot.endpoint }}</dd>
+          <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.requestId') }}</dt><dd class="break-all font-mono text-gray-900 dark:text-dark-100">{{ event.snapshot.request_id || '—' }}</dd>
+          <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.promptHash') }}</dt><dd class="break-all font-mono text-gray-900 dark:text-dark-100">{{ event.snapshot.prompt_hash }}</dd>
+          <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.technical.scanner') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ event.scanner_backend }} · {{ event.scanner_version }}</dd>
+          <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.technical.policy') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ event.policy_id }} · v{{ event.policy_version }}</dd>
+          <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.technical.guardEndpoint') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ event.guard_endpoint_id }}</dd>
+          <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.technical.config') }}</dt><dd class="text-gray-900 dark:text-dark-100">v{{ event.config_version }}</dd>
+          <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.technical.chunks') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ event.chunk_total }}</dd>
+          <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.technical.latency') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ event.latency_ms }} ms</dd>
+          <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.stage') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ event.snapshot.stage || 'http' }}</dd>
+          <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.events.technical.protocol') }}</dt><dd class="text-gray-900 dark:text-dark-100">{{ event.snapshot.protocol }} · {{ event.snapshot.endpoint }}</dd>
         </dl>
       </div>
     </div>

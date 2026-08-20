@@ -34,7 +34,7 @@
               </span>
               <span class="text-xs text-gray-500 dark:text-dark-400">{{ group.platform }} · {{ group.status }}</span>
             </label>
-            <p v-if="filteredGroups.length === 0" class="px-2 py-4 text-center text-sm text-gray-500">{{ t('admin.promptAudit.policy.noGroups') }}</p>
+            <p v-if="filteredGroups.length === 0" class="px-2 py-4 text-center text-sm text-gray-500 dark:text-dark-400">{{ t('admin.promptAudit.policy.noGroups') }}</p>
           </div>
           <div v-if="missingGroupIds.length" class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
             {{ t('admin.promptAudit.policy.missingGroups') }}: {{ missingGroupIds.join(', ') }}
@@ -64,7 +64,7 @@
         </label>
         <div class="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:bg-dark-900/50 dark:text-dark-300">
           <p class="font-medium text-gray-800 dark:text-dark-100">{{ t('admin.promptAudit.policy.strategy') }}</p>
-          <p class="mt-1">priority · {{ t('admin.promptAudit.policy.strategyHint') }}</p>
+          <p class="mt-1 text-sm text-dark-200">priority · {{ t('admin.promptAudit.policy.strategyHint') }}</p>
         </div>
       </div>
     </div>

@@ -214,7 +214,7 @@
                 />
                 <span class="input-label mb-0">{{ t('admin.channels.form.restrictModels', 'Restrict Models') }}</span>
               </label>
-              <p class="mt-1 ml-6 text-xs text-gray-400">
+              <p class="mt-1 ml-6 text-xs text-gray-400 dark:text-dark-400">
                 {{ t('admin.channels.form.restrictModelsHint', 'When enabled, only models in the pricing list are allowed. Others will be rejected.') }}
               </p>
             </div>
@@ -223,7 +223,7 @@
             <div>
               <label class="input-label">{{ t('admin.channels.form.billingModelSource', 'Billing Basis') }}</label>
               <Select v-model="form.billing_model_source" :options="billingModelSourceOptions" />
-              <p class="mt-1 text-xs text-gray-400">
+              <p class="mt-1 text-xs text-gray-400 dark:text-dark-400">
                 {{ t('admin.channels.form.billingModelSourceHint', 'Controls which model name is used for pricing lookup') }}
               </p>
             </div>
@@ -282,15 +282,15 @@
             <div>
               <label class="input-label text-xs">
                 {{ t('admin.channels.form.groups', 'Associated Groups') }} <span class="text-red-500">*</span>
-                <span v-if="section.group_ids.length > 0" class="ml-1 font-normal text-gray-400">
+                <span v-if="section.group_ids.length > 0" class="ml-1 font-normal text-gray-400 dark:text-dark-400">
                   ({{ t('admin.channels.form.selectedCount', { count: section.group_ids.length }) }})
                 </span>
               </label>
               <div class="max-h-40 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-2 dark:border-dark-600 dark:bg-dark-900">
-                <div v-if="groupsLoading" class="py-2 text-center text-xs text-gray-500">
+                <div v-if="groupsLoading" class="py-2 text-center text-xs text-gray-500 dark:text-dark-400">
                   {{ t('common.loading', 'Loading...') }}
                 </div>
-                <div v-else-if="getGroupsForPlatform(section.platform).length === 0" class="py-2 text-center text-xs text-gray-500">
+                <div v-else-if="getGroupsForPlatform(section.platform).length === 0" class="py-2 text-center text-xs text-gray-500 dark:text-dark-400">
                   {{ t('admin.channels.form.noGroupsAvailable', 'No groups available') }}
                 </div>
                 <div v-else class="flex flex-wrap gap-1">
@@ -314,10 +314,10 @@
                     <span
                       :class="['rounded-full px-1 py-0 text-[10px]', platformBadgeLightClass(group.platform)]"
                     >{{ group.rate_multiplier }}x</span>
-                    <span class="text-[10px] text-gray-400">{{ group.account_count || 0 }}</span>
+                    <span class="text-[10px] text-gray-400 dark:text-dark-400">{{ group.account_count || 0 }}</span>
                     <span
                       v-if="isGroupInOtherChannel(group.id, section.platform)"
-                      class="text-[10px] text-gray-400"
+                      class="text-[10px] text-gray-400 dark:text-dark-400"
                     >{{ getGroupInOtherChannelLabel(group.id) }}</span>
                   </label>
                 </div>
@@ -508,7 +508,7 @@
                       <span :class="['font-medium', platformTextClass(section.platform)]">{{ getGroupNameById(gid) }}</span>
                     </label>
                   </div>
-                  <p v-if="section.group_ids.length === 0" class="mt-1 text-xs text-gray-400">
+                  <p v-if="section.group_ids.length === 0" class="mt-1 text-xs text-gray-400 dark:text-dark-400">
                     {{ t('admin.channels.form.noGroupsInChannel') }}
                   </p>
                 </div>

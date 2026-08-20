@@ -27,7 +27,7 @@
             <h3 class="font-semibold text-primary-800 dark:text-primary-200">
               {{ t('common.contactSupport') }}
             </h3>
-            <p class="text-sm font-medium">{{ contactInfo }}</p>
+            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ contactInfo }}</p>
           </div>
         </div>
       </div>

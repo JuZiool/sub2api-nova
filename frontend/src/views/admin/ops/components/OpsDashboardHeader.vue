@@ -933,7 +933,7 @@ function handleToolbarRefresh() {
         <button
           v-if="!props.fullscreen"
           type="button"
-          class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200 dark:bg-dark-700 dark:text-gray-400 dark:hover:bg-dark-600"
+          class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:bg-dark-700 dark:text-gray-400 dark:hover:bg-dark-600"
           :disabled="loading"
           :title="t('common.refresh')"
           @click="handleToolbarRefresh"
@@ -1088,7 +1088,7 @@ function handleToolbarRefresh() {
             </div>
 
             <div class="mt-4 text-center" v-if="!props.fullscreen">
-              <div class="flex items-center justify-center gap-1 text-xs font-medium text-gray-500">
+              <div class="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400">
                 {{ t('admin.ops.healthCondition') }}
                 <HelpTooltip :content="t('admin.ops.healthHelp')" />
               </div>
@@ -1140,11 +1140,11 @@ function handleToolbarRefresh() {
                 <div class="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-2">
                   <div class="flex items-baseline gap-1.5">
                     <span :class="[props.fullscreen ? 'text-4xl' : 'text-xl sm:text-2xl', 'font-black text-gray-900 dark:text-white']">{{ displayRealTimeQps.toFixed(1) }}</span>
-                    <span :class="[props.fullscreen ? 'text-sm' : 'text-xs', 'font-bold text-gray-500']">QPS</span>
+                    <span :class="[props.fullscreen ? 'text-sm' : 'text-xs', 'font-bold text-gray-500 dark:text-gray-400']">QPS</span>
                   </div>
                   <div class="flex items-baseline gap-1.5">
                     <span :class="[props.fullscreen ? 'text-4xl' : 'text-xl sm:text-2xl', 'font-black text-gray-900 dark:text-white']">{{ displayRealTimeTps.toFixed(1) }}</span>
-                    <span :class="[props.fullscreen ? 'text-sm' : 'text-xs', 'font-bold text-gray-500']">{{ t('admin.ops.tps') }}</span>
+                    <span :class="[props.fullscreen ? 'text-sm' : 'text-xs', 'font-bold text-gray-500 dark:text-gray-400']">{{ t('admin.ops.tps') }}</span>
                   </div>
                 </div>
               </div>
@@ -1229,19 +1229,19 @@ function handleToolbarRefresh() {
           </div>
           <div class="mt-2 space-y-2 text-xs">
             <div class="flex justify-between">
-              <span class="text-gray-500">{{ t('admin.ops.requests') }}:</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('admin.ops.requests') }}:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ totalRequestsLabel }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">{{ t('admin.ops.tokens') }}:</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('admin.ops.tokens') }}:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ totalTokensLabel }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">{{ t('admin.ops.avgQps') }}:</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('admin.ops.avgQps') }}:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ qpsAvgLabel }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">{{ t('admin.ops.avgTps') }}:</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('admin.ops.avgTps') }}:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ tpsAvgLabel }}</span>
             </div>
           </div>
@@ -1272,7 +1272,7 @@ function handleToolbarRefresh() {
           </div>
           <div class="mt-3 text-xs">
             <div class="flex justify-between">
-              <span class="text-gray-500">{{ t('admin.ops.exceptions') }}:</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('admin.ops.exceptions') }}:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ formatNumber((overview.request_count_sla ?? 0) - (overview.success_count ?? 0)) }}</span>
             </div>
           </div>
@@ -1302,27 +1302,27 @@ function handleToolbarRefresh() {
           </div>
           <div class="mt-3 grid grid-cols-1 gap-x-3 gap-y-1 text-xs 2xl:grid-cols-2">
             <div class="flex items-baseline gap-1 whitespace-nowrap">
-              <span class="text-gray-500">P95:</span>
+              <span class="text-gray-500 dark:text-gray-400">P95:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ durationP95Ms ?? '-' }}</span>
               <span class="text-gray-400">ms</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
-              <span class="text-gray-500">P90:</span>
+              <span class="text-gray-500 dark:text-gray-400">P90:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ durationP90Ms ?? '-' }}</span>
               <span class="text-gray-400">ms</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
-              <span class="text-gray-500">P50:</span>
+              <span class="text-gray-500 dark:text-gray-400">P50:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ durationP50Ms ?? '-' }}</span>
               <span class="text-gray-400">ms</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
-              <span class="text-gray-500">Avg:</span>
+              <span class="text-gray-500 dark:text-gray-400">Avg:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ durationAvgMs ?? '-' }}</span>
               <span class="text-gray-400">ms</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
-              <span class="text-gray-500">Max:</span>
+              <span class="text-gray-500 dark:text-gray-400">Max:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ durationMaxMs ?? '-' }}</span>
               <span class="text-gray-400">ms</span>
             </div>
@@ -1353,27 +1353,27 @@ function handleToolbarRefresh() {
           </div>
           <div class="mt-3 grid grid-cols-1 gap-x-3 gap-y-1 text-xs 2xl:grid-cols-2">
             <div class="flex items-baseline gap-1 whitespace-nowrap">
-              <span class="text-gray-500">P95:</span>
+              <span class="text-gray-500 dark:text-gray-400">P95:</span>
               <span class="font-bold" :class="getThresholdColorClass(getTTFTThresholdLevel(ttftP95Ms))">{{ ttftP95Ms ?? '-' }}</span>
               <span class="text-gray-400">ms</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
-              <span class="text-gray-500">P90:</span>
+              <span class="text-gray-500 dark:text-gray-400">P90:</span>
               <span class="font-bold" :class="getThresholdColorClass(getTTFTThresholdLevel(ttftP90Ms))">{{ ttftP90Ms ?? '-' }}</span>
               <span class="text-gray-400">ms</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
-              <span class="text-gray-500">P50:</span>
+              <span class="text-gray-500 dark:text-gray-400">P50:</span>
               <span class="font-bold" :class="getThresholdColorClass(getTTFTThresholdLevel(ttftP50Ms))">{{ ttftP50Ms ?? '-' }}</span>
               <span class="text-gray-400">ms</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
-              <span class="text-gray-500">Avg:</span>
+              <span class="text-gray-500 dark:text-gray-400">Avg:</span>
               <span class="font-bold" :class="getThresholdColorClass(getTTFTThresholdLevel(ttftAvgMs))">{{ ttftAvgMs ?? '-' }}</span>
               <span class="text-gray-400">ms</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
-              <span class="text-gray-500">Max:</span>
+              <span class="text-gray-500 dark:text-gray-400">Max:</span>
               <span class="font-bold" :class="getThresholdColorClass(getTTFTThresholdLevel(ttftMaxMs))">{{ ttftMaxMs ?? '-' }}</span>
               <span class="text-gray-400">ms</span>
             </div>
@@ -1396,11 +1396,11 @@ function handleToolbarRefresh() {
           </div>
           <div class="mt-3 space-y-1 text-xs">
             <div class="flex justify-between">
-              <span class="text-gray-500">{{ t('admin.ops.errorCount') }}:</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('admin.ops.errorCount') }}:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ formatNumber(overview.error_count_sla ?? 0) }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">{{ t('admin.ops.businessLimited') }}:</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('admin.ops.businessLimited') }}:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ formatNumber(overview.business_limited_count ?? 0) }}</span>
             </div>
           </div>
@@ -1422,11 +1422,11 @@ function handleToolbarRefresh() {
           </div>
           <div class="mt-3 space-y-1 text-xs">
             <div class="flex justify-between">
-              <span class="text-gray-500">{{ t('admin.ops.errorCountExcl429529') }}:</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('admin.ops.errorCountExcl429529') }}:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ formatNumber(overview.upstream_error_count_excl_429_529 ?? 0) }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">429/529:</span>
+              <span class="text-gray-500 dark:text-gray-400">429/529:</span>
               <span class="font-bold text-gray-900 dark:text-white">{{ formatNumber((overview.upstream_429_count ?? 0) + (overview.upstream_529_count ?? 0)) }}</span>
             </div>
           </div>
