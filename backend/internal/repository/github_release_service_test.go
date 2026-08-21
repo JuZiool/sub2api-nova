@@ -39,7 +39,7 @@ func (t *testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	newReq.Header = req.Header
-	return http.DefaultTransport.RoundTrip(newReq)
+	return http.DefaultTransport.RoundTrip(newReq) //nolint:gosec // The test transport redirects only to its local httptest server.
 }
 
 func newTestGitHubReleaseClient() *githubReleaseClient {
