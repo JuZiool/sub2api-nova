@@ -20,6 +20,7 @@
 
 - 每次完成实际的代码改动后，必须使用 Docker 构建并部署当前项目，再将部署结果交由用户查看。
 - 使用项目既有的 Nova Compose 配置执行构建和部署：`cd deploy && docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build`。
+- 不单独执行测试，改用上述 Docker 构建和部署流程进行验证。
 - 构建或部署失败时，必须如实报告失败原因，不得宣称部署成功。
 - 部署完成后，向用户提供访问地址或部署状态，由用户进行页面与功能确认；除非用户另有要求，不代替用户做最终界面验收。
 
