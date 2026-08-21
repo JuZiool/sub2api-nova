@@ -485,8 +485,9 @@ const (
 	SettingKeyChannelMonitorShowQuota = "channel_monitor_show_quota"
 
 	// SettingKeyGrokDefaultTextModel is the fallback Grok text model for empty
-	// request models and built-in Grok aliases (e.g. "grok" → this id). Default grok-4.5.
-	SettingKeyGrokDefaultTextModel = "grok_default_text_model"
+		// request models and built-in Grok aliases (e.g. "grok" → this id). Default grok-4.6.
+		SettingKeyGrokDefaultTextModel = "grok_default_text_model"
+
 
 	// SettingKeyGrokCrossClientModelMapEnabled, when true, includes gpt-*/codex-*/o*/claude-*
 	// wildcards in the default Grok account model_mapping so foreign client model names
