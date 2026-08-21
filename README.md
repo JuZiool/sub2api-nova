@@ -2,6 +2,14 @@
 
 本项目使用 Docker Compose 运行 Sub2API、PostgreSQL 和 Redis 三个容器。生产服务器默认从 GitHub Container Registry 拉取预构建的 Nova 镜像，不需要在服务器编译前后端源码。
 
+GHCR 镜像由 GitHub Actions 自动融合构建：定时拉取官方 `Wei-Shaw/sub2api` 和透支分支 `DeanZFC/sub2api-overdraft`，以锁定的 Nova composite 基线重放改动，依次执行前端类型检查、前端测试、Go 测试后再发布多架构镜像。融合冲突、测试失败或版本校验失败时，工作流会停止且不会推送镜像。
+
+镜像标签包括：
+
+- `latest`：默认分支最近一次验证通过的融合构建
+- `sha-<Nova commit>`：对应 Nova 提交的融合构建
+- `fusion-<官方版本>-nova`：对应官方版本的 Nova 融合版本
+
 ## 部署要求
 
 - Git

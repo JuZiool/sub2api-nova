@@ -1,0 +1,93 @@
+name: Nova PR validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: none
+
+concurrency:
+  group: nova-pr-validation-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  OFFICIAL_URL: https://github.com/Wei-Shaw/sub2api.git
+  OVERDRAFT_URL: https://github.com/DeanZFC/sub2api-overdraft.git
+
+jobs:
+  validate:
+    name: Validate fusion candidate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Nova merge ref
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch official source
+        run: git clone --branch main --no-tags "$OFFICIAL_URL" build/sources/official
+
+      - name: Fetch overdraft source
+        run: git clone --branch codex-overdraft --no-tags "$OVERDRAFT_URL" build/sources/overdraft
+
+      - name: Read fusion base
+        shell: bash
+        run: |
+          nova_base="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          print(json.loads(Path("fusion.json").read_text(encoding="utf-8"))["nova"]["overlay_base_commit"])
+          PY
+          )"
+          test -n "$nova_base"
+          echo "NOVA_BASE=$nova_base" >> "$GITHUB_ENV"
+          git fetch "$OFFICIAL_URL" "$nova_base"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.6"
+          cache: false
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@9 --activate
+          pnpm --version
+
+      - name: Run fusion regression checks
+        run: |
+          python scripts/test_fusion.py
+          python scripts/test_sync_export.py
+
+      - name: Record fusion inputs
+        run: |
+          python scripts/detect_fusion.py \
+            --official-root build/sources/official \
+            --overdraft-root build/sources/overdraft \
+            --output build/fusion-detection.json
+
+      - name: Build and validate fusion candidate
+        run: |
+          python scripts/build_candidate_image.py \
+            --official-root build/sources/official \
+            --overdraft-root build/sources/overdraft \
+            --nova-base "$NOVA_BASE" \
+            --skip-image \
+            --full-tests \
+            --output build/candidate-image

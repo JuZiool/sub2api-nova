@@ -120,7 +120,9 @@ tests
 !deploy/tests/**
 CLAUDE.md
 .claude
-scripts
+scripts/*
+!scripts/README.md
+!scripts/*.py
 !backend/scripts/
 !backend/scripts/resolve-version.sh
 .code-review-state

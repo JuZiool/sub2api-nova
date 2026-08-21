@@ -1,0 +1,254 @@
+name: Nova 上游同步 PR
+
+on:
+  schedule:
+    - cron: "11 */4 * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "fusion.json"
+      - "scripts/**"
+      - ".github/workflows/upstream-sync.yml"
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: nova-upstream-sync
+  cancel-in-progress: false
+
+env:
+  OFFICIAL_URL: https://github.com/Wei-Shaw/sub2api.git
+  OVERDRAFT_URL: https://github.com/DeanZFC/sub2api-overdraft.git
+  SYNC_BRANCH: automation/sync-upstream
+
+jobs:
+  sync:
+    name: 检测上游并创建同步 PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出 Nova 主分支
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 拉取官方源码
+        run: git clone --branch main --no-tags "$OFFICIAL_URL" build/sources/official
+
+      - name: 拉取透支源码
+        run: git clone --branch codex-overdraft --no-tags "$OVERDRAFT_URL" build/sources/overdraft
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 配置 Node.js 和 pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: |
+          corepack enable
+          corepack prepare pnpm@9 --activate
+          pnpm --version
+
+      - name: 配置 Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.6"
+          cache: false
+
+      - name: 运行同步导出回归检查
+        run: |
+          python scripts/test_fusion.py
+          python scripts/test_sync_export.py
+
+      - name: 记录上游输入
+        run: |
+          python scripts/detect_fusion.py \
+            --official-root build/sources/official \
+            --overdraft-root build/sources/overdraft \
+            --output build/fusion-detection.json
+
+      - name: 读取当前融合基线
+        shell: bash
+        run: |
+          nova_base="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          print(json.loads(Path("fusion.json").read_text(encoding="utf-8"))["nova"]["overlay_base_commit"])
+          PY
+          )"
+          test -n "$nova_base"
+          echo "NOVA_BASE=$nova_base" >> "$GITHUB_ENV"
+          git fetch "$OFFICIAL_URL" "$nova_base"
+
+      - name: 生成并验证融合候选
+        run: |
+          python scripts/build_candidate_image.py \
+            --official-root build/sources/official \
+            --overdraft-root build/sources/overdraft \
+            --nova-base "$NOVA_BASE" \
+            --skip-image \
+            --full-tests \
+            --output build/candidate-image
+
+      - name: 准备自动同步分支
+        run: |
+          git fetch origin main
+          git checkout -B "$SYNC_BRANCH" origin/main
+          python scripts/apply_candidate.py \
+            --target . \
+            --candidate build/candidate \
+            --official-commit "$(git -C build/sources/official rev-parse HEAD)" \
+            --output build/sync-export.json
+
+      - name: 创建或更新同步提交
+        id: commit
+        shell: bash
+        run: |
+          if [[ -z "$(git status --porcelain -- . ':!build')" ]]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          official_sha="$(git -C build/sources/official rev-parse HEAD)"
+          git add -A -- . ':!build'
+          git commit -m "同步：融合上游 ${official_sha:0:12}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "official_sha=$official_sha" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --heads origin "$SYNC_BRANCH" >/dev/null 2>&1; then
+            git fetch origin "$SYNC_BRANCH"
+            git push --force-with-lease origin "$SYNC_BRANCH"
+          else
+            git push --set-upstream origin "$SYNC_BRANCH"
+          fi
+
+
+      - name: 生成同步 PR 内容
+        id: pr-body
+        if: steps.commit.outputs.changed == 'true'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          detection = json.loads(Path("build/fusion-detection.json").read_text())
+          metadata = json.loads(Path("build/candidate-image/build-metadata.json").read_text())
+          export = json.loads(Path("build/sync-export.json").read_text())
+          body = f"""## Nova 上游同步\n\n自动融合并验证了新的候选源码。\n\n- 官方 commit：`{metadata['official']['commit']}`\n- overdraft commit：`{metadata['overdraft']['commit']}`\n- Nova commit：`{metadata['nova']['commit']}`\n- 融合版本：`{metadata['nova']['version']}`\n- fingerprint：`{detection['fingerprint']}`\n- 修改文件：{export['changed_count']}\n- 新增文件：{export['added_count']}\n- 删除文件：{export['deleted_count']}\n\n门禁：前端类型检查、前端全量测试、Go service/repository 测试均已通过。合并后由 GHCR 融合发布工作流构建镜像。\n"""
+          Path("build/pr-body.md").write_text(body, encoding="utf-8")
+          PY
+
+      - name: 创建或更新同步 PR
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create upstream-sync --repo "$GITHUB_REPOSITORY" --color 1d76db --description "自动上游同步" --force
+          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$GITHUB_REPOSITORY:$SYNC_BRANCH" --base main --json number --jq '.[0].number // empty')"
+          title="同步：上游融合候选 ${{ steps.commit.outputs.official_sha }}"
+          if [[ -n "$existing" ]]; then
+            gh pr edit "$existing" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file build/pr-body.md
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$SYNC_BRANCH" --title "$title" --body-file build/pr-body.md --label "upstream-sync"
+          fi
+
+      - name: 无差异时关闭旧同步 PR
+        if: steps.commit.outputs.changed != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$GITHUB_REPOSITORY:$SYNC_BRANCH" --base main --json number --jq '.[0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            gh pr close "$existing" --repo "$GITHUB_REPOSITORY" --comment "当前 main 已包含最新融合结果，无需继续同步。"
+          fi
+
+      - name: 上传同步证据
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-upstream-sync-${{ github.run_id }}
+          path: |
+            build/fusion-detection.json
+            build/candidate-image/build-metadata.json
+            build/sync-export.json
+            build/pr-body.md
+          if-no-files-found: ignore
+          retention-days: 14
+
+  report-failure:
+    name: 报告同步失败
+    needs: sync
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      issues: write
+      contents: read
+    steps:
+      - name: 更新同步失败 Issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          mkdir -p build/failure-evidence
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name "nova-upstream-sync-${GITHUB_RUN_ID}" \
+            --dir build/failure-evidence || true
+          gh run view "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --log-failed \
+            > build/failure-log.txt 2>&1 || true
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          evidence = Path("build/failure-evidence")
+          lines = [
+              "自动融合或测试失败，未推送同步分支，也未修改 main。",
+              "",
+              f"工作流：${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+          ]
+          detection = next(evidence.rglob("fusion-detection.json"), None)
+          if detection:
+              try:
+                  value = json.loads(detection.read_text(encoding="utf-8"))
+                  lines.extend(["", f"fingerprint：`{value.get('fingerprint', 'unavailable')}`"])
+              except (OSError, json.JSONDecodeError):
+                  pass
+          metadata = next(evidence.rglob("build-metadata.json"), None)
+          if metadata:
+              try:
+                  value = json.loads(metadata.read_text(encoding="utf-8"))
+                  lines.extend([
+                      f"官方 commit：`{value.get('official', {}).get('commit', 'unavailable')}`",
+                      f"overdraft commit：`{value.get('overdraft', {}).get('commit', 'unavailable')}`",
+                      f"Nova commit：`{value.get('nova', {}).get('commit', 'unavailable')}`",
+                  ])
+              except (OSError, json.JSONDecodeError):
+                  pass
+          log = Path("build/failure-log.txt")
+          if log.is_file():
+              matches = [
+                  line for line in log.read_text(encoding="utf-8", errors="replace").splitlines()
+                  if any(token in line.lower() for token in ("error", "conflict", "failed", "failure"))
+              ]
+              if matches:
+                  lines.extend(["", "失败摘要：", "```text", *matches[-40:], "```"])
+          lines.extend(["", "请查看失败步骤和同步证据 artifact。"])
+          Path("build/failure-issue.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+          title="Nova 上游同步失败"
+          gh label create upstream-sync --repo "$GITHUB_REPOSITORY" --color 1d76db --description "自动上游同步" --force
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$title in:title" --json number --jq '.[0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body-file build/failure-issue.md
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file build/failure-issue.md --label "upstream-sync"
+          fi
