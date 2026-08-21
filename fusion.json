@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "project": "sub2api-nova",
+  "official": {
+    "repository": "Wei-Shaw/sub2api",
+    "url": "https://github.com/Wei-Shaw/sub2api.git",
+    "branch": "main",
+    "local_path": "../../原项目/sub2api",
+    "version_file": "backend/cmd/server/VERSION"
+  },
+  "overdraft": {
+    "repository": "DeanZFC/sub2api-overdraft",
+    "url": "https://github.com/DeanZFC/sub2api-overdraft.git",
+    "branch": "codex-overdraft",
+    "local_path": "../../参考二开项目/sub2api-overdraft",
+    "version_file": "backend/cmd/server/VERSION",
+    "fork_version_file": "FORK_VERSION",
+    "merge_policy": "aligned-or-three-way-replay-fail-closed"
+  },
+  "nova": {
+    "repository": "JuZiool/sub2api-nova",
+    "branch": "main",
+    "version_file": "backend/cmd/server/VERSION",
+    "overlay_base_commit": "2bc139ab527b4a687546d145dc7bb9063cf14510",
+    "overlay_policy": "composite-official-base-three-way-replay-fail-closed",
+    "includes_overdraft": true
+  },
+  "build": {
+    "dockerfile": "Dockerfile",
+    "compose_file": "deploy/docker-compose.local.yml + deploy/docker-compose.ghcr.yml",
+    "image_variable": "SUB2API_IMAGE",
+    "version_variable": "SUB2API_VERSION",
+    "commit_variable": "SUB2API_COMMIT",
+    "test_gate": "frontend-typecheck-frontend-tests-go-tests-docker-health"
+  }
+}

@@ -1,0 +1,203 @@
+name: Nova 融合构建与发布
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/fusion-build.yml"
+      - "Dockerfile"
+      - "FORK_VERSION"
+      - "backend/**"
+      - "frontend/**"
+      - "docs/legal/**"
+      - "fusion.json"
+      - "scripts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: nova-fusion-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  OFFICIAL_URL: https://github.com/Wei-Shaw/sub2api.git
+  OVERDRAFT_URL: https://github.com/DeanZFC/sub2api-overdraft.git
+
+jobs:
+  prepare:
+    name: 融合并验证候选源码
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      official_commit: ${{ steps.meta.outputs.official_commit }}
+      overdraft_commit: ${{ steps.meta.outputs.overdraft_commit }}
+      nova_commit: ${{ steps.meta.outputs.nova_commit }}
+    steps:
+      - name: 检出 Nova 源码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 拉取官方源码
+        run: git clone --branch main --no-tags "$OFFICIAL_URL" build/sources/official
+
+      - name: 拉取透支源码
+        run: git clone --branch codex-overdraft --no-tags "$OVERDRAFT_URL" build/sources/overdraft
+
+      - name: 拉取 Nova 融合基线对象
+        shell: bash
+        run: |
+          nova_base="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          print(json.loads(Path("fusion.json").read_text(encoding="utf-8"))["nova"]["overlay_base_commit"])
+          PY
+          )"
+          test -n "$nova_base"
+          echo "NOVA_BASE=$nova_base" >> "$GITHUB_ENV"
+          git fetch "$OFFICIAL_URL" "$nova_base"
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 配置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: 配置 Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.6"
+          cache: false
+
+      - name: 启用固定版本 pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@9 --activate
+          pnpm --version
+
+      - name: 运行融合脚本回归检查
+        run: |
+          python scripts/test_fusion.py
+          python scripts/test_sync_export.py
+
+      - name: 记录融合输入
+        run: |
+          python scripts/detect_fusion.py \
+            --official-root build/sources/official \
+            --overdraft-root build/sources/overdraft \
+            --output build/fusion-detection.json
+
+      - name: 生成候选源码并执行门禁
+        run: |
+          python scripts/build_candidate_image.py \
+            --official-root build/sources/official \
+            --overdraft-root build/sources/overdraft \
+            --nova-base "$NOVA_BASE" \
+            --skip-image \
+            --full-tests \
+            --output build/candidate-image
+
+      - name: 导出构建元数据
+        id: meta
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          value = json.loads(Path("build/candidate-image/build-metadata.json").read_text())
+          print(f"version={value['nova']['version']}")
+          print(f"official_commit={value['official']['commit']}")
+          print(f"overdraft_commit={value['overdraft']['commit']}")
+          print(f"nova_commit={value['nova']['commit']}")
+          PY
+
+      - name: 打包融合候选
+        run: tar -C build/candidate -czf build/nova-candidate.tar.gz .
+
+      - name: 上传融合候选
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-fused-candidate
+          path: |
+            build/nova-candidate.tar.gz
+            build/candidate-image/build-metadata.json
+            build/fusion-detection.json
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: 构建并发布多架构镜像
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出发布配置
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 下载融合候选
+        uses: actions/download-artifact@v4
+        with:
+          name: nova-fused-candidate
+          path: build-artifact
+
+      - name: 解压融合候选
+        run: |
+          mkdir -p build/candidate
+          tar -xzf build-artifact/nova-candidate.tar.gz -C build/candidate
+
+      - name: 配置 QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: 配置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录 GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 生成镜像标签
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/juziool/sub2api-nova
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=long
+            type=raw,value=fusion-${{ needs.prepare.outputs.version }}
+            type=raw,value=upstream-${{ needs.prepare.outputs.official_commit }}
+          labels: |
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
+            org.opencontainers.image.revision=${{ needs.prepare.outputs.nova_commit }}
+            org.opencontainers.image.title=Sub2API Nova
+            io.juziool.nova.official-commit=${{ needs.prepare.outputs.official_commit }}
+            io.juziool.nova.overdraft-commit=${{ needs.prepare.outputs.overdraft_commit }}
+
+      - name: 构建并推送融合镜像
+        uses: docker/build-push-action@v6
+        with:
+          context: build/candidate
+          file: build/candidate/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ needs.prepare.outputs.version }}
+            COMMIT=${{ needs.prepare.outputs.nova_commit }}
+            BUILD_TYPE=github-fusion
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true
