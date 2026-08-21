@@ -23,17 +23,22 @@ jobs:
     name: Validate fusion candidate
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      CI_ENV: ${{ runner.temp }}/nova-ci.env
-      CI_OVERRIDE: ${{ runner.temp }}/nova-ci.compose.yml
-      CI_DATA_DIR: ${{ runner.temp }}/nova-ci-data
-
     steps:
       - name: Checkout Nova merge ref
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Prepare CI paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "CI_ENV=$RUNNER_TEMP/nova-ci.env"
+            echo "CI_OVERRIDE=$RUNNER_TEMP/nova-ci.compose.yml"
+            echo "CI_DATA_DIR=$RUNNER_TEMP/nova-ci-data"
+          } >> "$GITHUB_ENV"
 
       - name: Check repository formatting
         shell: bash
