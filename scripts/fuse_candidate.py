@@ -469,6 +469,7 @@ def merge_composite_file(
         copy_or_remove(nova_file, destination)
         return "nova"
     if nova_signature == official_signature:
+        copy_or_remove(nova_file, destination)
         return "same"
 
     if base_signature is None:
