@@ -84,6 +84,14 @@ def ensure_regular(path: Path, label: str) -> None:
         raise FusionError(f"expected regular file in {label}: {path}")
 
 
+def content_signature(root: Path, relative: Path) -> str | None:
+    path = root / relative
+    if not path.exists() and not path.is_symlink():
+        return None
+    ensure_regular(path, str(root))
+    return sha256_file(path)
+
+
 def file_signature(root: Path, relative: Path) -> tuple[str, int] | None:
     path = root / relative
     if not path.exists() and not path.is_symlink():
@@ -459,9 +467,9 @@ def merge_composite_file(
     official_file = official / relative
     nova_file = nova / relative
     destination = candidate / relative
-    base_signature = file_signature(base, relative)
-    official_signature = file_signature(official, relative)
-    nova_signature = file_signature(nova, relative)
+    base_signature = content_signature(base, relative)
+    official_signature = content_signature(official, relative)
+    nova_signature = content_signature(nova, relative)
 
     if base_signature is None and official_signature is None and nova_signature is None:
         return "same"
