@@ -253,4 +253,4 @@ jobs:
             -f deploy/docker-compose.nova.yml \
             -f "$CI_OVERRIDE" \
             down --volumes --remove-orphans || true
-          rm -rf "$CI_DATA_DIR" "$CI_ENV" "$CI_OVERRIDE"
+          sudo rm -rf -- "$CI_DATA_DIR" "$CI_ENV" "$CI_OVERRIDE"
