@@ -17,15 +17,16 @@ concurrency:
 
 env:
   COMPOSE_PROJECT_NAME: nova-ci-${{ github.run_id }}
-  CI_ENV: ${{ runner.temp }}/nova-ci.env
-  CI_OVERRIDE: ${{ runner.temp }}/nova-ci.compose.yml
-  CI_DATA_DIR: ${{ runner.temp }}/nova-ci-data
 
 jobs:
   validate:
     name: Validate fusion candidate
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      CI_ENV: ${{ runner.temp }}/nova-ci.env
+      CI_OVERRIDE: ${{ runner.temp }}/nova-ci.compose.yml
+      CI_DATA_DIR: ${{ runner.temp }}/nova-ci-data
 
     steps:
       - name: Checkout Nova merge ref
