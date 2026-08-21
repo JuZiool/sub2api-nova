@@ -50,7 +50,10 @@ with tempfile.TemporaryDirectory() as temporary:
     (candidate / "added.txt").write_text("added\n", encoding="utf-8")
     (candidate / "scripts").mkdir()
     (candidate / "scripts/control.py").write_text("candidate must not apply\n", encoding="utf-8")
-    (candidate / ".nova-fusion-metadata.json").write_text("{}\n", encoding="utf-8")
+    (candidate / ".nova-fusion-metadata.json").write_text(
+        json.dumps({"nova": {"overlay_base_commit": "shared-base"}}) + "\n",
+        encoding="utf-8",
+    )
     (candidate / "frontend/node_modules").mkdir(parents=True)
     (candidate / "frontend/node_modules/generated.js").write_text("generated\n", encoding="utf-8")
     (candidate / "node_modules").mkdir()
@@ -68,12 +71,23 @@ with tempfile.TemporaryDirectory() as temporary:
     assert result["changed"] == ["keep.txt"]
     assert result["added"] == ["added.txt"]
     assert result["deleted"] == ["remove.txt"]
+    assert result["overlay_base_commit"] == "shared-base"
+    assert result["overlay_base_commit"] != "new-official"
     assert not (base / "remove.txt").exists()
     assert (base / "scripts/control.py").read_text(encoding="utf-8") == "target\n"
     assert tracked_dependency.exists()
     assert (base / "frontend/node_modules-extra/boundary.js").read_text(encoding="utf-8") == "boundary\n"
     config = json.loads((base / "fusion.json").read_text(encoding="utf-8"))
-    assert config["nova"]["overlay_base_commit"] == "new-official"
+    assert config["nova"]["overlay_base_commit"] == "shared-base"
+
+    missing_metadata = Path(temporary) / "missing-metadata-candidate"
+    missing_metadata.mkdir()
+    try:
+        module.apply_candidate(base, missing_metadata, "new-official")
+    except module.ExportError as exc:
+        assert "metadata" in str(exc)
+    else:
+        raise AssertionError("candidate without fusion metadata was accepted")
 
     if symlink_supported:
         business_candidate = Path(temporary) / "business-symlink-candidate"
