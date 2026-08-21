@@ -28,6 +28,10 @@ PROTECTED_PATHS = {
 SKIPPED_CANDIDATE_PATHS = {
     Path(".nova-fusion-metadata.json"),
 }
+GENERATED_DEPENDENCY_PREFIXES = (
+    Path("frontend/node_modules"),
+    Path("node_modules"),
+)
 
 
 def safe_relative(value: str) -> Path:
@@ -40,6 +44,13 @@ def safe_relative(value: str) -> Path:
 def is_protected(relative: Path) -> bool:
     return relative in PROTECTED_PATHS or any(
         relative == prefix or prefix in relative.parents for prefix in PROTECTED_PREFIXES
+    )
+
+
+def is_generated_dependency(relative: Path) -> bool:
+    return any(
+        relative == prefix or prefix in relative.parents
+        for prefix in GENERATED_DEPENDENCY_PREFIXES
     )
 
 
@@ -64,6 +75,8 @@ def candidate_files(candidate: Path) -> set[Path]:
     result: set[Path] = set()
     for path in candidate.rglob("*"):
         relative = safe_relative(path.relative_to(candidate).as_posix())
+        if is_generated_dependency(relative):
+            continue
         if path.is_symlink():
             raise ExportError(f"candidate contains symlink: {relative}")
         if path.is_file() and not is_protected(relative) and relative not in SKIPPED_CANDIDATE_PATHS:
@@ -86,7 +99,9 @@ def tracked_files(target: Path) -> set[Path]:
     return {
         safe_relative(value)
         for value in result.stdout.decode().split("\0")
-        if value and not is_protected(safe_relative(value))
+        if value
+        and not is_protected(safe_relative(value))
+        and not is_generated_dependency(safe_relative(value))
     }
 
 
