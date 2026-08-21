@@ -463,6 +463,10 @@ def merge_composite_file(
     official_signature = file_signature(official, relative)
     nova_signature = file_signature(nova, relative)
 
+    if base_signature is None and official_signature is None and nova_signature is None:
+        return "same"
+    if base_signature == official_signature == nova_signature:
+        return "same"
     if nova_signature == base_signature:
         return "official"
     if official_signature == base_signature:
