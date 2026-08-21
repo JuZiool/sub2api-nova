@@ -137,6 +137,34 @@ def untracked_paths(repository: Path) -> list[Path]:
     return [safe_relative(value) for value in raw.split("\0") if value]
 
 
+def validate_composite_base(
+    official: Path,
+    overdraft: Path,
+    official_commit: str,
+    overdraft_commit: str,
+    base_commit: str,
+) -> str:
+    for label, repository, descendant in (
+        ("official", official, official_commit),
+        ("overdraft", overdraft, overdraft_commit),
+    ):
+        result = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", base_commit, descendant],
+            cwd=repository,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if result.returncode != 0:
+            details = result.stderr.decode(errors="replace").strip()
+            raise FusionError(
+                f"Nova composite base is not an ancestor of {label} commit: "
+                f"{base_commit} -> {descendant}"
+                + (f": {details}" if details else "")
+            )
+    return base_commit
+
+
 def clone_official(official: Path, commit: str, destination: Path) -> None:
     run(["git", "clone", "--no-hardlinks", str(official), str(destination)], destination.parent)
     run(["git", "checkout", "--detach", commit], destination)
@@ -483,11 +511,22 @@ def main() -> int:
     overdraft = (args.overdraft_root or (root / overdraft_config["local_path"])).resolve()
     official_commit = run(["git", "rev-parse", "HEAD"], official, capture=True).strip()
     overdraft_commit = run(["git", "rev-parse", "HEAD"], overdraft, capture=True).strip()
-    base_commit = run(
-        ["git", "merge-base", official_commit, overdraft_commit], overdraft, capture=True
-    ).strip()
     nova_base = args.nova_base or config["nova"].get("overlay_base_commit")
-    if config["nova"].get("includes_overdraft", False) and nova_base and base_commit != nova_base:
+    if config["nova"].get("includes_overdraft", False):
+        if not nova_base:
+            raise FusionError("Nova composite base is missing")
+        base_commit = validate_composite_base(
+            official,
+            overdraft,
+            official_commit,
+            overdraft_commit,
+            nova_base,
+        )
+    else:
+        base_commit = run(
+            ["git", "merge-base", official_commit, overdraft_commit], overdraft, capture=True
+        ).strip()
+    if config["nova"].get("includes_overdraft", False) and base_commit != nova_base:
         raise FusionError(
             f"overdraft base does not match Nova composite base: {base_commit} != {nova_base}"
         )
