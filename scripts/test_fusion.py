@@ -38,4 +38,32 @@ with tempfile.TemporaryDirectory() as temporary:
     assert (candidate / "FORK_VERSION").read_text(encoding="utf-8") == "0.1.179-nova\n"
     assert (candidate / "backend/cmd/server/VERSION").read_text(encoding="utf-8") == "0.1.179-nova\n"
 
+with tempfile.TemporaryDirectory() as temporary:
+    root = Path(temporary)
+    base = root / "base"
+    official = root / "official"
+    nova = root / "nova"
+    candidate = root / "candidate"
+    merge_temp = root / "merge-temp"
+    for directory in (base, official, nova, candidate):
+        directory.mkdir()
+    relative = Path(".github/audit-exceptions.yml")
+    (base / relative).parent.mkdir(parents=True)
+    (official / relative).parent.mkdir(parents=True)
+    (candidate / relative).parent.mkdir(parents=True)
+    (base / relative).write_text("same\n", encoding="utf-8")
+    (official / relative).write_text("same\n", encoding="utf-8")
+    (candidate / relative).write_text("same\n", encoding="utf-8")
+    assert module.merge_composite_file(relative, base, official, nova, candidate, merge_temp) == "nova"
+    assert not (candidate / relative).exists()
+
+    (official / relative).write_text("official change\n", encoding="utf-8")
+    (candidate / relative).write_text("official change\n", encoding="utf-8")
+    try:
+        module.merge_composite_file(relative, base, official, nova, candidate, merge_temp)
+    except module.FusionError as exc:
+        assert "delete/modify conflict" in str(exc)
+    else:
+        raise AssertionError("Nova delete must not override an official modification")
+
 print("Nova fusion helper checks passed")
