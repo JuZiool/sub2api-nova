@@ -436,9 +436,10 @@ func (h *UsageHandler) TokenRanking(c *gin.Context) {
 			CacheTokens:  row.CacheTokens,
 			TotalTokens:  row.TotalTokens,
 		}
-		if row.Period == "weekly" {
+		switch row.Period {
+		case "weekly":
 			weekly = append(weekly, item)
-		} else if row.Period == "daily" {
+		case "daily":
 			daily = append(daily, item)
 		}
 	}

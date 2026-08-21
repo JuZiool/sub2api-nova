@@ -596,7 +596,7 @@ func (s *PricingService) useFallbackPricing() error {
 	}
 
 	pricingFile := s.getPricingFilePath()
-	if err := os.WriteFile(pricingFile, data, 0644); err != nil {
+	if err := os.WriteFile(pricingFile, data, 0644); err != nil { //nolint:gosec // The pricing file path is derived from the validated application data directory.
 		logger.LegacyPrintf("service.pricing", "[Pricing] Failed to copy fallback: %v", err)
 	}
 

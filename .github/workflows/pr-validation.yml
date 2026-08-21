@@ -1,0 +1,256 @@
+name: Nova PR validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: none
+
+concurrency:
+  group: nova-pr-validation-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  COMPOSE_PROJECT_NAME: nova-ci-${{ github.run_id }}
+
+jobs:
+  validate:
+    name: Validate fusion candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout Nova merge ref
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare CI paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "CI_ENV=$RUNNER_TEMP/nova-ci.env"
+            echo "CI_OVERRIDE=$RUNNER_TEMP/nova-ci.compose.yml"
+            echo "CI_DATA_DIR=$RUNNER_TEMP/nova-ci-data"
+          } >> "$GITHUB_ENV"
+
+      - name: Check repository formatting
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: |
+          set -euo pipefail
+          base_sha="$PR_BASE_SHA"
+          if [[ -z "$base_sha" ]]; then
+            base_sha="$(git rev-parse HEAD^2 2>/dev/null || git rev-parse HEAD^)"
+          fi
+          git diff --check "$base_sha...HEAD"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Validate tool versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          pnpm --version
+
+      - name: Check changed Go formatting
+        working-directory: backend
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          base_sha="$PR_BASE_SHA"
+          if [[ -z "$base_sha" ]]; then
+            base_sha="$(git rev-parse HEAD^2 2>/dev/null || git rev-parse HEAD^)"
+          fi
+          mapfile -t changed_go < <(git diff --name-only "$base_sha...HEAD" -- '*.go' | sed 's#^backend/##' | grep -E '\.go$' || true)
+          if ((${#changed_go[@]} == 0)); then
+            exit 0
+          fi
+          bad_files="$(printf '%s\n' "${changed_go[@]}" | xargs gofmt -l)"
+          if [[ -n "$bad_files" ]]; then
+            printf '未格式化的本次变更 Go 文件：\n%s\n' "$bad_files"
+            exit 1
+          fi
+
+      - name: Validate Go source
+        working-directory: backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          go test ./...
+
+      - name: Run Go lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.13.1
+          working-directory: backend
+          args: ./...
+
+      - name: Validate frontend
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
+          pnpm lint:check
+          pnpm typecheck
+          pnpm test:run
+          pnpm build
+
+      - name: Prepare isolated Compose environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$CI_DATA_DIR/data" "$CI_DATA_DIR/postgres_data" "$CI_DATA_DIR/redis_data"
+          cat > "$CI_ENV" <<EOF
+          BIND_HOST=127.0.0.1
+          SERVER_PORT=18080
+          POSTGRES_USER=sub2api_ci
+          POSTGRES_PASSWORD=ci-postgres-password-123456
+          POSTGRES_DB=sub2api_ci
+          REDIS_PASSWORD=ci-redis-password-123456
+          REDIS_USERNAME=
+          ADMIN_EMAIL=ci-admin@example.invalid
+          ADMIN_PASSWORD=ci-admin-password-123456
+          JWT_SECRET=0123456789abcdef0123456789abcdef
+          TOTP_ENCRYPTION_KEY=abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
+          GATEWAY_CODEX_QUOTA_OVERDRAFT_ENABLED=true
+          CI_DATA_DIR=$CI_DATA_DIR
+          EOF
+          cat > "$CI_OVERRIDE" <<'EOF'
+          services:
+            sub2api:
+              volumes:
+                - ${CI_DATA_DIR}/data:/app/data
+            postgres:
+              volumes:
+                - ${CI_DATA_DIR}/postgres_data:/var/lib/postgresql/data
+            redis:
+              volumes:
+                - ${CI_DATA_DIR}/redis_data:/data
+          EOF
+
+      - name: Validate Compose configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose \
+            --project-name "$COMPOSE_PROJECT_NAME" \
+            --env-file "$CI_ENV" \
+            -f deploy/docker-compose.local.yml \
+            -f deploy/docker-compose.nova.yml \
+            -f "$CI_OVERRIDE" \
+            config --quiet
+
+      - name: Build Nova Docker image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose \
+            --project-name "$COMPOSE_PROJECT_NAME" \
+            --env-file "$CI_ENV" \
+            -f deploy/docker-compose.local.yml \
+            -f deploy/docker-compose.nova.yml \
+            -f "$CI_OVERRIDE" \
+            build --pull sub2api
+
+      - name: Start isolated Nova stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose \
+            --project-name "$COMPOSE_PROJECT_NAME" \
+            --env-file "$CI_ENV" \
+            -f deploy/docker-compose.local.yml \
+            -f deploy/docker-compose.nova.yml \
+            -f "$CI_OVERRIDE" \
+            up -d --remove-orphans --wait --wait-timeout 180
+
+      - name: Run Nova smoke checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          compose() {
+            docker compose \
+              --project-name "$COMPOSE_PROJECT_NAME" \
+              --env-file "$CI_ENV" \
+              -f deploy/docker-compose.local.yml \
+              -f deploy/docker-compose.nova.yml \
+              -f "$CI_OVERRIDE" \
+              "$@"
+          }
+
+          health_body="$(curl --fail --silent --show-error \
+            --retry 30 --retry-delay 2 --retry-all-errors --max-time 10 \
+            http://127.0.0.1:18080/health)"
+          python -c 'import json, sys; assert json.load(sys.stdin).get("status") == "ok"' <<< "$health_body"
+
+          setup_body="$(curl --fail --silent --show-error \
+            --retry 10 --retry-delay 1 --retry-all-errors --max-time 10 \
+            http://127.0.0.1:18080/setup/status)"
+          python -c 'import json, sys; assert json.load(sys.stdin)["data"]["needs_setup"] is False' <<< "$setup_body"
+
+          for service in postgres redis sub2api; do
+            container_id="$(compose ps -q "$service")"
+            test -n "$container_id"
+            health="$(docker inspect --format '{{.State.Health.Status}}' "$container_id")"
+            test "$health" = healthy
+          done
+
+      - name: Print Compose diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          docker compose \
+            --project-name "$COMPOSE_PROJECT_NAME" \
+            --env-file "$CI_ENV" \
+            -f deploy/docker-compose.local.yml \
+            -f deploy/docker-compose.nova.yml \
+            -f "$CI_OVERRIDE" \
+            ps || true
+          docker compose \
+            --project-name "$COMPOSE_PROJECT_NAME" \
+            --env-file "$CI_ENV" \
+            -f deploy/docker-compose.local.yml \
+            -f deploy/docker-compose.nova.yml \
+            -f "$CI_OVERRIDE" \
+            logs --tail=200 sub2api postgres redis || true
+
+      - name: Tear down isolated Compose stack
+        if: always()
+        shell: bash
+        run: |
+          docker compose \
+            --project-name "$COMPOSE_PROJECT_NAME" \
+            --env-file "$CI_ENV" \
+            -f deploy/docker-compose.local.yml \
+            -f deploy/docker-compose.nova.yml \
+            -f "$CI_OVERRIDE" \
+            down --volumes --remove-orphans || true
+          sudo rm -rf -- "$CI_DATA_DIR" "$CI_ENV" "$CI_OVERRIDE"
