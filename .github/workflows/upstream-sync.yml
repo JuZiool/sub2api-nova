@@ -121,7 +121,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           official_sha="$(git -C build/sources/official rev-parse HEAD)"
-          git add -A -- . ':!build'
+          git add -A -- . ':(exclude)build/**'
           git commit -m "同步：融合上游 ${official_sha:0:12}"
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "official_sha=$official_sha" >> "$GITHUB_OUTPUT"
