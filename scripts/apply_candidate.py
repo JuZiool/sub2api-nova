@@ -105,7 +105,21 @@ def tracked_files(target: Path) -> set[Path]:
     }
 
 
-def update_fusion_config(target: Path, official_commit: str) -> None:
+def candidate_overlay_base_commit(candidate: Path) -> str:
+    metadata_path = candidate / ".nova-fusion-metadata.json"
+    if not metadata_path.is_file() or metadata_path.is_symlink():
+        raise ExportError("candidate fusion metadata is missing")
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        base_commit = metadata["nova"]["overlay_base_commit"]
+    except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise ExportError(f"invalid fusion metadata: {exc}") from exc
+    if not isinstance(base_commit, str) or not base_commit:
+        raise ExportError("candidate fusion metadata has no valid nova.overlay_base_commit")
+    return base_commit
+
+
+def update_fusion_config(target: Path, overlay_base_commit: str) -> None:
     path = target / "fusion.json"
     if not path.is_file() or path.is_symlink():
         raise ExportError("target fusion.json is missing")
@@ -114,13 +128,14 @@ def update_fusion_config(target: Path, official_commit: str) -> None:
     except (OSError, json.JSONDecodeError) as exc:
         raise ExportError(f"cannot read fusion.json: {exc}") from exc
     try:
-        config["nova"]["overlay_base_commit"] = official_commit
+        config["nova"]["overlay_base_commit"] = overlay_base_commit
     except (KeyError, TypeError) as exc:
         raise ExportError("fusion.json has no nova.overlay_base_commit") from exc
     path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def apply_candidate(target: Path, candidate: Path, official_commit: str) -> dict[str, Any]:
+    overlay_base_commit = candidate_overlay_base_commit(candidate)
     candidate_set = candidate_files(candidate)
     target_set = tracked_files(target)
     changed: list[str] = []
@@ -159,9 +174,10 @@ def apply_candidate(target: Path, candidate: Path, official_commit: str) -> dict
         for path in PROTECTED_PATHS
         if (target / path).exists()
     )
-    update_fusion_config(target, official_commit)
+    update_fusion_config(target, overlay_base_commit)
     return {
         "official_commit": official_commit,
+        "overlay_base_commit": overlay_base_commit,
         "changed": changed,
         "added": added,
         "deleted": deleted,
