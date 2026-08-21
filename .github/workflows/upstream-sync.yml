@@ -167,7 +167,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh label create upstream-sync --repo "$GITHUB_REPOSITORY" --color 1d76db --description "自动上游同步" --force
-          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$GITHUB_REPOSITORY:$SYNC_BRANCH" --base main --json number --jq '.[0].number // empty')"
+          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$SYNC_BRANCH" --base main --json number --jq '.[0].number // empty')"
           title="同步：上游融合候选 ${{ steps.commit.outputs.official_sha }}"
           if [[ -n "$existing" ]]; then
             gh pr edit "$existing" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file build/pr-body.md
@@ -180,7 +180,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$GITHUB_REPOSITORY:$SYNC_BRANCH" --base main --json number --jq '.[0].number // empty')"
+          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$SYNC_BRANCH" --base main --json number --jq '.[0].number // empty')"
           if [[ -n "$existing" ]]; then
             gh pr close "$existing" --repo "$GITHUB_REPOSITORY" --comment "当前 main 已包含最新融合结果，无需继续同步。"
           fi
