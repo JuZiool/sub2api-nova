@@ -84,10 +84,18 @@ jobs:
 
       - name: Build and validate fusion candidate
         run: |
-          python scripts/build_candidate_image.py \
-            --official-root build/sources/official \
-            --overdraft-root build/sources/overdraft \
-            --nova-base "$NOVA_BASE" \
-            --skip-image \
-            --full-tests \
-            --output build/candidate-image
+          if [[ "${{ github.event.pull_request.head.ref }}" == "automation/sync-upstream" ]]; then
+            python scripts/build_candidate_image.py \
+              --validate-existing \
+              --skip-image \
+              --full-tests \
+              --output build/candidate-image
+          else
+            python scripts/build_candidate_image.py \
+              --official-root build/sources/official \
+              --overdraft-root build/sources/overdraft \
+              --nova-base "$NOVA_BASE" \
+              --skip-image \
+              --full-tests \
+              --output build/candidate-image
+          fi

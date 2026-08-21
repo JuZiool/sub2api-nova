@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -125,7 +126,15 @@ def main() -> int:
         action="store_true",
         help="run the complete Go service and repository test packages",
     )
+    parser.add_argument(
+        "--validate-existing",
+        action="store_true",
+        help="validate the checked-out tree without running the fusion step",
+    )
     args = parser.parse_args()
+
+    if args.validate_existing and (args.official_root or args.overdraft_root or args.nova_base):
+        raise BuildError("--validate-existing cannot be combined with fusion inputs")
 
     root = args.root.resolve()
     official_root = resolve_input_path(args.official_root, root)
@@ -138,25 +147,47 @@ def main() -> int:
     output.mkdir(parents=True, exist_ok=True)
 
     candidate = root / "build" / "candidate"
-    if candidate.exists():
+    if args.validate_existing:
+        candidate = Path(tempfile.mkdtemp(prefix="sub2api-nova-existing-")) / "candidate"
+    elif candidate.exists():
         shutil.rmtree(candidate)
 
-    fusion_script = root / "scripts" / "fuse_candidate.py"
-    run(
-        [
-            sys.executable,
-            str(fusion_script),
-            "--root",
-            str(root),
-            *optional_arg("--official-root", official_root),
-            *optional_arg("--overdraft-root", overdraft_root),
-            *optional_arg("--nova-base", args.nova_base),
-            "--output",
-            str(candidate),
-        ],
-        root,
-    )
-    metadata = load_json(candidate / ".nova-fusion-metadata.json")
+    if args.validate_existing:
+        shutil.copytree(
+            root,
+            candidate,
+            ignore=shutil.ignore_patterns(".git", "build", "node_modules"),
+        )
+        version_path = candidate / "backend" / "cmd" / "server" / "VERSION"
+        metadata = {
+            "schema": 1,
+            "official": {},
+            "overdraft": {},
+            "nova": {
+                "repository": "JuZiool/sub2api-nova",
+                "commit": run(["git", "rev-parse", "HEAD"], root, capture=True).strip(),
+                "version": version_path.read_text(encoding="utf-8").strip(),
+                "overlay_base_commit": load_json(root / "fusion.json")["nova"]["overlay_base_commit"],
+            },
+            "provenance": {"mode": "checked-out-tree"},
+        }
+    else:
+        fusion_script = root / "scripts" / "fuse_candidate.py"
+        run(
+            [
+                sys.executable,
+                str(fusion_script),
+                "--root",
+                str(root),
+                *optional_arg("--official-root", official_root),
+                *optional_arg("--overdraft-root", overdraft_root),
+                *optional_arg("--nova-base", args.nova_base),
+                "--output",
+                str(candidate),
+            ],
+            root,
+        )
+        metadata = load_json(candidate / ".nova-fusion-metadata.json")
     version = str(metadata["nova"]["version"])
     commit = str(metadata["nova"]["commit"])
 
