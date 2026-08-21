@@ -34,6 +34,8 @@ NOVA_PRIORITY_PATHS = {
     Path("backend/internal/service/openai_codex_quota_overdraft_probe.go"),
     Path("backend/internal/service/update_service.go"),
     Path("backend/internal/service/update_service_test.go"),
+    Path("backend/internal/handler/openai_gateway_handler.go"),
+    Path("backend/internal/handler/openai_gateway_handler_test.go"),
     Path("frontend/index.html"),
     Path("README.md"),
 }
@@ -258,6 +260,9 @@ def apply_nova_commit_patch(
             ":!fusion.json",
             ":!scripts",
             ":!.gitignore",
+            ":!README.md",
+            ":!backend/internal/handler/openai_gateway_handler.go",
+            ":!backend/internal/handler/openai_gateway_handler_test.go",
         ],
         nova,
         capture=True,
@@ -394,6 +399,168 @@ def merge_dockerfile(nova: Path, overdraft: Path, candidate: Path) -> None:
     destination.chmod(stat.S_IMODE(nova.stat().st_mode))
 
 
+def materialize_revision(repository: Path, revision: str, destination: Path) -> None:
+    destination.mkdir(parents=True, exist_ok=True)
+    archive = subprocess.run(
+        ["git", "archive", revision],
+        cwd=repository,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if archive.returncode != 0:
+        details = archive.stderr.decode(errors="replace").strip()
+        raise FusionError(f"cannot materialize {revision}: {details}")
+    import io
+    import tarfile
+
+    with tarfile.open(fileobj=io.BytesIO(archive.stdout), mode="r:") as bundle:
+        bundle.extractall(destination)
+
+
+def git_tracked_paths(repository: Path) -> set[Path]:
+    if not (repository / ".git").exists():
+        return {
+            safe_relative(path.relative_to(repository).as_posix())
+            for path in repository.rglob("*")
+            if path.is_file() and not path.is_symlink()
+        }
+    raw = run(["git", "ls-files", "-z"], repository, capture=True)
+    return {safe_relative(value) for value in raw.split("\0") if value}
+
+
+def composite_paths(base: Path, official: Path, nova: Path) -> set[Path]:
+    paths = git_tracked_paths(base) | git_tracked_paths(official) | git_tracked_paths(nova)
+    paths.update(untracked_paths(nova))
+    return {
+        relative
+        for relative in paths
+        if relative not in CONTROL_PATHS
+        and not (relative.parts and relative.parts[0] == "build")
+    }
+
+
+def copy_or_remove(source: Path, destination: Path) -> None:
+    if source.exists() or source.is_symlink():
+        copy_overlay_file(source, destination)
+    elif destination.exists() or destination.is_symlink():
+        remove_destination(destination)
+
+
+def merge_composite_file(
+    relative: Path,
+    base: Path,
+    official: Path,
+    nova: Path,
+    candidate: Path,
+    temporary: Path,
+) -> str:
+    base_file = base / relative
+    official_file = official / relative
+    nova_file = nova / relative
+    destination = candidate / relative
+    base_signature = file_signature(base, relative)
+    official_signature = file_signature(official, relative)
+    nova_signature = file_signature(nova, relative)
+
+    if nova_signature == base_signature:
+        return "official"
+    if official_signature == base_signature:
+        copy_or_remove(nova_file, destination)
+        return "nova"
+    if nova_signature == official_signature:
+        return "same"
+
+    if base_signature is None:
+        if official_signature is None and nova_signature is not None:
+            copy_or_remove(nova_file, destination)
+            return "nova"
+        if nova_signature is None and official_signature is not None:
+            return "official"
+        raise FusionError(f"Nova composite add/add conflict in {relative.as_posix()}")
+    if official_signature is None or nova_signature is None:
+        raise FusionError(f"Nova composite delete/modify conflict in {relative.as_posix()}")
+
+    base_bytes = base_file.read_bytes()
+    official_bytes = official_file.read_bytes()
+    nova_bytes = nova_file.read_bytes()
+    if b"\x00" in base_bytes + official_bytes + nova_bytes:
+        raise FusionError(f"Nova composite binary conflict in {relative.as_posix()}")
+
+    merge_root = temporary / "merge"
+    merge_root.mkdir(parents=True, exist_ok=True)
+    merge_base = merge_root / "base"
+    merge_official = merge_root / "official"
+    merge_nova = merge_root / "nova"
+    merge_base.write_bytes(base_bytes)
+    merge_official.write_bytes(official_bytes)
+    merge_nova.write_bytes(nova_bytes)
+    result = subprocess.run(
+        ["git", "merge-file", "--diff3", "--marker-size=7", "-p", str(merge_nova), str(merge_base), str(merge_official)],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if result.returncode != 0:
+        details = result.stderr.decode(errors="replace").strip()
+        raise FusionError(
+            f"Nova composite merge conflict in {relative.as_posix()}"
+            + (f": {details}" if details else "")
+        )
+    if destination.exists() and destination.is_symlink():
+        raise FusionError(f"refusing to replace candidate symlink: {relative}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(result.stdout)
+    destination.chmod(stat.S_IMODE(nova_file.stat().st_mode))
+    return "merged"
+
+
+def apply_composite_overlay(
+    nova: Path,
+    base: Path,
+    official: Path,
+    candidate: Path,
+    temporary: Path,
+) -> dict[str, Any]:
+    applied: list[str] = []
+    merged: list[str] = []
+    for relative in sorted(composite_paths(base, official, nova)):
+        if relative in NOVA_PRIORITY_PATHS:
+            copy_overlay_file(nova / relative, candidate / relative)
+            applied.append(relative.as_posix())
+            continue
+        result = merge_composite_file(relative, base, official, nova, candidate, temporary)
+        if result == "nova":
+            applied.append(relative.as_posix())
+        elif result == "merged":
+            applied.append(relative.as_posix())
+            merged.append(relative.as_posix())
+    return {
+        "overlay_files": sorted(applied),
+        "overlay_skipped": [],
+        "overlay_file_count": len(applied),
+        "overlay_merged_files": sorted(merged),
+        "overlay_merge_file_count": len(merged),
+    }
+
+
+def apply_nova_priority_overlay(nova: Path, candidate: Path) -> dict[str, Any]:
+    applied: list[str] = []
+    for relative in sorted(NOVA_PRIORITY_PATHS):
+        source = nova / relative
+        if not source.exists():
+            continue
+        copy_overlay_file(source, candidate / relative)
+        applied.append(relative.as_posix())
+    return {
+        "overlay_files": applied,
+        "overlay_skipped": [],
+        "overlay_file_count": len(applied),
+        "overlay_merged_files": [],
+        "overlay_merge_file_count": 0,
+    }
+
+
 def apply_nova_overlay(
     nova: Path,
     official: Path,
@@ -415,13 +582,8 @@ def apply_nova_overlay(
         current_signature = file_signature(nova, relative)
         official_signature = file_signature(official, relative)
         overdraft_signature = file_signature(overdraft, relative)
-
-        # The selected official/overdraft layer already contains this exact file.
-        if current_signature == official_signature or current_signature == overdraft_signature:
-            skipped.append(relative.as_posix())
-            continue
-
         current = nova / relative
+
         if current_signature is None:
             destination = candidate / relative
             if destination.exists() or destination.is_symlink():
@@ -429,13 +591,20 @@ def apply_nova_overlay(
             applied.append(f"delete:{relative.as_posix()}")
             continue
 
-        # Nova-owned integration points are the final overlay by policy. They
-        # are intentionally listed instead of silently making all conflicts Nova.
         if relative in NOVA_PRIORITY_PATHS:
             copy_overlay_file(current, candidate / relative)
+            applied.append(relative.as_posix())
+            continue
+
+        # The selected official/overdraft layer already contains this exact file.
+        if current_signature == official_signature or current_signature == overdraft_signature:
+            skipped.append(relative.as_posix())
+            continue
+
+        current = nova / relative
         # Dockerfile has independent build and branding requirements that need
         # both source layers, so merge it with an explicit policy.
-        elif relative == Path("Dockerfile"):
+        if relative == Path("Dockerfile"):
             merge_dockerfile(nova / relative, overdraft / relative, candidate)
         # Nova owns the generated version marker. Other files use a real
         # three-way merge whenever both source layers already contain them.
@@ -537,7 +706,15 @@ def main() -> int:
     try:
         if config["nova"].get("includes_overdraft", False):
             clone_official(official, official_commit, candidate)
-            nova_provenance = apply_nova_commit_patch(root, nova_base, candidate)
+            base_tree = work / "base-tree"
+            materialize_revision(official, nova_base, base_tree)
+            nova_commit = run(["git", "rev-parse", "HEAD"], root, capture=True).strip()
+            nova_provenance = {
+                "mode": "composite-three-way",
+                "base_commit": nova_base,
+                "nova_commit": nova_commit,
+            }
+            overlay = apply_composite_overlay(root, base_tree, official, candidate, work)
             provenance = {
                 "mode": "official-plus-nova-composite-replay",
                 "official_commit": official_commit,
@@ -555,7 +732,8 @@ def main() -> int:
                 candidate,
             )
             nova_provenance = apply_nova_commit_patch(root, nova_base, candidate)
-        overlay = apply_nova_overlay(root, official, overdraft, candidate)
+            overlay = apply_nova_priority_overlay(root, candidate)
+
         candidate_version = apply_candidate_version(
             candidate,
             (official / official_config["version_file"]).read_text(encoding="utf-8").strip(),
