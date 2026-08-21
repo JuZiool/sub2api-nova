@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "repository": "JuZiool/sub2api-nova",
+  "protectedPathPolicy": {
+    "criticalPaths": [
+      "backend/internal/service/openai_codex_quota_overdraft.go",
+      "backend/internal/service/openai_codex_quota_overdraft_hooks.go",
+      "backend/internal/service/openai_codex_quota_overdraft_integration.go",
+      "backend/internal/service/openai_codex_quota_overdraft_probe.go",
+      "backend/internal/repository/account_repo_codex_overdraft.go",
+      "backend/internal/service/cn_provider_balance_check_service.go",
+      "backend/internal/service/cn_provider_balance_service.go",
+      "backend/internal/service/cn_provider_quota_service.go",
+      "backend/internal/domain/constants.go",
+      "backend/internal/service/domain_constants.go",
+      "backend/internal/payment",
+      "frontend/src/views/HomeView.vue",
+      "frontend/src/styles",
+      "frontend/src/components",
+      "frontend/src/stores",
+      "frontend/src/router",
+      "deploy",
+      "Dockerfile",
+      "FORK_VERSION",
+      "backend/cmd/server/VERSION"
+    ],
+    "manualReviewPaths": [
+      "backend/internal/service/billing_service.go",
+      "backend/internal/service/account.go",
+      "backend/internal/service/openai_gateway_service.go",
+      "backend/migrations",
+      "frontend/src/api",
+      "frontend/src/features",
+      "frontend/src/composables",
+      "backend/internal/server/routes",
+      "backend/internal/config"
+    ],
+    "stopOnDeletePaths": [
+      "backend/migrations",
+      "deploy",
+      "Dockerfile",
+      "backend/internal/service/openai_codex_quota_overdraft.go",
+      "backend/internal/service/cn_provider_balance_service.go",
+      "backend/internal/payment"
+    ]
+  },
+  "classificationRules": {
+    "criticalChange": "If an upstream candidate changes, deletes, or renames a critical path, block automatic merge and require the nova-manual-review label.",
+    "manualReviewChange": "If an upstream candidate changes a manualReviewPath, allow PR creation but require Nova-specific review before merge.",
+    "deleteChange": "If an upstream candidate deletes a stopOnDeletePath, stop synchronization and do not create an auto-mergeable PR.",
+    "unlistedChange": "Changes outside these paths may use the normal validation and automatic merge policy after all required checks pass."
+  },
+  "validationRequirements": [
+    "Validate fusion candidate",
+    "git diff --check",
+    "Go tests and golangci-lint",
+    "frontend lint, typecheck, tests, and build",
+    "Nova Docker Compose build, startup, and health smoke checks"
+  ],
+  "updatedAt": "2026-08-21T19:32:47Z"
+}
