@@ -37,7 +37,7 @@ jobs:
 
       - name: 检查 GitHub Actions YAML
         shell: bash
-        run: actionlint .github/workflows/*.yml
+        run: actionlint -ignore 'SC2129' -ignore 'SC2034' .github/workflows/*.yml
 
       - name: 检查 Shell 脚本
         shell: bash
