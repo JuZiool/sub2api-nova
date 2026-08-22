@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import fnmatch
+import hashlib
 import json
 import re
 import shutil
@@ -28,6 +29,7 @@ class Config:
     manifest_path: Path
     report_path: Path
     upstream_remote: str
+    upstream_repository: str
     upstream_ref: str
     target_ref: str
     requested_commit: str | None
@@ -88,7 +90,75 @@ def version_at(config: Config, commit: str) -> str:
     return "unknown"
 
 
-def path_matches(path: str, patterns: Iterable[str]) -> bool:
+def sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def patch_bytes(config: Config, old: str, new: str) -> bytes:
+    return subprocess.run(
+        ["git", "diff", "--binary", old, new],
+        cwd=config.root,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ).stdout
+
+
+def verify_upstream_remote(config: Config) -> None:
+    try:
+        remote_url = run_git(config, "remote", "get-url", config.upstream_remote)
+    except SyncError:
+        raise SyncError(f"缺少上游远程：{config.upstream_remote}")
+    normalized = remote_url.removesuffix(".git").rstrip("/").lower()
+    expected = f"https://github.com/{config.upstream_repository}".lower()
+    if normalized != expected:
+        raise SyncError(
+            f"上游远程地址与配置不一致：期望 {expected}，实际 {normalized}"
+        )
+
+
+def verify_upstream_object(config: Config, commit: str) -> None:
+    resolved = resolve_commit(config, commit)
+    if resolved != commit:
+        raise SyncError(f"上游提交不是完整且稳定的 SHA: {commit}")
+
+
+def write_provenance(config: Config, report: dict, patch: bytes) -> str:
+    provenance_path = config.root / ".nova-upstream-provenance.json"
+    manifest_hash = sha256_file(config.manifest_path)
+    provenance = {
+        "schema": 1,
+        "generator": "scripts/sync_upstream.py",
+        "upstreamRepository": config.upstream_repository,
+        "upstreamRemote": config.upstream_remote,
+        "upstreamRef": config.upstream_ref,
+        "oldUpstreamCommit": report["oldUpstreamCommit"],
+        "newUpstreamCommit": report["newUpstreamCommit"],
+        "oldVersion": report["oldVersion"],
+        "newVersion": report["newVersion"],
+        "targetRef": report["targetRef"],
+        "candidateBranch": report.get("candidateBranch"),
+        "baseNovaCommit": resolve_commit(config, config.target_ref),
+        "manifestPath": str(config.manifest_path.relative_to(config.root)).replace("\\", "/"),
+        "manifestSha256": manifest_hash,
+        "patchSha256": sha256_bytes(patch),
+        "applyStatus": report["applyStatus"],
+    }
+    provenance_path.write_text(
+        json.dumps(provenance, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return str(provenance_path.relative_to(config.root)).replace("\\", "/")
+
+
     normalized = path.rstrip("/")
     for pattern in patterns:
         candidate = pattern.rstrip("/")
@@ -233,6 +303,7 @@ def write_report(config: Config, report: dict) -> None:
         f"- Nova 候选版本：`{report.get('novaCandidateVersion', '未生成')}`",
         f"- Nova 目标分支：`{report['targetRef']}`",
         f"- 候选分支：`{report.get('candidateBranch') or '未创建'}`",
+        f"- Provenance：`{report.get('provenancePath', '未生成')}`",
         f"- 应用状态：`{report['applyStatus']}`",
         f"- 自动合并判定：`{report['autoMergeDecision']}`",
         "",
@@ -274,6 +345,7 @@ def parse_args(argv: Sequence[str]) -> Config:
     parser.add_argument("--manifest", type=Path, default=Path("state/nova-customizations.json"))
     parser.add_argument("--report", type=Path, default=Path("artifacts/upstream-sync-report.md"))
     parser.add_argument("--remote", default="upstream")
+    parser.add_argument("--upstream-repository", default="Wei-Shaw/sub2api")
     parser.add_argument("--ref", default="main")
     parser.add_argument("--target", default="main")
     parser.add_argument("--commit", dest="requested_commit")
@@ -289,6 +361,7 @@ def parse_args(argv: Sequence[str]) -> Config:
         manifest_path=(root / args.manifest).resolve(),
         report_path=(root / args.report).resolve(),
         upstream_remote=args.remote,
+        upstream_repository=args.upstream_repository,
         upstream_ref=args.ref,
         target_ref=args.target,
         requested_commit=args.requested_commit,
@@ -306,6 +379,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         manifest = load_json(config.manifest_path)
         ensure_clean(config)
         ensure_paths_exist(config, manifest)
+        verify_upstream_remote(config)
         if not config.requested_commit:
             run_git(config, "fetch", "--prune", config.upstream_remote)
         old = resolve_commit(config, state["lastSuccessfulCommit"])
@@ -321,7 +395,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if config.requested_commit:
             new = resolve_commit(config, config.requested_commit)
-
+        if len(old) != 40 or len(new) != 40:
+            raise SyncError("上游 old/new 提交必须是完整 SHA")
+        verify_upstream_object(config, old)
+        verify_upstream_object(config, new)
         paths = changed_paths(config, old, new)
         policy = manifest["protectedPathPolicy"]
         critical = [path for path in paths if path_matches(path, policy["criticalPaths"])]
@@ -354,10 +431,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             apply_three_way(config, old, new)
             updated_versions = update_nova_versions(config, report["newVersion"])
             report["updatedVersionFiles"] = updated_versions
+            provenance_path = write_provenance(config, report, patch)
+            report["provenancePath"] = provenance_path
             config.report_path.parent.mkdir(parents=True, exist_ok=True)
             write_report(config, report)
             if config.commit:
-                stage_paths = [*paths, *updated_versions]
+                stage_paths = [*paths, *updated_versions, provenance_path]
                 try:
                     stage_paths.append(str(config.report_path.relative_to(config.root)))
                 except ValueError:
