@@ -27,6 +27,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: 初始化发布记录路径
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "PUBLISH_ENV=$RUNNER_TEMP/nova-publish.env"
+            echo "PUBLISH_OVERRIDE=$RUNNER_TEMP/nova-publish.compose.yml"
+            echo "PUBLISH_DATA_DIR=$RUNNER_TEMP/nova-publish-data"
+            echo "PUBLISH_RECORD=$RUNNER_TEMP/nova-publish-record.json"
+          } >> "$GITHUB_ENV"
+
       - name: 配置 QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -51,6 +62,7 @@ jobs:
             type=ref,event=tag
 
       - name: 构建并推送镜像
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -67,3 +79,166 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: mode=max
           sbom: true
+
+      - name: 准备发布冒烟环境
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/nova-publish-data/data" \
+            "$RUNNER_TEMP/nova-publish-data/postgres_data" \
+            "$RUNNER_TEMP/nova-publish-data/redis_data"
+          cat > "$RUNNER_TEMP/nova-publish.env" <<EOF
+          BIND_HOST=127.0.0.1
+          SERVER_PORT=18080
+          POSTGRES_USER=sub2api_publish_ci
+          POSTGRES_PASSWORD=ci-publish-postgres-password-123456
+          POSTGRES_DB=sub2api_publish_ci
+          REDIS_PASSWORD=ci-publish-redis-password-123456
+          REDIS_USERNAME=
+          ADMIN_EMAIL=ci-publish-admin@example.invalid
+          ADMIN_PASSWORD=ci-publish-admin-password-123456
+          JWT_SECRET=0123456789abcdef0123456789abcdef
+          TOTP_ENCRYPTION_KEY=abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
+          GATEWAY_CODEX_QUOTA_OVERDRAFT_ENABLED=true
+          SUB2API_IMAGE=ghcr.io/juziool/sub2api-nova:sha-${GITHUB_SHA}
+          CI_DATA_DIR=$RUNNER_TEMP/nova-publish-data
+          EOF
+          cat > "$RUNNER_TEMP/nova-publish.compose.yml" <<'EOF'
+          services:
+            sub2api:
+              volumes:
+                - ${CI_DATA_DIR}/data:/app/data
+            postgres:
+              volumes:
+                - ${CI_DATA_DIR}/postgres_data:/var/lib/postgresql/data
+            redis:
+              volumes:
+                - ${CI_DATA_DIR}/redis_data:/data
+          EOF
+
+      - name: 校验发布镜像 Compose 配置
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose \
+            --project-name "nova-publish-${GITHUB_RUN_ID}" \
+            --env-file "$PUBLISH_ENV" \
+            -f deploy/docker-compose.local.yml \
+            -f deploy/docker-compose.ghcr.yml \
+            -f "$PUBLISH_OVERRIDE" \
+            config --quiet
+
+      - name: 启动发布镜像冒烟环境
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose \
+            --project-name "nova-publish-${GITHUB_RUN_ID}" \
+            --env-file "$PUBLISH_ENV" \
+            -f deploy/docker-compose.local.yml \
+            -f deploy/docker-compose.ghcr.yml \
+            -f "$PUBLISH_OVERRIDE" \
+            up -d --remove-orphans --wait --wait-timeout 180
+
+      - name: 执行发布镜像冒烟检查
+        shell: bash
+        run: |
+          set -euo pipefail
+          compose() {
+            docker compose \
+              --project-name "nova-publish-${GITHUB_RUN_ID}" \
+              --env-file "$PUBLISH_ENV" \
+              -f deploy/docker-compose.local.yml \
+              -f deploy/docker-compose.ghcr.yml \
+              -f "$PUBLISH_OVERRIDE" \
+              "$@"
+          }
+
+          health_body="$(curl --fail --silent --show-error \
+            --retry 30 --retry-delay 2 --retry-all-errors --max-time 10 \
+            http://127.0.0.1:18080/health)"
+          python3 -c 'import json, sys; assert json.load(sys.stdin).get("status") == "ok"' <<< "$health_body"
+
+          setup_body="$(curl --fail --silent --show-error \
+            --retry 10 --retry-delay 1 --retry-all-errors --max-time 10 \
+            http://127.0.0.1:18080/setup/status)"
+          python3 -c 'import json, sys; assert json.load(sys.stdin)["data"]["needs_setup"] is False' <<< "$setup_body"
+
+          for service in postgres redis sub2api; do
+            container_id="$(compose ps -q "$service")"
+            test -n "$container_id"
+            health="$(docker inspect --format '{{.State.Health.Status}}' "$container_id")"
+            test "$health" = healthy
+          done
+
+      - name: 输出发布冒烟诊断
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose \
+            --project-name "nova-publish-${GITHUB_RUN_ID}" \
+            --env-file "$PUBLISH_ENV" \
+            -f deploy/docker-compose.local.yml \
+            -f deploy/docker-compose.ghcr.yml \
+            -f "$PUBLISH_OVERRIDE" \
+            ps || true
+          docker compose \
+            --project-name "nova-publish-${GITHUB_RUN_ID}" \
+            --env-file "$PUBLISH_ENV" \
+            -f deploy/docker-compose.local.yml \
+            -f deploy/docker-compose.ghcr.yml \
+            -f "$PUBLISH_OVERRIDE" \
+            logs --tail=200 sub2api postgres redis || true
+
+      - name: 记录发布结果
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          IMAGE_REF: ghcr.io/juziool/sub2api-nova:sha-${{ github.sha }}
+          MANIFEST_DIGEST: ${{ steps.build.outputs.digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$PUBLISH_RECORD" <<'PY'
+          import json
+          import os
+          import sys
+          from datetime import datetime, timezone
+
+          path = sys.argv[1]
+          record = {
+              "schema": 1,
+              "status": os.environ["JOB_STATUS"],
+              "commit": os.environ["GITHUB_SHA"],
+              "image": os.environ["IMAGE_REF"],
+              "manifestDigest": os.environ.get("MANIFEST_DIGEST", ""),
+              "workflowRun": os.environ["GITHUB_RUN_ID"],
+              "recordedAt": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+          }
+          with open(path, "w", encoding="utf-8") as handle:
+              json.dump(record, handle, ensure_ascii=False, indent=2)
+              handle.write("\n")
+          PY
+
+      - name: 上传发布结果记录
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-publish-${{ github.run_id }}
+          path: ${{ runner.temp }}/nova-publish-record.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: 清理发布冒烟环境
+        if: always()
+        shell: bash
+        run: |
+          docker compose \
+            --project-name "nova-publish-${GITHUB_RUN_ID}" \
+            --env-file "$PUBLISH_ENV" \
+            -f deploy/docker-compose.local.yml \
+            -f deploy/docker-compose.ghcr.yml \
+            -f "$PUBLISH_OVERRIDE" \
+            down --volumes --remove-orphans || true
+          sudo rm -rf -- "$PUBLISH_DATA_DIR" "$PUBLISH_ENV" "$PUBLISH_OVERRIDE" "$PUBLISH_RECORD"
