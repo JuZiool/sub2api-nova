@@ -98,8 +98,8 @@ jobs:
           fi
 
           current_sha="$(jq -r '.lastSuccessfulCommit // empty' "$SYNC_STATE")"
-          if [[ "$current_sha" == "$upstream_sha" ]]; then
-            echo "成功基线已经记录为 $upstream_sha，幂等跳过。"
+          if [[ "$current_sha" == "$provenance_new" ]]; then
+            echo "成功基线已经记录为 $provenance_new，幂等跳过。"
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
