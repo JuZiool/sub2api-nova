@@ -126,6 +126,7 @@ scripts
 scripts/*
 !scripts/sync_upstream.py
 !scripts/record_upstream_success.py
+!scripts/verify_database_backup_restore.sh
 !backend/scripts/
 !backend/scripts/resolve-version.sh
 .code-review-state
