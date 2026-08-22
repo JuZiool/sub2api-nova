@@ -251,7 +251,15 @@ docker compose --env-file .env -f docker-compose.local.yml -f docker-compose.ghc
 bash deploy/update.sh
 ```
 
-脚本会拉取 `main` 分支，再下载与该 Git 提交完全对应的 GHCR 镜像，并只更新 `sub2api` 应用容器。现有 `.env`、PostgreSQL、Redis 和持久化数据不会被删除。更新成功后，脚本会清理刚被替换的上一版应用镜像。
+脚本会拉取 `main` 分支，再下载与该 Git 提交完全对应的 GHCR 镜像，并只更新 `sub2api` 应用容器。现有 `.env`、PostgreSQL、Redis 和持久化数据不会被删除。更新前会为上一版镜像创建本地回滚标签，成功后将部署提交、镜像和回滚标签写入 `deploy/.deploy-state.json`；更新失败会尝试自动恢复上一版镜像。
+
+如需回滚到最近一次成功更新前的应用镜像：
+
+```bash
+bash deploy/update.sh --rollback
+```
+
+回滚只切换应用容器镜像，不修改 Git 分支，也不会自动回退数据库迁移；涉及不可逆迁移时必须先采用向前兼容方案或恢复数据库备份。
 
 GHCR 暂时不可用时，可以回退到服务器本地源码构建：
 

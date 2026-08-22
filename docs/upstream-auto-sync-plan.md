@@ -366,17 +366,16 @@ main 合并提交
 
 服务器更新继续使用 `deploy/update.sh`：
 
-- 更新前保留旧镜像 ID。
-- 新容器健康检查失败时停止流程。
-- 不删除旧镜像。
+- 更新前保留旧镜像 ID，并创建带上一稳定提交的本地回滚标签。
+- 新容器健康检查失败时自动尝试恢复旧镜像。
+- 更新成功后写入被忽略的 `deploy/.deploy-state.json`，记录状态、提交、镜像、镜像 ID 和回滚标签。
 - 输出容器状态和最近日志。
-- 需要时使用旧提交和旧镜像回滚。
+- `bash deploy/update.sh --rollback` 只切换应用镜像，不修改 Git 或数据库。
 
 回滚方式：
 
 ```bash
-git checkout <上一稳定提交>
-bash deploy/update.sh
+bash deploy/update.sh --rollback
 ```
 
 生产环境不允许直接回滚数据库迁移；涉及不可逆迁移时，必须先提供向前兼容方案和备份恢复方案。
