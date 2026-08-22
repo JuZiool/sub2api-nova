@@ -111,6 +111,7 @@ backend/data/
 backend/config.yaml
 deploy/config.yaml
 deploy/.deploy-state.json
+deploy/.update.lock
 backend/.installed
 
 # ===================
