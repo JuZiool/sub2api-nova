@@ -357,7 +357,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             config.report_path.parent.mkdir(parents=True, exist_ok=True)
             write_report(config, report)
             if config.commit:
-                run_git(config, "add", "--", *paths, *updated_versions, str(config.report_path.relative_to(config.root)))
+                stage_paths = [*paths, *updated_versions]
+                try:
+                    stage_paths.append(str(config.report_path.relative_to(config.root)))
+                except ValueError:
+                    pass
+                run_git(config, "add", "--", *stage_paths)
                 run_git(config, "commit", "-m", f"同步：融合上游 {new[:12]}")
         else:
             write_report(config, report)
