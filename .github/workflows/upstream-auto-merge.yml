@@ -22,6 +22,14 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - name: 检出待合并候选用于证据校验
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
       - name: 校验同步 PR 安全条件
         id: guard
         env:
@@ -92,16 +100,44 @@ jobs:
           provenance_old="$(jq -r '.oldUpstreamCommit // empty' <<< "$provenance_json")"
           [[ "$provenance_new" =~ ^[0-9a-f]{40}$ ]]
           [[ "$provenance_old" =~ ^[0-9a-f]{40}$ ]]
+          test "$(jq -r '.manifestPath // empty' <<< "$provenance_json")" = state/nova-customizations.json
+          printf '%s\n' "$provenance_json" > "$RUNNER_TEMP/nova-provenance.json"
           upstream_new_json="$(gh api "repos/Wei-Shaw/sub2api/commits/$provenance_new")"
           upstream_old_json="$(gh api "repos/Wei-Shaw/sub2api/commits/$provenance_old")"
           test "$(jq -r '.sha // empty' <<< "$upstream_new_json")" = "$provenance_new"
           test "$(jq -r '.sha // empty' <<< "$upstream_old_json")" = "$provenance_old"
 
+          candidate_manifest_sha="$(gh api \
+            "repos/$repository/contents/state/nova-customizations.json?ref=$head_sha" \
+            --jq '.content' | tr -d '\n' | base64 --decode | sha256sum | awk '{print $1}')"
+          trusted_manifest_sha="$(git show "$base_sha:state/nova-customizations.json" | sha256sum | awk '{print $1}')"
+          test "$candidate_manifest_sha" = "$trusted_manifest_sha"
+          test "$(jq -r '.manifestSha256 // empty' <<< "$provenance_json")" = "$trusted_manifest_sha"
+
+          git remote add upstream https://github.com/Wei-Shaw/sub2api.git
+          git fetch --no-tags --quiet upstream main
+          candidate_report="$(python3 scripts/verify_upstream_candidate.py \
+            --root "$GITHUB_WORKSPACE" \
+            --provenance "$RUNNER_TEMP/nova-provenance.json" \
+            --base-sha "$base_sha" \
+            --candidate-branch "$head_ref")"
+          critical_count="$(jq '.criticalPaths | length' <<< "$candidate_report")"
+          manual_count="$(jq '.manualReviewPaths | length' <<< "$candidate_report")"
+          stop_count="$(jq '.stopOnDeletePaths | length' <<< "$candidate_report")"
+          if [[ "$critical_count" -gt 0 || "$manual_count" -gt 0 || "$stop_count" -gt 0 ]]; then
+            echo "候选重新分类为人工复核，禁止自动合并。"
+            echo "$candidate_report"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           checks_json="$(gh api "repos/$repository/commits/$head_sha/check-runs?per_page=100")"
-          required_check_count="$(jq '[.check_runs[] | select(.name == "Validate fusion candidate")] | length' <<< "$checks_json")"
-          test "$required_check_count" -gt 0
-          bad_checks="$(jq '[.check_runs[] | select(.name == "Validate fusion candidate" and (.status != "completed" or .conclusion != "success"))] | length' <<< "$checks_json")"
-          test "$bad_checks" -eq 0
+          for required_check in "Validate fusion candidate" "Static checks and script regressions"; do
+            required_check_count="$(jq --arg name "$required_check" '[.check_runs[] | select(.name == $name)] | length' <<< "$checks_json")"
+            test "$required_check_count" -gt 0
+            bad_checks="$(jq --arg name "$required_check" '[.check_runs[] | select(.name == $name and (.status != "completed" or .conclusion != "success"))] | length' <<< "$checks_json")"
+            test "$bad_checks" -eq 0
+          done
 
           compare_json="$(gh api "repos/$repository/compare/main...$head_sha")"
           test "$(jq -r '.status' <<< "$compare_json")" = ahead

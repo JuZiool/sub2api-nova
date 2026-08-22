@@ -1,8 +1,10 @@
 name: 记录上游成功基线
 
 on:
-  pull_request:
-    types: [closed]
+  workflow_run:
+    workflows:
+      - 发布 GHCR 镜像
+    types: [completed]
   workflow_dispatch:
     inputs:
       pull_request:
@@ -13,6 +15,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 concurrency:
   group: nova-record-upstream-baseline
@@ -26,7 +29,7 @@ env:
 jobs:
   prepare:
     name: 生成成功基线 PR
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.action == 'closed' && github.event.pull_request.merged == true) }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -41,14 +44,27 @@ jobs:
         id: source
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REQUESTED_PR: ${{ inputs.pull_request || github.event.pull_request.number || '' }}
+          REQUESTED_PR: ${{ inputs.pull_request || '' }}
+          PUBLISH_HEAD_SHA: ${{ github.event.workflow_run.head_sha || '' }}
         shell: bash
         run: |
           set -euo pipefail
           repository="$GITHUB_REPOSITORY"
           pr_number="$REQUESTED_PR"
+          if [[ -z "$pr_number" && -n "$PUBLISH_HEAD_SHA" ]]; then
+            merged_sync_prs="$(gh pr list \
+              --repo "$repository" \
+              --base main \
+              --state merged \
+              --label upstream-sync \
+              --limit 100 \
+              --json number,mergeCommit)"
+            pr_number="$(jq -r --arg sha "$PUBLISH_HEAD_SHA" \
+              '[.[] | select(.mergeCommit.oid == $sha)][0].number // empty' \
+              <<< "$merged_sync_prs")"
+          fi
           if [[ -z "$pr_number" ]]; then
-            echo "没有指定同步 PR，跳过成功基线记录。"
+            echo "没有找到已成功发布对应的同步 PR，跳过成功基线记录。"
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -98,8 +114,8 @@ jobs:
           fi
 
           current_sha="$(jq -r '.lastSuccessfulCommit // empty' "$SYNC_STATE")"
-          if [[ "$current_sha" == "$upstream_sha" ]]; then
-            echo "成功基线已经记录为 $upstream_sha，幂等跳过。"
+          if [[ "$current_sha" == "$provenance_new" ]]; then
+            echo "成功基线已经记录为 $provenance_new，幂等跳过。"
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -214,3 +230,33 @@ jobs:
             }
           fi
           gh pr merge "$existing" --repo "$GITHUB_REPOSITORY" --auto --squash
+
+  report-publish-failure:
+    name: 记录 GHCR 发布失败
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 创建或复用发布失败 Issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISH_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          PUBLISH_RUN_URL: ${{ github.event.workflow_run.html_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          title="发布 GHCR 失败 ${PUBLISH_HEAD_SHA:0:12}"
+          existing="$(gh issue list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --limit 100 \
+            --json number,title \
+            | jq -r --arg title "$title" '[.[] | select(.title == $title)][0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            echo "已存在发布失败 Issue #$existing。"
+            exit 0
+          fi
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$title" \
+            --body "GHCR 发布工作流失败。\n\n提交：$PUBLISH_HEAD_SHA\n运行记录：$PUBLISH_RUN_URL\n\n成功基线未推进，请修复发布问题后重新运行发布工作流。"

@@ -159,6 +159,7 @@ def write_provenance(config: Config, report: dict, patch: bytes) -> str:
     return str(provenance_path.relative_to(config.root)).replace("\\", "/")
 
 
+def path_matches(path: str, patterns: Iterable[str]) -> bool:
     normalized = path.rstrip("/")
     for pattern in patterns:
         candidate = pattern.rstrip("/")
@@ -222,14 +223,7 @@ def update_nova_versions(config: Config, version: str) -> list[str]:
     return updated
 
 
-def preflight_three_way(config: Config, old: str, new: str) -> list[str]:
-    patch = subprocess.run(
-        ["git", "diff", "--binary", old, new],
-        cwd=config.root,
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    ).stdout
+def preflight_three_way(config: Config, patch: bytes) -> list[str]:
     temp_root = Path(tempfile.mkdtemp(prefix="nova-sync-preflight-"))
     worktree_added = False
     try:
@@ -270,14 +264,7 @@ def preflight_three_way(config: Config, old: str, new: str) -> list[str]:
         shutil.rmtree(temp_root, ignore_errors=True)
 
 
-def apply_three_way(config: Config, old: str, new: str) -> None:
-    patch = subprocess.run(
-        ["git", "diff", "--binary", old, new],
-        cwd=config.root,
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    ).stdout
+def apply_three_way(config: Config, patch: bytes) -> None:
     result = subprocess.run(
         ["git", "apply", "--3way", "--binary", "-"],
         cwd=config.root,
@@ -372,6 +359,22 @@ def parse_args(argv: Sequence[str]) -> Config:
     )
 
 
+def is_upstream_ancestor(config: Config, old: str, new: str) -> bool:
+    result = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", old, new],
+        cwd=config.root,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        return False
+    detail = result.stderr.decode("utf-8", errors="replace").strip()
+    raise SyncError(f"无法验证上游提交祖先关系：{detail}")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     config = parse_args(argv or sys.argv[1:])
     try:
@@ -399,12 +402,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise SyncError("上游 old/new 提交必须是完整 SHA")
         verify_upstream_object(config, old)
         verify_upstream_object(config, new)
+        if not is_upstream_ancestor(config, old, new):
+            raise SyncError(f"上游新提交不是旧成功基线的后代：{old} -> {new}")
         paths = changed_paths(config, old, new)
         policy = manifest["protectedPathPolicy"]
         critical = [path for path in paths if path_matches(path, policy["criticalPaths"])]
         manual = [path for path in paths if path_matches(path, policy["manualReviewPaths"])]
         stop_deleted = [path for path in deleted_paths(config, old, new) if path_matches(path, policy["stopOnDeletePaths"])]
-        conflicts = preflight_three_way(config, old, new)
+        patch = patch_bytes(config, old, new)
+        conflicts = preflight_three_way(config, patch)
         blocked = bool(conflicts or stop_deleted)
         report = {
             "generatedAt": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
@@ -428,7 +434,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 branch = config.branch or f"sync/upstream-{new[:12]}-{dt.date.today().isoformat()}"
                 run_git(config, "switch", "-c", branch)
                 report["candidateBranch"] = branch
-            apply_three_way(config, old, new)
+            apply_three_way(config, patch)
             updated_versions = update_nova_versions(config, report["newVersion"])
             report["updatedVersionFiles"] = updated_versions
             provenance_path = write_provenance(config, report, patch)

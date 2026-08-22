@@ -2,12 +2,6 @@ name: 静态检查与脚本回归
 
 on:
   pull_request:
-    paths:
-      - .github/workflows/**
-      - deploy/**
-      - scripts/**
-      - backend/Makefile
-      - backend/scripts/**
   workflow_dispatch:
 
 permissions:
@@ -56,6 +50,14 @@ jobs:
       - name: 检查脚本语法
         shell: bash
         run: bash deploy/tests/scripts-syntax-test.sh
+
+      - name: 运行 Python 脚本回归
+        shell: bash
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+
+      - name: 检查 Python 脚本编译
+        shell: bash
+        run: python3 -m compileall -q scripts
 
       - name: 检查 Compose 配置
         shell: bash
