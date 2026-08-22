@@ -28,12 +28,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_ID: ${{ github.event.workflow_run.id }}
           RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-          EVENT_FILE: ${{ github.event_path }}
         shell: bash
         run: |
           set -euo pipefail
           repository="$GITHUB_REPOSITORY"
-          pr_number="$(python3 -c 'import json, os; event=json.load(open(os.environ["EVENT_FILE"], encoding="utf-8")); prs=event.get("workflow_run", {}).get("pull_requests", []); print(prs[0].get("number", "") if prs else "")')"
+          pr_number="$(gh api "repos/$repository/actions/runs/$RUN_ID/pull_requests" --jq '.[0].number // empty')"
           if [[ -z "$pr_number" ]]; then
             echo "本次验证运行没有关联 Pull Request，跳过自动合并。"
             echo "eligible=false" >> "$GITHUB_OUTPUT"
