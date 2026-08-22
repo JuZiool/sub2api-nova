@@ -65,9 +65,9 @@ assert state["image"] == "sub2api-nova:rollback-previous", state
 assert state["rollbackTag"] == "sub2api-nova:rollback-current-comm", state
 PY
 
-git -C "$REPO_DIR" status --porcelain | grep -q . && {
+if git -C "$REPO_DIR" status --porcelain | grep -q .; then
   printf 'rollback changed the fixture repository\n' >&2
   exit 1
-} || true
+fi
 
 printf 'update rollback behavior checks passed\n'
