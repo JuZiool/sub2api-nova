@@ -169,13 +169,17 @@ jobs:
           set -euo pipefail
           existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head "${GITHUB_REPOSITORY_OWNER}:$BASELINE_BRANCH" --state open --json number --jq '.[0].number // empty')"
           if [[ -z "$existing" ]]; then
-            existing="$(gh pr create \
+            created_url="$(gh pr create \
               --repo "$GITHUB_REPOSITORY" \
               --base main \
               --head "$BASELINE_BRANCH" \
               --title "配置：记录上游成功基线 ${UPSTREAM_SHA:0:12}" \
               --body "此 PR 由已通过 Nova 验证并合并的上游同步 PR 自动生成，只更新 state/upstreams.json。" \
-              --label upstream-baseline \
-              --json number --jq '.number')"
+              --label upstream-baseline)"
+            existing="${created_url##*/}"
+            [[ "$existing" =~ ^[0-9]+$ ]] || {
+              echo "无法从 gh pr create 输出解析 PR 编号：$created_url" >&2
+              exit 1
+            }
           fi
           gh pr merge "$existing" --repo "$GITHUB_REPOSITORY" --auto --squash
