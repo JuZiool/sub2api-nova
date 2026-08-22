@@ -6,7 +6,9 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +52,26 @@ def nova_version(version: str) -> str:
     return f"{base}-nova"
 
 
+def atomic_write_json(path: Path, value: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mode = path.stat().st_mode & 0o777 if path.exists() else 0o644
+    fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(value, handle, ensure_ascii=False, indent=2)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(temporary, mode)
+        os.replace(temporary, path)
+    except OSError as exc:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise BaselineError(f"无法原子写入状态文件 {path}: {exc}") from exc
+
 def update_state(
     state_path: Path,
     report: dict[str, Any],
@@ -57,13 +79,23 @@ def update_state(
     merged_at: str,
 ) -> None:
     state = load_object(state_path)
+    if report.get("applyStatus") != "ready":
+        raise BaselineError("同步报告不是 ready 状态，拒绝记录成功基线")
+    if report.get("conflicts"):
+        raise BaselineError("同步报告包含冲突文件，拒绝记录成功基线")
+    if report.get("stopOnDeletePaths"):
+        raise BaselineError("同步报告包含删除即停路径，拒绝记录成功基线")
     old = required_string(state.get("lastSuccessfulCommit"), "lastSuccessfulCommit")
     report_old = required_string(report["oldUpstreamCommit"], "oldUpstreamCommit")
-    if report_old != "provided-by-workflow" and report_old != old:
+    if not re.fullmatch(r"[0-9a-f]{40}", report_old):
+        raise BaselineError("同步报告旧基线必须是完整 SHA")
+    if report_old != old:
         raise BaselineError(
             f"同步报告旧基线 {report_old} 与当前成功基线 {old} 不一致，拒绝记录"
         )
     upstream_commit = required_string(report["newUpstreamCommit"], "newUpstreamCommit")
+    if not re.fullmatch(r"[0-9a-f]{40}", upstream_commit):
+        raise BaselineError("同步报告新提交必须是完整 SHA")
     if old == upstream_commit:
         raise BaselineError(f"成功基线已经是 {upstream_commit}，拒绝重复更新")
 
@@ -89,24 +121,23 @@ def update_state(
             "syncReason": "lastSuccessfulCommit 已由通过验证并合并的同步候选更新。",
         }
     )
-    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    atomic_write_json(state_path, state)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--state", type=Path, default=Path("state/upstreams.json"))
     parser.add_argument("--report", type=Path)
+    parser.add_argument("--old-upstream-commit")
     parser.add_argument("--upstream-commit")
     parser.add_argument("--upstream-version")
     parser.add_argument("--nova-commit", required=True)
     parser.add_argument("--merged-at", default="")
     args = parser.parse_args()
-    if args.report and (args.upstream_commit or args.upstream_version):
-        parser.error("--report 不能与 --upstream-commit 或 --upstream-version 同时使用")
-    if bool(args.upstream_commit) != bool(args.upstream_version):
-        parser.error("--upstream-commit 和 --upstream-version 必须同时提供")
-    if not args.report and not args.upstream_commit:
-        parser.error("必须提供 --report，或同时提供 --upstream-commit 和 --upstream-version")
+    if args.report and (args.upstream_commit or args.upstream_version or args.old_upstream_commit):
+        parser.error("--report 不能与手动提交参数同时使用")
+    if args.report is None and not all((args.old_upstream_commit, args.upstream_commit, args.upstream_version)):
+        parser.error("手动模式必须同时提供 --old-upstream-commit、--upstream-commit 和 --upstream-version")
     return args
 
 
@@ -114,7 +145,7 @@ def report_from_args(args: argparse.Namespace) -> dict[str, Any]:
     if args.report:
         return load_report(args.report.resolve())
     return {
-        "oldUpstreamCommit": "provided-by-workflow",
+        "oldUpstreamCommit": required_string(args.old_upstream_commit, "old_upstream_commit"),
         "newUpstreamCommit": required_string(args.upstream_commit, "upstream_commit"),
         "newVersion": required_string(args.upstream_version, "upstream_version"),
         "applyStatus": "ready",

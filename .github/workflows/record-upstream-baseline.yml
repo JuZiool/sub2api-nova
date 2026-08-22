@@ -61,6 +61,7 @@ jobs:
           merged="$(jq -r '.merged' <<< "$pr_json")"
           merge_commit="$(jq -r '.merge_commit_sha // empty' <<< "$pr_json")"
           merged_at="$(jq -r '.merged_at // empty' <<< "$pr_json")"
+          base_sha="$(jq -r '.base.sha // empty' <<< "$pr_json")"
           labels="$(jq -r '[.labels[].name] | .[]' <<< "$pr_json")"
           if [[ "$base_ref" != main || "$head_repo" != "$repository" || "$head_ref" != sync/upstream-* || "$merged" != true ]]; then
             echo "不是已合并的本仓库上游同步 PR，跳过。"
@@ -72,26 +73,27 @@ jobs:
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if [[ -z "$merge_commit" || -z "$head_sha" ]]; then
-            echo "已合并 PR 缺少源提交或合并提交，停止。" >&2
+          if [[ -z "$merge_commit" || -z "$head_sha" || -z "$base_sha" ]]; then
+            echo "已合并 PR 缺少源提交、基线提交或合并提交，停止。" >&2
             exit 1
           fi
-          if [[ "$head_ref" =~ ^sync/upstream-([0-9a-f]{7,40})-[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-            upstream_hint="${BASH_REMATCH[1]}"
-          else
-            echo "同步 PR 分支名没有包含可验证的上游提交：$head_ref" >&2
-            exit 1
-          fi
-
-          upstream_json="$(gh api "repos/${UPSTREAM_REPOSITORY}/commits/$upstream_hint")"
-          upstream_sha="$(jq -r '.sha // empty' <<< "$upstream_json")"
-          if [[ -z "$upstream_sha" ]]; then
-            echo "无法从上游仓库解析完整提交：$upstream_hint" >&2
-            exit 1
-          fi
-          upstream_version="$(gh api "repos/${UPSTREAM_REPOSITORY}/contents/backend/cmd/server/VERSION?ref=$upstream_sha" --jq '.content' | tr -d '\n' | base64 --decode | tr -d '\r\n')"
+          provenance_json="$(gh api \
+            "repos/$repository/contents/.nova-upstream-provenance.json?ref=$head_sha" \
+            --jq '.content' | tr -d '\n' | base64 --decode)"
+          test "$(jq -r '.schema // empty' <<< "$provenance_json")" = 1
+          test "$(jq -r '.generator // empty' <<< "$provenance_json")" = scripts/sync_upstream.py
+          test "$(jq -r '.upstreamRepository // empty' <<< "$provenance_json")" = "$UPSTREAM_REPOSITORY"
+          test "$(jq -r '.targetRef // empty' <<< "$provenance_json")" = main
+          test "$(jq -r '.baseNovaCommit // empty' <<< "$provenance_json")" = "$base_sha"
+          provenance_old="$(jq -r '.oldUpstreamCommit // empty' <<< "$provenance_json")"
+          provenance_new="$(jq -r '.newUpstreamCommit // empty' <<< "$provenance_json")"
+          [[ "$provenance_old" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$provenance_new" =~ ^[0-9a-f]{40}$ ]]
+          upstream_json="$(gh api "repos/${UPSTREAM_REPOSITORY}/commits/$provenance_new")"
+          test "$(jq -r '.sha // empty' <<< "$upstream_json")" = "$provenance_new"
+          upstream_version="$(gh api "repos/${UPSTREAM_REPOSITORY}/contents/backend/cmd/server/VERSION?ref=$provenance_new" --jq '.content' | tr -d '\n' | base64 --decode | tr -d '\r\n')"
           if [[ -z "$upstream_version" ]]; then
-            echo "无法读取上游提交的服务版本：$upstream_sha" >&2
+            echo "无法读取上游提交的服务版本：$provenance_new" >&2
             exit 1
           fi
 
@@ -107,12 +109,22 @@ jobs:
           echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
           echo "merge_commit=$merge_commit" >> "$GITHUB_OUTPUT"
           echo "merged_at=$merged_at" >> "$GITHUB_OUTPUT"
-          echo "upstream_sha=$upstream_sha" >> "$GITHUB_OUTPUT"
+          echo "upstream_sha=$provenance_new" >> "$GITHUB_OUTPUT"
+          echo "upstream_old_sha=$provenance_old" >> "$GITHUB_OUTPUT"
           echo "upstream_version=$upstream_version" >> "$GITHUB_OUTPUT"
 
-      - name: 生成成功基线状态
+      - name: 同步最新主线
+        if: steps.source.outputs.eligible == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --prune origin main
+          git switch main
+          git reset --hard origin/main
+
         if: steps.source.outputs.eligible == 'true'
         env:
+          UPSTREAM_OLD_SHA: ${{ steps.source.outputs.upstream_old_sha }}
           UPSTREAM_SHA: ${{ steps.source.outputs.upstream_sha }}
           UPSTREAM_VERSION: ${{ steps.source.outputs.upstream_version }}
           MERGE_COMMIT: ${{ steps.source.outputs.merge_commit }}
@@ -122,6 +134,7 @@ jobs:
           set -euo pipefail
           python3 scripts/record_upstream_success.py \
             --state "$SYNC_STATE" \
+            --old-upstream-commit "$UPSTREAM_OLD_SHA" \
             --upstream-commit "$UPSTREAM_SHA" \
             --upstream-version "$UPSTREAM_VERSION" \
             --nova-commit "$MERGE_COMMIT" \
@@ -143,6 +156,22 @@ jobs:
         run: |
           set -euo pipefail
           branch="automation/record-upstream-${UPSTREAM_SHA:0:12}"
+          open_baseline_json="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --state open \
+            --label upstream-baseline \
+            --json number,headRefName,title,body)"
+          existing="$(jq -r --arg sha "$UPSTREAM_SHA" \
+            '[.[] | select((.title + " " + .body) | contains($sha))][0].number // empty' \
+            <<< "$open_baseline_json")"
+          if [[ -n "$existing" ]]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "existing_pr=$existing" >> "$GITHUB_OUTPUT"
+            echo "branch=existing" >> "$GITHUB_OUTPUT"
+            echo "已存在同一上游 SHA 的开放基线 PR #$existing，跳过重复创建。"
+            exit 0
+          fi
           if git ls-remote --exit-code origin "refs/heads/$branch" >/dev/null 2>&1; then
             branch="${branch}-${GITHUB_RUN_ID}"
           fi
@@ -166,18 +195,22 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASELINE_BRANCH: ${{ steps.branch.outputs.branch }}
+          EXISTING_PR: ${{ steps.branch.outputs.existing_pr || '' }}
           UPSTREAM_SHA: ${{ steps.source.outputs.upstream_sha }}
         shell: bash
         run: |
           set -euo pipefail
-          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head "${GITHUB_REPOSITORY_OWNER}:$BASELINE_BRANCH" --state open --json number --jq '.[0].number // empty')"
+          existing="${EXISTING_PR:-}"
+          if [[ -z "$existing" ]]; then
+            existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head "${GITHUB_REPOSITORY_OWNER}:$BASELINE_BRANCH" --state open --json number --jq '.[0].number // empty')"
+          fi
           if [[ -z "$existing" ]]; then
             created_url="$(gh pr create \
               --repo "$GITHUB_REPOSITORY" \
               --base main \
               --head "$BASELINE_BRANCH" \
               --title "配置：记录上游成功基线 ${UPSTREAM_SHA:0:12}" \
-              --body "此 PR 由已通过 Nova 验证并合并的上游同步 PR 自动生成，只更新 state/upstreams.json。" \
+              --body "此 PR 由已通过 Nova 验证并合并的上游同步 PR 自动生成，只更新 state/upstreams.json。\n\n上游完整提交：${UPSTREAM_SHA}" \
               --label upstream-baseline)"
             existing="${created_url##*/}"
             [[ "$existing" =~ ^[0-9]+$ ]] || {
