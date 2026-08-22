@@ -1,0 +1,232 @@
+name: 上游自动同步候选
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      upstream_commit:
+        description: "可选：指定上游提交 SHA，留空则使用 upstream/main"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: nova-upstream-sync
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_REPOSITORY: Wei-Shaw/sub2api
+  UPSTREAM_BRANCH: main
+  SYNC_STATE: state/upstreams.json
+  CUSTOMIZATION_MANIFEST: state/nova-customizations.json
+
+jobs:
+  create-candidate:
+    name: 创建上游同步候选
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 检出 Nova 主分支
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: 配置 Git 远程
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git remote get-url upstream >/dev/null 2>&1; then
+            git remote set-url upstream "https://github.com/${UPSTREAM_REPOSITORY}.git"
+          else
+            git remote add upstream "https://github.com/${UPSTREAM_REPOSITORY}.git"
+          fi
+          git fetch --prune origin main
+          git fetch --prune upstream "${UPSTREAM_BRANCH}"
+          git switch main
+          git reset --hard origin/main
+
+      - name: 检查是否已有同一候选 PR
+        id: existing
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REQUESTED_COMMIT: ${{ inputs.upstream_commit || '' }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$REQUESTED_COMMIT" ]]; then
+            upstream_sha="$(git rev-parse --verify "${REQUESTED_COMMIT}^{commit}")"
+          else
+            upstream_sha="$(git rev-parse --verify "upstream/${UPSTREAM_BRANCH}^{commit}")"
+          fi
+          branch_base="sync/upstream-${upstream_sha:0:12}-$(date -u +%F)"
+          existing_pr="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head "${GITHUB_REPOSITORY_OWNER}:${branch_base}" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')"
+          if [[ -n "$existing_pr" ]]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "branch=$branch_base" >> "$GITHUB_OUTPUT"
+            echo "pr=$existing_pr" >> "$GITHUB_OUTPUT"
+            echo "已存在同步 PR #$existing_pr，跳过重复候选。"
+            exit 0
+          fi
+          branch="$branch_base"
+          if git ls-remote --exit-code origin "refs/heads/$branch" >/dev/null 2>&1; then
+            branch="${branch}-${GITHUB_RUN_ID}"
+          fi
+          echo "found=false" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "upstream_sha=$upstream_sha" >> "$GITHUB_OUTPUT"
+
+      - name: 运行同步候选脚本
+        if: steps.existing.outputs.found != 'true'
+        id: sync
+        shell: bash
+        env:
+          REQUESTED_COMMIT: ${{ inputs.upstream_commit || '' }}
+          CANDIDATE_BRANCH: ${{ steps.existing.outputs.branch }}
+        run: |
+          set -euo pipefail
+          report="$RUNNER_TEMP/nova-upstream-sync-report.md"
+          result="$RUNNER_TEMP/nova-upstream-sync-result.json"
+          args=(
+            --state "$SYNC_STATE"
+            --manifest "$CUSTOMIZATION_MANIFEST"
+            --report "$report"
+            --branch "$CANDIDATE_BRANCH"
+          )
+          if [[ -n "$REQUESTED_COMMIT" ]]; then
+            args+=(--commit "$REQUESTED_COMMIT")
+          fi
+          set +e
+          python3 scripts/sync_upstream.py "${args[@]}" > "$result"
+          rc=$?
+          set -e
+          if [[ "$rc" -eq 0 ]] && grep -q '^没有上游更新：' "$result"; then
+            echo "updated=false" >> "$GITHUB_OUTPUT"
+            echo "没有新的上游提交。"
+            exit 0
+          fi
+          if [[ "$rc" -ne 0 ]]; then
+            echo "updated=false" >> "$GITHUB_OUTPUT"
+            echo "同步候选被阻止，退出码：$rc"
+            if [[ -f "$report" ]]; then
+              cat "$report"
+            fi
+            exit "$rc"
+          fi
+          echo "updated=true" >> "$GITHUB_OUTPUT"
+          echo "report=$report" >> "$GITHUB_OUTPUT"
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+          cat "$result"
+
+      - name: 上传同步报告
+        if: always() && steps.existing.outputs.found != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-upstream-sync-${{ github.run_id }}
+          path: ${{ runner.temp }}/nova-upstream-sync-report.md
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: 配置同步分支提交
+        if: steps.sync.outputs.updated == 'true'
+        shell: bash
+        env:
+          CANDIDATE_BRANCH: ${{ steps.existing.outputs.branch }}
+        run: |
+          set -euo pipefail
+          git diff --check
+          git status --short
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "同步脚本没有生成文件变更。" >&2
+            exit 1
+          fi
+          git add -A
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "同步：生成上游候选 ${CANDIDATE_BRANCH#sync/upstream-}"
+          git push origin "HEAD:refs/heads/$CANDIDATE_BRANCH"
+
+      - name: 生成同步 PR 内容
+        if: steps.sync.outputs.updated == 'true'
+        shell: bash
+        env:
+          RESULT_FILE: ${{ steps.sync.outputs.result }}
+          REPORT_FILE: ${{ steps.sync.outputs.report }}
+          CANDIDATE_BRANCH: ${{ steps.existing.outputs.branch }}
+        run: |
+          set -euo pipefail
+          critical="$(python3 -c 'import json, os; print("\n".join(json.load(open(os.environ["RESULT_FILE"], encoding="utf-8")).get("criticalPaths", [])))')"
+          manual="$(python3 -c 'import json, os; print("\n".join(json.load(open(os.environ["RESULT_FILE"], encoding="utf-8")).get("manualReviewPaths", [])))')"
+          {
+            echo "本 PR 由上游同步工作流生成，目标分支为 main。"
+            echo
+            echo "同步脚本只生成候选，不更新 lastSuccessfulCommit；成功基线须在本 PR 验证并合并后单独更新。"
+            echo
+            echo "候选分支：$CANDIDATE_BRANCH"
+            if [[ -n "$critical" ]]; then
+              echo
+              echo "本次变更命中 Nova Critical 路径，必须人工复核："
+              printf '%s\n' "$critical" | sed 's/^/- `/' | sed 's/$/`/'
+            fi
+            if [[ -n "$manual" ]]; then
+              echo
+              echo "本次变更命中 Nova 人工复核路径："
+              printf '%s\n' "$manual" | sed 's/^/- `/' | sed 's/$/`/'
+            fi
+            echo
+            cat "$REPORT_FILE"
+          } > "$RUNNER_TEMP/nova-upstream-pr-body.md"
+
+      - name: 确保同步标签存在
+        if: steps.sync.outputs.updated == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh label create upstream-sync --repo "$GITHUB_REPOSITORY" --color 1d76db --description "由上游同步工作流生成" || true
+          gh label create nova-critical-change --repo "$GITHUB_REPOSITORY" --color b60205 --description "涉及 Nova 关键定制路径" || true
+          gh label create nova-manual-review --repo "$GITHUB_REPOSITORY" --color fbca04 --description "需要 Nova 人工复核" || true
+
+      - name: 创建或更新同步 PR
+        if: steps.sync.outputs.updated == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CANDIDATE_BRANCH: ${{ steps.existing.outputs.branch }}
+          RESULT_FILE: ${{ steps.sync.outputs.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          critical_count="$(python3 -c 'import json, os; print(len(json.load(open(os.environ["RESULT_FILE"], encoding="utf-8")).get("criticalPaths", [])))')"
+          manual_count="$(python3 -c 'import json, os; print(len(json.load(open(os.environ["RESULT_FILE"], encoding="utf-8")).get("manualReviewPaths", [])))')"
+          labels=(upstream-sync)
+          if [[ "$critical_count" -gt 0 ]]; then
+            labels+=(nova-critical-change nova-manual-review)
+          elif [[ "$manual_count" -gt 0 ]]; then
+            labels+=(nova-manual-review)
+          fi
+          label_args=()
+          for label in "${labels[@]}"; do
+            label_args+=(--label "$label")
+          done
+          gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head "$CANDIDATE_BRANCH" \
+            --title "同步：上游候选 ${CANDIDATE_BRANCH#sync/upstream-}" \
+            --body-file "$RUNNER_TEMP/nova-upstream-pr-body.md" \
+            "${label_args[@]}"
