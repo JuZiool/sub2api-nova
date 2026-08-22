@@ -8,6 +8,7 @@ REPO_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 BRANCH="${SUB2API_BRANCH:-main}"
 HEALTH_TIMEOUT="${SUB2API_HEALTH_TIMEOUT:-180}"
 DEPLOY_STATE_FILE="${SUB2API_DEPLOY_STATE_FILE:-$SCRIPT_DIR/.deploy-state.json}"
+UPDATE_LOCK_FILE="${SUB2API_UPDATE_LOCK_FILE:-$SCRIPT_DIR/.update.lock}"
 PRUNE_CACHE=false
 LOCAL_BUILD=false
 ROLLBACK=false
@@ -50,6 +51,7 @@ Sub2API Nova 服务器更新脚本
   SUB2API_HEALTH_TIMEOUT  健康检查超时秒数，默认 180
   SUB2API_IMAGE           自定义预构建镜像；默认使用当前提交对应的 GHCR 镜像
   SUB2API_DEPLOY_STATE_FILE  部署状态文件，默认 deploy/.deploy-state.json
+  SUB2API_UPDATE_LOCK_FILE   更新锁文件，默认 deploy/.update.lock
 EOF
 }
 
@@ -104,11 +106,18 @@ ensure_requirements() {
   command -v git >/dev/null 2>&1 || die "未安装 Git。"
   command -v docker >/dev/null 2>&1 || die "未安装 Docker。"
   command -v python3 >/dev/null 2>&1 || die "未安装 Python 3，无法写入部署状态。"
+  command -v flock >/dev/null 2>&1 || die "未安装 flock，无法防止并发更新。"
   docker compose version >/dev/null 2>&1 || die "未安装 Docker Compose v2。"
   docker info >/dev/null 2>&1 || die "Docker 服务未运行，或当前用户无权访问 Docker。"
   if [[ "$ROLLBACK" != true ]]; then
     git check-ref-format --branch "$BRANCH" >/dev/null 2>&1 || die "无效的 Git 分支名称：$BRANCH"
   fi
+}
+
+acquire_update_lock() {
+  mkdir -p -- "$(dirname -- "$UPDATE_LOCK_FILE")" || die "无法创建更新锁目录。"
+  exec 9>"$UPDATE_LOCK_FILE" || die "无法创建更新锁文件：$UPDATE_LOCK_FILE"
+  flock -n 9 || die "另一个安装或更新任务正在运行。"
 }
 
 write_deploy_state() {
@@ -433,6 +442,7 @@ print_result() {
 main() {
   parse_args "$@"
   ensure_requirements
+  acquire_update_lock
   if [[ "$ROLLBACK" == true ]]; then
     rollback_application
     print_result

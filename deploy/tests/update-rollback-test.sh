@@ -50,6 +50,7 @@ chmod +x "$FAKE_BIN/docker" "$DEPLOY_DIR/update.sh"
 export FAKE_DOCKER_LOG="$TEMP_DIR/docker.log"
 export PATH="$FAKE_BIN:$PATH"
 export SUB2API_DEPLOY_STATE_FILE="$STATE_FILE"
+export SUB2API_UPDATE_LOCK_FILE="$TEMP_DIR/update.lock"
 
 bash "$DEPLOY_DIR/update.sh" --rollback > "$TEMP_DIR/output.log"
 
