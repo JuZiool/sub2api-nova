@@ -128,10 +128,10 @@ jobs:
             --merged-at "$MERGED_AT"
           git diff --check
           git diff -- state/upstreams.json
-          git diff --quiet -- state/upstreams.json && {
+          if git diff --quiet -- state/upstreams.json; then
             echo "状态文件没有变化，跳过基线 PR。"
             exit 0
-          }
+          fi
 
       - name: 创建或更新基线分支
         if: steps.source.outputs.eligible == 'true'
