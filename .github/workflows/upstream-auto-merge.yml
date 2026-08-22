@@ -75,9 +75,10 @@ jobs:
             exit 0
           fi
 
-          checks_json="$(gh pr checks "$pr_number" --repo "$repository" --required --json name,bucket)"
-          test "$(jq 'length' <<< "$checks_json")" -gt 0
-          bad_checks="$(jq '[.[] | select(.bucket != "pass")] | length' <<< "$checks_json")"
+          checks_json="$(gh api "repos/$repository/commits/$head_sha/check-runs?per_page=100")"
+          required_check_count="$(jq '[.check_runs[] | select(.name == "Validate fusion candidate")] | length' <<< "$checks_json")"
+          test "$required_check_count" -gt 0
+          bad_checks="$(jq '[.check_runs[] | select(.name == "Validate fusion candidate" and (.status != "completed" or .conclusion != "success"))] | length' <<< "$checks_json")"
           test "$bad_checks" -eq 0
 
           compare_json="$(gh api "repos/$repository/compare/main...$head_sha")"
