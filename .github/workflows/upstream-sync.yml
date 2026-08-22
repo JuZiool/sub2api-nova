@@ -66,21 +66,23 @@ jobs:
           else
             upstream_sha="$(git rev-parse --verify "upstream/${UPSTREAM_BRANCH}^{commit}")"
           fi
-          branch_base="sync/upstream-${upstream_sha:0:12}-$(date -u +%F)"
-          existing_pr="$(gh pr list \
+          open_sync_prs_json="$(gh pr list \
             --repo "$GITHUB_REPOSITORY" \
             --base main \
-            --head "${GITHUB_REPOSITORY_OWNER}:${branch_base}" \
             --state open \
-            --json number \
-            --jq '.[0].number // empty')"
-          if [[ -n "$existing_pr" ]]; then
+            --label upstream-sync \
+            --json number,headRefName)"
+          open_sync_prs="$(jq -r --arg prefix "sync/upstream-${upstream_sha:0:12}-" \
+            '[.[] | select(.headRefName | startswith($prefix))][0].number // empty' \
+            <<< "$open_sync_prs_json")"
+          if [[ -n "$open_sync_prs" ]]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
-            echo "branch=$branch_base" >> "$GITHUB_OUTPUT"
-            echo "pr=$existing_pr" >> "$GITHUB_OUTPUT"
-            echo "已存在同步 PR #$existing_pr，跳过重复候选。"
+            echo "pr=$open_sync_prs" >> "$GITHUB_OUTPUT"
+            echo "branch=existing" >> "$GITHUB_OUTPUT"
+            echo "已存在同一上游提交的开放同步 PR #$open_sync_prs，跳过重复候选。"
             exit 0
           fi
+          branch_base="sync/upstream-${upstream_sha:0:12}-$(date -u +%F)"
           branch="$branch_base"
           if git ls-remote --exit-code origin "refs/heads/$branch" >/dev/null 2>&1; then
             branch="${branch}-${GITHUB_RUN_ID}"
