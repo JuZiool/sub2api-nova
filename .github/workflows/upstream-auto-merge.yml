@@ -115,13 +115,19 @@ jobs:
           test "$candidate_manifest_sha" = "$trusted_manifest_sha"
           test "$(jq -r '.manifestSha256 // empty' <<< "$provenance_json")" = "$trusted_manifest_sha"
 
+          candidate_ref="refs/remotes/origin/nova-candidate-$pr_number"
+          if ! git fetch --no-tags --quiet origin "refs/pull/$pr_number/head:$candidate_ref"; then
+            git fetch --no-tags --quiet origin "refs/heads/$head_ref:$candidate_ref"
+          fi
+          test "$(git rev-parse "$candidate_ref")" = "$head_sha"
           git remote add upstream https://github.com/Wei-Shaw/sub2api.git
           git fetch --no-tags --quiet upstream main
           candidate_report="$(python3 scripts/verify_upstream_candidate.py \
             --root "$GITHUB_WORKSPACE" \
             --provenance "$RUNNER_TEMP/nova-provenance.json" \
             --base-sha "$base_sha" \
-            --candidate-branch "$head_ref")"
+            --candidate-branch "$head_ref" \
+            --candidate-sha "$head_sha")"
           critical_count="$(jq '.criticalPaths | length' <<< "$candidate_report")"
           manual_count="$(jq '.manualReviewPaths | length' <<< "$candidate_report")"
           stop_count="$(jq '.stopOnDeletePaths | length' <<< "$candidate_report")"

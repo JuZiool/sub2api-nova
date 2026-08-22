@@ -73,6 +73,81 @@ class VerifyUpstreamCandidateTests(unittest.TestCase):
                 "upstreamRef": "main",
                 "oldUpstreamCommit": old,
                 "newUpstreamCommit": new,
+                "newVersion": "0.1.179",
+                "targetRef": "main",
+                "candidateBranch": "sync/test",
+                "baseNovaCommit": old,
+                "manifestPath": "state/nova-customizations.json",
+                "manifestSha256": module.sha256_file(manifest_path),
+                "patchSha256": module.sha256_bytes(patch),
+                "applyStatus": "ready",
+            }
+            provenance_path = root / ".nova-upstream-provenance.json"
+            provenance_path.write_text(
+                json.dumps(provenance, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            git(root, "add", ".nova-upstream-provenance.json")
+            git(root, "commit", "-m", "candidate")
+            candidate = git(root, "rev-parse", "HEAD")
+
+            result = module.verify_candidate(
+                root,
+                provenance_path,
+                "state/nova-customizations.json",
+                old,
+                "sync/test",
+                candidate,
+            )
+
+        self.assertTrue(result["eligible"])
+        self.assertEqual(result["criticalPaths"], [])
+        self.assertEqual(result["manualReviewPaths"], [])
+
+    def test_rejects_candidate_with_extra_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            git(root, "init", "-b", "main")
+            git(root, "config", "core.autocrlf", "false")
+            git(root, "config", "user.name", "test")
+            git(root, "config", "user.email", "test@example.invalid")
+            manifest_path = root / "state" / "nova-customizations.json"
+            manifest_path.parent.mkdir()
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "protectedPathPolicy": {
+                            "criticalPaths": [],
+                            "manualReviewPaths": [],
+                            "stopOnDeletePaths": [],
+                        }
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            (root / "tracked.txt").write_text("old\n", encoding="utf-8")
+            git(root, "add", ".")
+            git(root, "commit", "-m", "base")
+            old = git(root, "rev-parse", "HEAD")
+            (root / "tracked.txt").write_text("new\n", encoding="utf-8")
+            git(root, "add", ".")
+            git(root, "commit", "-m", "upstream")
+            new = git(root, "rev-parse", "HEAD")
+            patch = subprocess.run(
+                ["git", "diff", "--binary", old, new],
+                cwd=root,
+                check=True,
+                stdout=subprocess.PIPE,
+            ).stdout
+            provenance = {
+                "schema": 1,
+                "generator": "scripts/sync_upstream.py",
+                "upstreamRepository": "Wei-Shaw/sub2api",
+                "upstreamRef": "main",
+                "oldUpstreamCommit": old,
+                "newUpstreamCommit": new,
+                "newVersion": "0.1.179",
                 "targetRef": "main",
                 "candidateBranch": "sync/test",
                 "baseNovaCommit": old,
@@ -83,18 +158,20 @@ class VerifyUpstreamCandidateTests(unittest.TestCase):
             }
             provenance_path = root / ".nova-upstream-provenance.json"
             provenance_path.write_text(json.dumps(provenance) + "\n", encoding="utf-8")
+            (root / "unexpected.txt").write_text("extra\n", encoding="utf-8")
+            git(root, "add", ".nova-upstream-provenance.json", "unexpected.txt")
+            git(root, "commit", "-m", "tampered candidate")
+            candidate = git(root, "rev-parse", "HEAD")
 
-            result = module.verify_candidate(
-                root,
-                provenance_path,
-                "state/nova-customizations.json",
-                old,
-                "sync/test",
-            )
-
-        self.assertTrue(result["eligible"])
-        self.assertEqual(result["criticalPaths"], [])
-        self.assertEqual(result["manualReviewPaths"], [])
+            with self.assertRaises(module.VerificationError):
+                module.verify_candidate(
+                    root,
+                    provenance_path,
+                    "state/nova-customizations.json",
+                    old,
+                    "sync/test",
+                    candidate,
+                )
 
     def test_rejects_missing_provenance(self):
         with self.assertRaises(module.VerificationError):

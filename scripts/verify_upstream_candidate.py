@@ -6,12 +6,14 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Sequence
 
-from sync_upstream import path_matches, sha256_bytes, sha256_file
+from sync_upstream import nova_version, path_matches, sha256_bytes, sha256_file
 
 
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -61,12 +63,68 @@ def verify_lineage(root: Path, old: str, new: str) -> None:
     raise VerificationError(f"cannot verify upstream ancestry: {detail}")
 
 
+def verify_candidate_tree(
+    root: Path,
+    provenance: dict,
+    base_sha: str,
+    candidate_sha: str,
+    patch: bytes,
+) -> None:
+    """Rebuild the expected candidate tree without executing candidate code."""
+    if not SHA_RE.fullmatch(candidate_sha):
+        raise VerificationError("candidate commit must be a full lowercase SHA-1 value")
+
+    temp_root = Path(tempfile.mkdtemp(prefix="nova-candidate-tree-"))
+    worktree_added = False
+    try:
+        git_bytes(root, "worktree", "add", "--detach", str(temp_root), base_sha)
+        worktree_added = True
+        result = subprocess.run(
+            ["git", "apply", "--3way", "--binary", "-"],
+            cwd=temp_root,
+            input=patch,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if result.returncode != 0:
+            detail = result.stderr.decode("utf-8", errors="replace").strip()
+            raise VerificationError(f"expected candidate patch does not apply: {detail}")
+
+        new_version = require(provenance.get("newVersion"), "missing new upstream version")
+        for relative in ("FORK_VERSION", "backend/cmd/server/VERSION"):
+            version_path = temp_root / relative
+            if version_path.exists():
+                version_path.write_text(nova_version(new_version) + "\n", encoding="utf-8")
+
+        expected_provenance = temp_root / ".nova-upstream-provenance.json"
+        expected_provenance.write_text(
+            json.dumps(provenance, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        git_bytes(root, "-C", str(temp_root), "add", "--all")
+        expected_tree = git_text(root, "-C", str(temp_root), "write-tree").strip()
+        actual_tree = git_text(root, "rev-parse", f"{candidate_sha}^{{tree}}").strip()
+        if expected_tree != actual_tree:
+            raise VerificationError(
+                "candidate tree does not exactly match the trusted upstream fusion result"
+            )
+    finally:
+        if worktree_added:
+            try:
+                git_bytes(root, "worktree", "remove", "--force", str(temp_root))
+            except VerificationError:
+                pass
+        shutil.rmtree(temp_root, ignore_errors=True)
+
+
 def verify_candidate(
     root: Path,
     provenance_path: Path,
     manifest_path: str,
     base_sha: str,
     candidate_branch: str,
+    candidate_sha: str | None = None,
 ) -> dict:
     try:
         provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
@@ -116,6 +174,8 @@ def verify_candidate(
     patch = git_bytes(root, "diff", "--binary", old, new)
     if provenance.get("patchSha256") != sha256_bytes(patch):
         raise VerificationError("provenance patch hash does not match upstream diff")
+    if candidate_sha is not None:
+        verify_candidate_tree(root, provenance, base_sha, candidate_sha, patch)
 
     try:
         manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
@@ -154,6 +214,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--manifest", default="state/nova-customizations.json")
     parser.add_argument("--base-sha", required=True)
     parser.add_argument("--candidate-branch", required=True)
+    parser.add_argument("--candidate-sha", required=True)
     return parser.parse_args(argv)
 
 
@@ -166,6 +227,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.manifest,
             args.base_sha,
             args.candidate_branch,
+            args.candidate_sha,
         )
     except VerificationError as exc:
         print(f"candidate verification failed: {exc}", file=sys.stderr)
