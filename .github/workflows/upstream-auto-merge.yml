@@ -49,6 +49,7 @@ jobs:
 
           pr_json="$(gh api "repos/$repository/pulls/$pr_number")"
           base_ref="$(jq -r '.base.ref' <<< "$pr_json")"
+          base_sha="$(jq -r '.base.sha // empty' <<< "$pr_json")"
           head_ref="$(jq -r '.head.ref' <<< "$pr_json")"
           head_repo="$(jq -r '.head.repo.full_name // empty' <<< "$pr_json")"
           head_sha="$(jq -r '.head.sha' <<< "$pr_json")"
@@ -85,6 +86,7 @@ jobs:
           test "$(jq -r '.upstreamRepository // empty' <<< "$provenance_json")" = Wei-Shaw/sub2api
           test "$(jq -r '.upstreamRef // empty' <<< "$provenance_json")" = main
           test "$(jq -r '.targetRef // empty' <<< "$provenance_json")" = main
+          test "$(jq -r '.baseNovaCommit // empty' <<< "$provenance_json")" = "$base_sha"
           test "$(jq -r '.candidateBranch // empty' <<< "$provenance_json")" = "$head_ref"
           provenance_new="$(jq -r '.newUpstreamCommit // empty' <<< "$provenance_json")"
           provenance_old="$(jq -r '.oldUpstreamCommit // empty' <<< "$provenance_json")"
