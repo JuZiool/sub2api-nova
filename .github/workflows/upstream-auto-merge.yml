@@ -28,10 +28,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_ID: ${{ github.event.workflow_run.id }}
           RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_EVENT: ${{ github.event.workflow_run.event }}
         shell: bash
         run: |
           set -euo pipefail
           repository="$GITHUB_REPOSITORY"
+          if [[ "$RUN_EVENT" != pull_request && "$RUN_EVENT" != merge_group ]]; then
+            echo "验证运行事件为 $RUN_EVENT，没有可自动合并的 Pull Request，跳过。"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           pr_number="$(gh api "repos/$repository/actions/runs/$RUN_ID/pull_requests" --jq '.[0].number // empty')"
           if [[ -z "$pr_number" ]]; then
             echo "本次验证运行没有关联 Pull Request，跳过自动合并。"
