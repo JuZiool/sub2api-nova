@@ -202,6 +202,9 @@ jobs:
 
       - name: Run Nova smoke checks
         shell: bash
+        env:
+          ADMIN_EMAIL: ci-admin@example.invalid
+          ADMIN_PASSWORD: ci-admin-password-123456
         run: |
           set -euo pipefail
           compose() {
@@ -230,6 +233,8 @@ jobs:
             health="$(docker inspect --format '{{.State.Health.Status}}' "$container_id")"
             test "$health" = healthy
           done
+
+          python3 scripts/nova_smoke.py --base-url http://127.0.0.1:18080
 
       - name: Print Compose diagnostics
         if: failure()

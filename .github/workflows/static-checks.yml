@@ -55,6 +55,10 @@ jobs:
         shell: bash
         run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 
+      - name: 验证更新脚本回滚行为
+        shell: bash
+        run: bash deploy/tests/update-rollback-test.sh
+
       - name: 检查 Python 脚本编译
         shell: bash
         run: python3 -m compileall -q scripts

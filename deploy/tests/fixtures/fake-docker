@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+printf '%s\n' "$*" >> "${FAKE_DOCKER_LOG:?}"
+
+if [[ "${1:-}" == "compose" ]]; then
+  if [[ "${2:-}" == "version" ]]; then
+    printf 'Docker Compose version v2.0.0\n'
+    exit 0
+  fi
+  command_line=" $* "
+  case "$command_line" in
+    *" images -q "*) printf 'sha256:current-image\n'; exit 0 ;;
+    *" images --format "*) printf 'ghcr.io/example/sub2api-nova:current\n'; exit 0 ;;
+    *" ps -q "*) printf 'container-id\n'; exit 0 ;;
+    *" logs "*) exit 0 ;;
+    *) exit 0 ;;
+  esac
+fi
+
+if [[ "${1:-}" == "info" ]]; then
+  exit 0
+fi
+
+if [[ "${1:-}" == "inspect" && "${2:-}" == "--format" ]]; then
+  printf '%s\n' "${FAKE_DOCKER_HEALTH:-healthy}"
+  exit 0
+fi
+
+if [[ "${1:-}" == "image" && "${2:-}" == "inspect" ]]; then
+  if [[ "${FAKE_DOCKER_HEALTH:-healthy}" == "unhealthy" && " $* " == *" --format "* ]]; then
+    printf 'unhealthy\n'
+    exit 0
+  fi
+  if [[ " $* " == *" --format "* ]]; then
+    printf 'healthy\n'
+  elif [[ " $* " == *" -q "* ]]; then
+    printf 'sha256:rollback-image\n'
+  fi
+  exit 0
+fi
+
+if [[ "${1:-}" == "tag" ]]; then
+  exit 0
+fi
+
+exit 0
