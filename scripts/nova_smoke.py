@@ -105,17 +105,6 @@ def main() -> int:
     if not isinstance(login_user, dict) or not isinstance(login_user.get("id"), int):
         raise SmokeError("login response did not contain data.user.id")
 
-    require_2xx(
-        request(
-            args.base_url,
-            "POST",
-            f"/api/v1/admin/users/{login_user['id']}/balance",
-            token,
-            {"balance": 1, "operation": "add", "notes": "isolated Nova CI smoke"},
-        ),
-        "/api/v1/admin/users/:id/balance",
-    )
-
     compliance = require_2xx(
         request(args.base_url, "GET", "/api/v1/admin/compliance", token),
         "/api/v1/admin/compliance",
@@ -138,6 +127,17 @@ def main() -> int:
         )
         if not isinstance(accepted, dict) or accepted.get("required"):
             raise SmokeError("admin compliance acknowledgement did not take effect")
+
+    require_2xx(
+        request(
+            args.base_url,
+            "POST",
+            f"/api/v1/admin/users/{login_user['id']}/balance",
+            token,
+            {"balance": 1, "operation": "add", "notes": "isolated Nova CI smoke"},
+        ),
+        "/api/v1/admin/users/:id/balance",
+    )
 
     require_2xx(request(args.base_url, "GET", "/api/v1/admin/settings", token), "/api/v1/admin/settings")
     require_2xx(
