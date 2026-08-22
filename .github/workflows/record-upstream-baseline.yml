@@ -143,6 +143,9 @@ jobs:
         run: |
           set -euo pipefail
           branch="automation/record-upstream-${UPSTREAM_SHA:0:12}"
+          if git ls-remote --exit-code origin "refs/heads/$branch" >/dev/null 2>&1; then
+            branch="${branch}-${GITHUB_RUN_ID}"
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- state/upstreams.json
