@@ -282,16 +282,26 @@ restore_previous_image() {
 handle_deploy_failure() {
   local error_message="$1"
   local recovered=false
+  local actual_image_id=""
+  local actual_image_ref="$NEW_IMAGE_REF"
+  local actual_commit="$CURRENT_COMMIT"
+  local rollback_tag="$OLD_ROLLBACK_TAG"
   warn "$error_message"
   if [[ -n "$OLD_ROLLBACK_TAG" ]] && restore_previous_image; then
     recovered=true
+    actual_image_id="$OLD_IMAGE_ID"
+    actual_image_ref="$OLD_IMAGE_REF"
+    actual_commit="$PREVIOUS_COMMIT"
+    rollback_tag=""
+  else
+    actual_image_id="$(compose images -q sub2api 2>/dev/null | head -n 1 || true)"
   fi
   write_deploy_state \
-    "failed" \
-    "$CURRENT_COMMIT" \
-    "$NEW_IMAGE_REF" \
-    "$(compose images -q sub2api 2>/dev/null | head -n 1 || true)" \
-    "$OLD_ROLLBACK_TAG" \
+    "$([[ "$recovered" == true ]] && printf '%s' failed-recovered || printf '%s' failed)" \
+    "$actual_commit" \
+    "$actual_image_ref" \
+    "$actual_image_id" \
+    "$rollback_tag" \
     "$error_message" \
     "$PREVIOUS_COMMIT" \
     "$OLD_IMAGE_REF"
@@ -302,12 +312,16 @@ handle_deploy_failure() {
 }
 
 deploy_application() {
-  export BUILD_COMMIT
-  export SUB2API_IMAGE
   CURRENT_COMMIT="$(repo_git rev-parse HEAD)"
   BUILD_COMMIT="${CURRENT_COMMIT:0:7}"
-  NEW_IMAGE_REF="${SUB2API_IMAGE:-ghcr.io/juziool/sub2api-nova:sha-${CURRENT_COMMIT}}"
+  if [[ "$LOCAL_BUILD" == true ]]; then
+    NEW_IMAGE_REF="${SUB2API_IMAGE:-sub2api-nova:local}"
+  else
+    NEW_IMAGE_REF="${SUB2API_IMAGE:-ghcr.io/juziool/sub2api-nova:sha-${CURRENT_COMMIT}}"
+  fi
+  export BUILD_COMMIT NEW_IMAGE_REF
   SUB2API_IMAGE="$NEW_IMAGE_REF"
+  export SUB2API_IMAGE
   OLD_IMAGE_ID="$(compose images -q sub2api 2>/dev/null | head -n 1 || true)"
   OLD_IMAGE_REF="$(compose images --format '{{.Repository}}:{{.Tag}}' sub2api 2>/dev/null | head -n 1 || true)"
   case "$(read_state_value_optional status)" in
@@ -365,7 +379,7 @@ rollback_application() {
   local current_commit
   local current_image
   local current_image_id
-  local next_rollback_tag
+  local next_rollback_tag=""
   local rollback_image_id
 
   rollback_tag="$(read_state_value rollbackTag)"
@@ -378,8 +392,8 @@ rollback_application() {
   docker image inspect "$rollback_tag" >/dev/null 2>&1 || die "本地不存在回滚镜像：$rollback_tag"
 
   current_image_id="$(compose images -q sub2api 2>/dev/null | head -n 1 || true)"
-  next_rollback_tag="sub2api-nova:rollback-${current_commit:0:12}"
   if [[ -n "$current_image_id" && "$current_image_id" != "$(docker image inspect -q "$rollback_tag" 2>/dev/null || true)" ]]; then
+    next_rollback_tag="sub2api-nova:rollback-${current_commit:0:12}"
     docker tag "$current_image_id" "$next_rollback_tag"
   fi
   rollback_image_id="$(docker image inspect -q "$rollback_tag")"
