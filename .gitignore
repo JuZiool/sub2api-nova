@@ -125,6 +125,7 @@ scripts
 !scripts/
 scripts/*
 !scripts/sync_upstream.py
+!scripts/record_upstream_success.py
 !backend/scripts/
 !backend/scripts/resolve-version.sh
 .code-review-state
