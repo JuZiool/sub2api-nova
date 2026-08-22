@@ -105,6 +105,14 @@ jobs:
           provenance_new="$(jq -r '.newUpstreamCommit // empty' <<< "$provenance_json")"
           [[ "$provenance_old" =~ ^[0-9a-f]{40}$ ]]
           [[ "$provenance_new" =~ ^[0-9a-f]{40}$ ]]
+          printf '%s\n' "$provenance_json" > "$RUNNER_TEMP/nova-provenance.json"
+          git remote add upstream "https://github.com/${UPSTREAM_REPOSITORY}.git"
+          git fetch --no-tags --quiet upstream "$UPSTREAM_BRANCH"
+          python3 scripts/verify_upstream_candidate.py \
+            --root "$GITHUB_WORKSPACE" \
+            --provenance "$RUNNER_TEMP/nova-provenance.json" \
+            --base-sha "$base_sha" \
+            --candidate-branch "$head_ref" > "$RUNNER_TEMP/nova-candidate-evidence.json"
           upstream_json="$(gh api "repos/${UPSTREAM_REPOSITORY}/commits/$provenance_new")"
           test "$(jq -r '.sha // empty' <<< "$upstream_json")" = "$provenance_new"
           upstream_version="$(gh api "repos/${UPSTREAM_REPOSITORY}/contents/backend/cmd/server/VERSION?ref=$provenance_new" --jq '.content' | tr -d '\n' | base64 --decode | tr -d '\r\n')"

@@ -124,6 +124,7 @@ CLAUDE.md
 scripts
 !scripts/
 scripts/*
+!scripts/nova_smoke.py
 !scripts/sync_upstream.py
 !scripts/record_upstream_success.py
 !scripts/verify_upstream_candidate.py

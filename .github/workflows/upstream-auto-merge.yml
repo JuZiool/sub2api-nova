@@ -4,6 +4,7 @@ on:
   workflow_run:
     workflows:
       - Nova PR validation
+      - Static checks and script regressions
     types: [completed]
 
 permissions:
@@ -133,10 +134,13 @@ jobs:
 
           checks_json="$(gh api "repos/$repository/commits/$head_sha/check-runs?per_page=100")"
           for required_check in "Validate fusion candidate" "Static checks and script regressions"; do
-            required_check_count="$(jq --arg name "$required_check" '[.check_runs[] | select(.name == $name)] | length' <<< "$checks_json")"
-            test "$required_check_count" -gt 0
-            bad_checks="$(jq --arg name "$required_check" '[.check_runs[] | select(.name == $name and (.status != "completed" or .conclusion != "success"))] | length' <<< "$checks_json")"
-            test "$bad_checks" -eq 0
+            latest_check="$(jq -r --arg name "$required_check" '
+              [.check_runs[] | select(.name == $name)]
+              | sort_by(.completed_at // .started_at // .created_at)
+              | last
+              | if . == null then "missing" else "\(.status):\(.conclusion // "")" end
+            ' <<< "$checks_json")"
+            test "$latest_check" = "completed:success"
           done
 
           compare_json="$(gh api "repos/$repository/compare/main...$head_sha")"
