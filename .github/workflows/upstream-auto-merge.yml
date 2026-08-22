@@ -1,0 +1,112 @@
+name: 上游同步自动合并
+
+on:
+  workflow_run:
+    workflows:
+      - Nova PR validation
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: nova-upstream-auto-merge-${{ github.event.workflow_run.id }}
+  cancel-in-progress: true
+
+jobs:
+  queue-auto-merge:
+    name: 检查并排队上游同步自动合并
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 校验同步 PR 安全条件
+        id: guard
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          EVENT_FILE: ${{ github.event_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          repository="$GITHUB_REPOSITORY"
+          pr_number="$(python3 -c 'import json, os; event=json.load(open(os.environ["EVENT_FILE"], encoding="utf-8")); prs=event.get("workflow_run", {}).get("pull_requests", []); print(prs[0].get("number", "") if prs else "")')"
+          if [[ -z "$pr_number" ]]; then
+            echo "本次验证运行没有关联 Pull Request，跳过自动合并。"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          pr_json="$(gh api "repos/$repository/pulls/$pr_number")"
+          base_ref="$(jq -r '.base.ref' <<< "$pr_json")"
+          head_ref="$(jq -r '.head.ref' <<< "$pr_json")"
+          head_repo="$(jq -r '.head.repo.full_name // empty' <<< "$pr_json")"
+          head_sha="$(jq -r '.head.sha' <<< "$pr_json")"
+          mergeable="$(jq -r '.mergeable' <<< "$pr_json")"
+          labels="$(jq -r '[.labels[].name] | .[]' <<< "$pr_json")"
+
+          if [[ "$base_ref" != main || "$head_repo" != "$repository" || "$head_ref" != sync/upstream-* ]]; then
+            echo "不是本仓库的上游同步 PR，跳过自动合并。"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$head_sha" != "$RUN_HEAD_SHA" ]]; then
+            echo "验证运行提交与 PR 当前提交不一致，跳过自动合并。"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! grep -qx 'upstream-sync' <<< "$labels"; then
+            echo "PR 缺少 upstream-sync 标签，跳过自动合并。"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if grep -Eq '^(nova-critical-change|nova-manual-review|no-auto-merge)$' <<< "$labels"; then
+            echo "同步 PR 命中人工阻止标签，跳过自动合并。"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          checks_json="$(gh pr checks "$pr_number" --repo "$repository" --required --json name,bucket)"
+          test "$(jq 'length' <<< "$checks_json")" -gt 0
+          bad_checks="$(jq '[.[] | select(.bucket != "pass")] | length' <<< "$checks_json")"
+          test "$bad_checks" -eq 0
+
+          compare_json="$(gh api "repos/$repository/compare/main...$head_sha")"
+          test "$(jq -r '.status' <<< "$compare_json")" = ahead
+
+          for attempt in {1..10}; do
+            pr_json="$(gh api "repos/$repository/pulls/$pr_number")"
+            mergeable="$(jq -r '.mergeable' <<< "$pr_json")"
+            merge_state="$(jq -r '.mergeable_state' <<< "$pr_json")"
+            if [[ "$mergeable" = true && "$merge_state" = clean ]]; then
+              break
+            fi
+            if [[ "$mergeable" = false || "$merge_state" = blocked || "$merge_state" = dirty || "$merge_state" = behind ]]; then
+              echo "PR 当前不可安全合并：mergeable=$mergeable mergeable_state=$merge_state" >&2
+              exit 1
+            fi
+            sleep 3
+          done
+          test "$mergeable" = true
+          test "$merge_state" = clean
+
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
+          echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
+          echo "已通过自动合并安全门禁：PR #$pr_number，提交 $head_sha。"
+
+      - name: 启用 GitHub 原生 Auto-merge
+        if: steps.guard.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.guard.outputs.pr_number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh pr merge "$PR_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --auto \
+            --squash
