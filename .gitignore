@@ -121,6 +121,9 @@ tests
 CLAUDE.md
 .claude
 scripts
+!scripts/
+scripts/*
+!scripts/sync_upstream.py
 !backend/scripts/
 !backend/scripts/resolve-version.sh
 .code-review-state
@@ -146,6 +149,7 @@ frontend/coverage/
 frontend/audit.json
 aicodex
 output/
+artifacts/
 
 # Vitest / Vite cache at repo root
 .vite/
