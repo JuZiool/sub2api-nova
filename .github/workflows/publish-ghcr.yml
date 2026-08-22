@@ -61,24 +61,24 @@ jobs:
             type=sha,prefix=sha-,format=long
             type=ref,event=tag
 
-      - name: 构建并推送镜像
-        id: build
+      - name: 构建本地冒烟镜像
+        id: smoke-build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: sub2api-nova:smoke-${{ github.sha }}
           build-args: |
             VERSION=
             COMMIT=${{ github.sha }}
             BUILD_TYPE=github
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          provenance: mode=max
-          sbom: true
+          provenance: false
+          sbom: false
 
       - name: 准备发布冒烟环境
         shell: bash
@@ -100,7 +100,7 @@ jobs:
           JWT_SECRET=0123456789abcdef0123456789abcdef
           TOTP_ENCRYPTION_KEY=abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
           GATEWAY_CODEX_QUOTA_OVERDRAFT_ENABLED=true
-          SUB2API_IMAGE=ghcr.io/juziool/sub2api-nova:sha-${GITHUB_SHA}
+          SUB2API_IMAGE=sub2api-nova:smoke-${GITHUB_SHA}
           CI_DATA_DIR=$RUNNER_TEMP/nova-publish-data
           EOF
           cat > "$RUNNER_TEMP/nova-publish.compose.yml" <<'EOF'
@@ -190,6 +190,25 @@ jobs:
             -f deploy/docker-compose.ghcr.yml \
             -f "$PUBLISH_OVERRIDE" \
             logs --tail=200 sub2api postgres redis || true
+
+      - name: 发布已通过冒烟检查的多架构镜像
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=
+            COMMIT=${{ github.sha }}
+            BUILD_TYPE=github
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true
 
       - name: 记录发布结果
         if: always()
