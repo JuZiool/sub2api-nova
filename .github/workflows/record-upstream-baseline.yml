@@ -26,7 +26,7 @@ env:
 jobs:
   prepare:
     name: 生成成功基线 PR
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.action == 'closed' && github.event.pull_request.merged == true) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -113,15 +113,7 @@ jobs:
           echo "upstream_old_sha=$provenance_old" >> "$GITHUB_OUTPUT"
           echo "upstream_version=$upstream_version" >> "$GITHUB_OUTPUT"
 
-      - name: 同步最新主线
-        if: steps.source.outputs.eligible == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch --prune origin main
-          git switch main
-          git reset --hard origin/main
-
+      - name: 生成成功基线状态
         if: steps.source.outputs.eligible == 'true'
         env:
           UPSTREAM_OLD_SHA: ${{ steps.source.outputs.upstream_old_sha }}
@@ -132,6 +124,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git fetch --prune origin main
+          git switch main
+          git reset --hard origin/main
           python3 scripts/record_upstream_success.py \
             --state "$SYNC_STATE" \
             --old-upstream-commit "$UPSTREAM_OLD_SHA" \

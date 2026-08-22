@@ -1,0 +1,62 @@
+name: 静态检查与脚本回归
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/**
+      - deploy/**
+      - scripts/**
+      - backend/Makefile
+      - backend/scripts/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: Static checks and script regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装静态检查工具
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="1.7.12"
+          curl --fail --silent --show-error --location \
+            "https://github.com/rhysd/actionlint/releases/download/v${version}/actionlint_${version}_linux_amd64.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP"
+          chmod +x "$RUNNER_TEMP/actionlint"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends shellcheck yamllint
+
+      - name: 检查 GitHub Actions YAML
+        shell: bash
+        run: actionlint -ignore 'SC2129' -ignore 'SC2034' .github/workflows/*.yml
+
+      - name: 检查 Shell 脚本
+        shell: bash
+        run: |
+          set -euo pipefail
+          shellcheck -x -e SC1007,SC2129,SC2034 \
+            deploy/*.sh \
+            scripts/*.sh \
+            backend/scripts/*.sh \
+            deploy/tests/*.sh
+
+      - name: 检查 YAML 风格
+        shell: bash
+        run: yamllint -d relaxed .github/workflows/*.yml
+
+      - name: 检查脚本语法
+        shell: bash
+        run: bash deploy/tests/scripts-syntax-test.sh
+
+      - name: 检查 Compose 配置
+        shell: bash
+        run: bash deploy/tests/compose-config-test.sh
