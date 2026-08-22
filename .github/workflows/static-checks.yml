@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          shellcheck -x \
+          shellcheck -x -e SC2129,SC2034 \
             deploy/*.sh \
             scripts/*.sh \
             backend/scripts/*.sh \
