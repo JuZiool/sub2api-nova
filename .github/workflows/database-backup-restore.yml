@@ -1,0 +1,25 @@
+name: 验证数据库备份恢复
+
+on:
+  pull_request:
+    paths:
+      - deploy/install.sh
+      - scripts/verify_database_backup_restore.sh
+      - .github/workflows/database-backup-restore.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify database backup restore
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 验证临时 PostgreSQL 备份恢复
+        shell: bash
+        run: bash scripts/verify_database_backup_restore.sh
