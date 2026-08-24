@@ -1,0 +1,39 @@
+import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+const source = readFileSync(resolve(process.cwd(), 'src/views/admin/ProxiesView.vue'), 'utf8')
+
+function extractRegex(): RegExp {
+  const match = source.match(/const regex =\s*\n\s*(\/\^\(https\?[^;\n]+\/i)\n/)
+  expect(match, 'parseProxyUrl regex not found in ProxiesView.vue').toBeTruthy()
+  return new RegExp((match as RegExpMatchArray)[1].slice(1, -2), 'i')
+}
+
+describe('proxy batch URL parsing (IPv6 support)', () => {
+  const regex = extractRegex()
+
+  it.each([
+    ['socks5://[2001:db8::1]:1080', true],
+    ['socks5h://[2001:db8::1]:1080', true],
+    ['http://[::1]:8080', true],
+    ['socks5://user:pass@[2001:db8::1]:1080', true],
+    ['socks5://proxy.example.com:1080', true],
+    ['http://192.168.1.1:8080', true],
+    ['socks5://2001:db8::1:1080', false],
+    ['ftp://example.com:21', false],
+    ['socks5://example.com:port', false]
+  ])('%s => %s', (line, expected) => {
+    expect(regex.test(line)).toBe(expected)
+  })
+
+  it('captures credentials and bracketed IPv6 host', () => {
+    const match = 'socks5://user:pass@[2001:db8::1]:1080'.match(regex)
+    expect(match).toBeTruthy()
+    const [, , username, password, rawHost, port] = match as RegExpMatchArray
+    expect(username).toBe('user')
+    expect(password).toBe('pass')
+    expect(rawHost.replace(/^\[|\]$/g, '')).toBe('2001:db8::1')
+    expect(port).toBe('1080')
+  })
+})
