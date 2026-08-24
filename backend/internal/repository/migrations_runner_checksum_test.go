@@ -153,6 +153,15 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 		}
 	})
 
+	t.Run("224 Nova历史checksum可兼容当前格式", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"224_channel_monitor_mode_v2_default.sql",
+			"9afa1ba5cfe874c6b6da9e0fb84aed02dc20956b391c56178d2f54c52b049261",
+			"1484fbf7f979f0bdc5915d2f0d73049713abb43af06d6dec45a8a1fa682b046e",
+		)
+		require.True(t, ok)
+	})
+
 	t.Run("119未知checksum不兼容", func(t *testing.T) {
 		ok := isMigrationChecksumCompatible(
 			"119_enforce_payment_orders_out_trade_no_unique.sql",
