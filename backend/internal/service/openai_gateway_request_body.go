@@ -1263,6 +1263,47 @@ func normalizeOpenAIServiceTier(raw string) *string {
 	}
 }
 
+// ErrInvalidOpenAIServiceTier 表示请求携带了未知或非字符串的 service_tier。
+// 入口 handler 将其映射为 400，避免静默删除用户明确指定的服务档位。
+type ErrInvalidOpenAIServiceTier struct {
+	Value string
+}
+
+func (e *ErrInvalidOpenAIServiceTier) Error() string {
+	return fmt.Sprintf("invalid service_tier %q: must be one of auto, default, fast, flex, priority, scale", e.Value)
+}
+
+const invalidOpenAIServiceTierValueMaxLen = 64
+
+func boundInvalidOpenAIServiceTierValue(raw string) string {
+	if len(raw) <= invalidOpenAIServiceTierValueMaxLen {
+		return raw
+	}
+	return raw[:invalidOpenAIServiceTierValueMaxLen] + "..."
+}
+
+// ValidateOpenAIServiceTierField 校验 OpenAI 兼容请求体中的 service_tier。
+// 缺失/null 保持兼容；fast 规范化为 priority；未知值、空字符串和非字符串值
+// 返回错误，由 HTTP 入口转换为 400。
+func ValidateOpenAIServiceTierField(body []byte) (string, error) {
+	tierResult := gjson.GetBytes(body, "service_tier")
+	if !tierResult.Exists() || tierResult.Type == gjson.Null {
+		return "", nil
+	}
+	if tierResult.Type != gjson.String {
+		return "", &ErrInvalidOpenAIServiceTier{Value: "<non-string>"}
+	}
+	raw := strings.TrimSpace(tierResult.String())
+	if raw == "" {
+		return "", &ErrInvalidOpenAIServiceTier{Value: raw}
+	}
+	norm := normalizedOpenAIServiceTierValue(raw)
+	if norm == "" {
+		return "", &ErrInvalidOpenAIServiceTier{Value: boundInvalidOpenAIServiceTierValue(raw)}
+	}
+	return norm, nil
+}
+
 // OpenAIFastBlockedError indicates a request was rejected by the OpenAI fast
 // policy (action=block). Mirrors BetaBlockedError on the Claude side.
 type OpenAIFastBlockedError struct {
