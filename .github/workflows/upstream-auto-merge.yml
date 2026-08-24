@@ -18,7 +18,8 @@ concurrency:
 jobs:
   queue-auto-merge:
     name: 检查并排队上游同步自动合并
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Temporarily disabled: automatic upstream merges are paused.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
