@@ -841,6 +841,9 @@ func finalizeObservedRelayTerminal(state *relayState, observed observedUpstreamE
 		state.consumePendingTurnStartedAt()
 		openAIWSRelayDiscardActiveTurnTiming(state)
 	}
+	// A terminal event closes the current turn even when its response ID matched
+	// an existing timing record. Do not leave a stale start marker for the next turn.
+	state.consumePendingTurnStartedAt()
 	return observed
 }
 
