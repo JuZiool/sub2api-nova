@@ -29,7 +29,8 @@ env:
 jobs:
   prepare:
     name: 生成成功基线 PR
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
+    # Temporarily disabled: do not advance the upstream baseline while sync is paused.
+    if: ${{ github.event_name == 'nova-upstream-automation-disabled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

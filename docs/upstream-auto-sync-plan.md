@@ -1,5 +1,7 @@
 # Nova 上游自动同步与自动合并方案
 
+> **当前状态：已暂停。** `.github/workflows/upstream-sync.yml`、`.github/workflows/upstream-auto-merge.yml` 和成功基线记录作业当前通过永不会匹配的事件条件停用。恢复前需要先完成 Nova 与上游的选择性融合方案评审；本地同步脚本仍保留供人工使用。
+
 ## 1. 目标
 
 让 `sub2api-nova` 在上游 `Wei-Shaw/sub2api` 有新提交时，能够自动完成：

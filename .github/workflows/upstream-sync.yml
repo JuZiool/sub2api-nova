@@ -28,6 +28,8 @@ env:
 jobs:
   create-candidate:
     name: 创建上游同步候选
+    # Temporarily disabled: upstream synchronization is paused for Nova review.
+    if: ${{ github.event_name == 'nova-upstream-automation-disabled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
