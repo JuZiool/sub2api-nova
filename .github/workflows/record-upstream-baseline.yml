@@ -30,7 +30,7 @@ jobs:
   prepare:
     name: 生成成功基线 PR
     # Temporarily disabled: do not advance the upstream baseline while sync is paused.
-    if: ${{ false }}
+    if: ${{ github.event_name == 'nova-upstream-automation-disabled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
