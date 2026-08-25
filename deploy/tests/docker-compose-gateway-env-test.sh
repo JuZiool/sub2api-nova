@@ -30,6 +30,7 @@ while IFS="$tab" read -r key value; do
     GATEWAY_MAX_IDLE_CONNS_PER_HOST) value=120 ;;
   esac
 
+  # shellcheck disable=SC2016 # The Compose interpolation must remain literal.
   expected=$(printf '      - %s=${%s:-%s}' "$key" "$key" "$value")
   expected_count=$(grep -Fxc "$expected" "$compose_lines" || true)
   key_count=$(grep -Ec "^[[:space:]]*-[[:space:]]*${key}=.*$" "$compose_lines" || true)
