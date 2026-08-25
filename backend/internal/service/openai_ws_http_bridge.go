@@ -131,20 +131,38 @@ func prepareOpenAIWSHTTPBridgeBody(payload []byte) ([]byte, error) {
 }
 
 type openAIWSToolCallReplayCollector struct {
-	items []json.RawMessage
-	seen  map[string]struct{}
+	items    []json.RawMessage
+	seen     map[string]struct{}
+	allItems []json.RawMessage
+	allSeen  map[string]struct{}
 }
 
 func (c *openAIWSToolCallReplayCollector) AddEvent(eventType string, message []byte) {
 	switch strings.TrimSpace(eventType) {
 	case "response.output_item.done":
-		c.addItem(gjson.GetBytes(message, "item"))
+		item := gjson.GetBytes(message, "item")
+		c.addAllItem(item)
+		c.addItem(item)
 	case "response.completed", "response.done":
 		output := gjson.GetBytes(message, "response.output")
 		if !output.IsArray() {
 			return
 		}
-		for _, item := range output.Array() {
+		items := output.Array()
+		hasToolContext := false
+		for _, item := range items {
+			if isCodexToolCallContextItemType(item.Get("type").String()) {
+				hasToolContext = true
+				break
+			}
+		}
+		for _, item := range items {
+			c.addAllItem(item)
+			if hasToolContext && strings.TrimSpace(item.Get("type").String()) == "message" &&
+				strings.EqualFold(strings.TrimSpace(item.Get("role").String()), "assistant") {
+				c.addAssistantMessage(item)
+				continue
+			}
 			c.addItem(item)
 		}
 	}
@@ -152,6 +170,57 @@ func (c *openAIWSToolCallReplayCollector) AddEvent(eventType string, message []b
 
 func (c *openAIWSToolCallReplayCollector) Items() []json.RawMessage {
 	return cloneOpenAIWSRawMessages(c.items)
+}
+
+func (c *openAIWSToolCallReplayCollector) AllItems() []json.RawMessage {
+	return cloneOpenAIWSRawMessages(c.allItems)
+}
+
+func (c *openAIWSToolCallReplayCollector) addAllItem(item gjson.Result) {
+	if !item.Exists() || item.Type != gjson.JSON {
+		return
+	}
+	raw := strings.TrimSpace(item.Raw)
+	if raw == "" || !strings.HasPrefix(raw, "{") || strings.TrimSpace(item.Get("type").String()) == "" {
+		return
+	}
+	key := strings.TrimSpace(item.Get("id").String())
+	if key == "" {
+		key = strings.TrimSpace(item.Get("call_id").String())
+	}
+	if key == "" {
+		key = raw
+	}
+	if c.allSeen == nil {
+		c.allSeen = make(map[string]struct{})
+	}
+	if _, ok := c.allSeen[key]; ok {
+		return
+	}
+	c.allSeen[key] = struct{}{}
+	c.allItems = append(c.allItems, json.RawMessage(raw))
+}
+
+func (c *openAIWSToolCallReplayCollector) addAssistantMessage(item gjson.Result) {
+	if !item.Exists() || item.Type != gjson.JSON || strings.TrimSpace(item.Get("type").String()) != "message" {
+		return
+	}
+	raw := strings.TrimSpace(item.Raw)
+	if raw == "" || !strings.HasPrefix(raw, "{") {
+		return
+	}
+	key := strings.TrimSpace(item.Get("id").String())
+	if key == "" {
+		key = raw
+	}
+	if c.seen == nil {
+		c.seen = make(map[string]struct{})
+	}
+	if _, ok := c.seen[key]; ok {
+		return
+	}
+	c.seen[key] = struct{}{}
+	c.items = append(c.items, json.RawMessage(raw))
 }
 
 func (c *openAIWSToolCallReplayCollector) addItem(item gjson.Result) {
@@ -430,6 +499,11 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 		} else if turn == 1 && shouldFailover {
 			return nil, s.handleFailoverErrorResponsePassthrough(ctx, resp, c, account, body, respBody)
 		}
+		if account.Platform != PlatformGrok && turn > 1 && resp.StatusCode == http.StatusTooManyRequests && shouldFailover {
+			failoverErr := newOpenAIUpstreamFailoverError(resp.StatusCode, resp.Header, respBody, upstreamMsg, false)
+			retryPayload := RemovePreviousResponseIDFromBody(body)
+			return nil, newOpenAIWSCurrentTurnFailoverError(failoverErr, retryPayload)
+		}
 		if account.Platform != PlatformGrok && (shouldFailover || shouldCooldownOpenAITransientUpstreamError(resp.StatusCode, respBody)) {
 			s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, respBody, actualModel)
 		}
@@ -501,6 +575,7 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 			result.wsReplayInput = replayInput
 			result.wsReplayInputExists = true
 		}
+		result.wsAccountFailoverReplayInput = replayCollector.AllItems()
 		if imageCount > 0 {
 			result.ImageCount = imageCount
 			result.ImageSize = imageSizeTier
@@ -645,11 +720,15 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 					s.handleGrokAccountUpstreamError(ctx, account, statusCode, resp.Header, upstreamMessage)
 				}
 			}
-			if !wroteDownstream && shouldFailover && (turn == 1 || statusCode == http.StatusTooManyRequests) {
+			if !wroteDownstream && shouldFailover && turn == 1 {
 				if account.Platform == PlatformGrok {
 					return nil, newOpenAIUpstreamFailoverError(statusCode, resp.Header, upstreamMessage, errMessage, false)
 				}
-				return nil, s.newOpenAIStreamFailoverError(c, account, true, resp.Header.Get("x-request-id"), upstreamMessage, errMessage, resp.Header)
+				if eventType == "response.failed" && requestScopedCapacity && openAIStreamFailedEventErrorCode(upstreamMessage) != "" {
+					// Coded capacity terminals are safe to relay after client-side code rewriting.
+				} else {
+					return nil, s.newOpenAIStreamFailoverError(c, account, true, resp.Header.Get("x-request-id"), upstreamMessage, errMessage, resp.Header)
+				}
 			}
 			if account.Platform != PlatformGrok && !failureAccountSideEffectsApplied {
 				if eventType == "response.failed" || (shouldFailover && !requestScopedCapacity) {
@@ -784,6 +863,16 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 	terminalErr := errors.New("upstream http bridge stream ended before terminal event")
 	if sawDone {
 		terminalErr = errors.New("upstream http bridge stream sent [DONE] before terminal event")
+		if !wroteDownstream && len(pendingClientMessages) > 0 {
+			for _, message := range pendingClientMessages {
+				if writeErr := writeClientMessage(message); writeErr != nil {
+					return resultWithUsage(), fmt.Errorf("write truncated upstream response: %w", writeErr)
+				}
+				wroteDownstream = true
+			}
+			pendingClientMessages = nil
+			pendingClientMessageBytes = 0
+		}
 	}
 	if turn == 1 && !wroteDownstream {
 		return nil, s.handleOpenAIUpstreamTransportError(ctx, c, account, terminalErr, true)

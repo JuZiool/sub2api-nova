@@ -119,7 +119,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 	}
 	var firstTokenMs *int
 	firstOutputProgressObserved := false
-	bufferedWriter := bufio.NewWriterSize(w, 4*1024)
+	bufferedWriter := bufio.NewWriterSize(w, openAIFirstOutputStageMemoryLimit)
 	var firstOutputStage *openAIFirstOutputStage
 	if guardFirstOutput {
 		firstOutputStage = newDefaultOpenAIFirstOutputStage()
@@ -142,14 +142,13 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 		return int64(bufferedWriter.Buffered())
 	}
 	flushBuffered := func() error {
-		if firstOutputStage != nil && !firstOutputProgressObserved && !firstOutputStage.closed {
+		if firstOutputStage != nil && !firstOutputStage.closed && firstOutputStage.Buffered() > 0 {
 			if err := firstOutputStage.CommitTo(w); err != nil {
 				return err
 			}
-		} else {
-			if err := bufferedWriter.Flush(); err != nil {
-				return err
-			}
+		}
+		if err := bufferedWriter.Flush(); err != nil {
+			return err
 		}
 		flusher.Flush()
 		return nil
@@ -249,6 +248,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 	capacityFailoverSuppressedLogged := false
 	terminalEventType := ""
 	responsesSemanticOutputSeen := false
+	protocolProgressObserved := false
 	failedMessage := ""
 	clientOutputStarted := false
 	codexFailureTerminal := account != nil && account.Platform == PlatformOpenAI
@@ -262,6 +262,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 	pendingSSEEventType := ""
 	eventInProgress := false
 	eventStartsClientOutput := false
+	eventStartsStructuralProgress := false
 	eventStartsVisibleOutput := false
 	eventShouldFlush := false
 	handlePendingWriteError := func(err error) {
@@ -282,6 +283,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 	}
 	completeGuardedEvent := func(queueDrained bool) {
 		completedProgressEvent := eventStartsClientOutput
+		completedStructuralProgress := eventStartsStructuralProgress
 		completedVisibleEvent := eventStartsVisibleOutput
 		shouldFlush := eventShouldFlush || (queueDrained && clientOutputStarted)
 		eventInProgress = false
@@ -299,7 +301,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 				}
 			}
 		}
-		if completedProgressEvent && !firstOutputProgressObserved {
+		if (completedProgressEvent || completedStructuralProgress) && !firstOutputProgressObserved {
 			firstOutputScanGuard.Store(false)
 			firstOutputProgressObserved = true
 			stopFirstOutputTimer()
@@ -309,6 +311,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 			firstTokenMs = &ms
 		}
 		eventStartsClientOutput = false
+		eventStartsStructuralProgress = false
 		eventStartsVisibleOutput = false
 		eventShouldFlush = false
 	}
@@ -370,6 +373,11 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 			// EOF dispatches the final SSE event even without a trailing blank line.
 			completeGuardedEvent(true)
 		}
+		if codexFailureTerminal && sawBareError && !sawResponseFailed &&
+			!openAIStreamClientOutputStarted(c, clientOutputStarted) &&
+			isOpenAIRequestScopedCapacityShed(failedMessage, bareErrorPayload) {
+			return resultWithUsage(), s.newOpenAIStreamFailoverError(c, account, false, upstreamRequestID, bareErrorPayload, failedMessage, resp.Header)
+		}
 		if codexFailureTerminal && sawBareError && !sawResponseFailed && bareErrorAccountSideEffectsPending {
 			s.handleOpenAIStreamTerminalAccountSideEffects(c, account, bareErrorPayload, failedMessage, resp.Header)
 			bareErrorAccountSideEffectsPending = false
@@ -385,7 +393,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 		if sawTerminalEvent && !sawFailedEvent {
 			s.clearOpenAIProxyStreamDisconnect(account)
 		}
-		if !sawTerminalEvent && !openAIStreamClientOutputStarted(c, clientOutputStarted) && !eventShouldFlush {
+		if !sawTerminalEvent && !openAIStreamClientOutputStarted(c, clientOutputStarted) && !eventShouldFlush && !protocolProgressObserved {
 			return resultWithUsage(), s.newOpenAIStreamFailoverError(
 				c,
 				account,
@@ -403,6 +411,9 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 			return resultWithUsage(), fmt.Errorf("stream usage incomplete: missing terminal event")
 		}
 		if sawFailedEvent {
+			if codexFailureTerminal && sawBareError && !sawResponseFailed && isOpenAIRequestScopedCapacityShed(failedMessage, bareErrorPayload) {
+				return resultWithUsage(), s.newOpenAIStreamFailoverError(c, account, false, upstreamRequestID, bareErrorPayload, failedMessage, resp.Header)
+			}
 			return resultWithUsage(), fmt.Errorf("upstream response failed: %s", failedMessage)
 		}
 		logOpenAISuccessMissingUsage(ctx, c, account, resp, usage, terminalEventType, clientDisconnected)
@@ -648,9 +659,12 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 				line = s.replaceModelInSSELine(line, mappedModel, originalModel)
 			}
 			startsClientOutput := forceFlushFailedEvent || openAIStreamDataStartsClientOutput(data, eventType)
+			startsStructuralProgress := openAIStreamDataStartsStructuralProgress(data, eventType)
 			startsVisibleOutput := openAIStreamDataStartsVisibleOutput(data, eventType)
+			protocolProgressObserved = protocolProgressObserved || startsStructuralProgress
 			if guardFirstOutput {
 				eventStartsClientOutput = eventStartsClientOutput || startsClientOutput
+				eventStartsStructuralProgress = eventStartsStructuralProgress || startsStructuralProgress
 				eventStartsVisibleOutput = eventStartsVisibleOutput || startsVisibleOutput
 			}
 			if startsClientOutput && !openAIStreamEventTypeIsTerminal(eventType) {
@@ -704,6 +718,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 				terminalFailurePending = false
 				eventInProgress = false
 				eventStartsClientOutput = false
+				eventStartsStructuralProgress = false
 				eventStartsVisibleOutput = false
 				eventShouldFlush = false
 				return
@@ -712,6 +727,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 				terminalFailurePending = false
 				eventInProgress = false
 				eventStartsClientOutput = false
+				eventStartsStructuralProgress = false
 				eventStartsVisibleOutput = false
 				eventShouldFlush = false
 				return
@@ -866,6 +882,9 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 				return finalizeStream()
 			}
 			if failureDelivered {
+				if codexFailureTerminal && sawBareError && !sawResponseFailed && isOpenAIRequestScopedCapacityShed(failedMessage, bareErrorPayload) {
+					return resultWithUsage(), s.newOpenAIStreamFailoverError(c, account, false, upstreamRequestID, bareErrorPayload, failedMessage, resp.Header)
+				}
 				return resultWithUsage(), fmt.Errorf("upstream response failed: %s", failedMessage)
 			}
 			lastRead := time.Unix(0, atomic.LoadInt64(&lastReadAt))

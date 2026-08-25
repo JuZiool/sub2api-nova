@@ -316,6 +316,7 @@ func newOpenAIUpstreamFailoverError(
 	} else if requestScopedCapacity {
 		// Preserve the provider's actionable overload message after gateway
 		// retries are exhausted, but expose it as a retryable server_error.
+		failoverErr.RequestScopedTransient = true
 		failoverErr.ClientStatusCode = http.StatusServiceUnavailable
 		failoverErr.ClientMessage = openAICapacityShedClientMessage(upstreamMsg, responseBody)
 	}

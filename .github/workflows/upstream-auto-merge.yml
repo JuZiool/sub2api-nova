@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows:
       - Nova PR validation
-      - Static checks and script regressions
+      - 静态检查与脚本回归
     types: [completed]
 
 permissions:
@@ -18,8 +18,8 @@ concurrency:
 jobs:
   queue-auto-merge:
     name: 检查并排队上游同步自动合并
-    # Temporarily disabled: automatic upstream merges are paused.
-    if: ${{ github.event_name == 'nova-upstream-automation-disabled' }}
+    # 默认暂停；将仓库变量 NOVA_UPSTREAM_AUTOMATION_ENABLED 设为 true 后启用。
+    if: ${{ vars.NOVA_UPSTREAM_AUTOMATION_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
 

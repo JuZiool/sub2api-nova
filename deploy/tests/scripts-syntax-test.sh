@@ -12,6 +12,8 @@ scripts=(
   "$ROOT_DIR/deploy/docker-entrypoint.sh"
   "$ROOT_DIR/scripts/verify_database_backup_restore.sh"
   "$ROOT_DIR/backend/scripts/resolve-version.sh"
+  "$ROOT_DIR/deploy/tests/docker-compose-gateway-env-test.sh"
+  "$ROOT_DIR/deploy/tests/version-consistency-test.sh"
 )
 
 for script in "${scripts[@]}"; do

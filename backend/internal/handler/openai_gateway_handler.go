@@ -217,6 +217,17 @@ func openAICompatibleTextTargetAllowed(c *gin.Context, apiKey *service.APIKey, m
 		service.PlatformKimi, service.PlatformZhipu, service.PlatformDeepseek)
 }
 
+// isResponsesWebSocketCompositePlatform limits Responses WebSocket composite
+// routing to providers supported by the WS ingress and HTTP bridge.
+func isResponsesWebSocketCompositePlatform(platform string) bool {
+	switch platform {
+	case service.PlatformOpenAI, service.PlatformGrok:
+		return true
+	default:
+		return false
+	}
+}
+
 // NewOpenAIGatewayHandler creates a new OpenAIGatewayHandler
 func NewOpenAIGatewayHandler(
 	gatewayService *service.OpenAIGatewayService,

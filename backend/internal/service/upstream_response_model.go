@@ -216,6 +216,21 @@ func observedUpstreamResponseServiceTier(c *gin.Context) string {
 	return upstreamResponseModelObserverFromContext(c).ServiceTier()
 }
 
+// resolvedOpenAIUpstreamServiceTierFromObserver returns the tier actually used
+// for billing, preferring the upstream echo and falling back to the final body.
+func resolvedOpenAIUpstreamServiceTierFromObserver(observer *upstreamResponseModelObserver, outboundBodyTier *string) *string {
+	if observer != nil {
+		if tier := strings.TrimSpace(observer.ServiceTier()); tier != "" {
+			return normalizeOpenAIServiceTier(tier)
+		}
+	}
+	return outboundBodyTier
+}
+
+func resolvedOpenAIUpstreamServiceTier(c *gin.Context, outboundBodyTier *string) *string {
+	return resolvedOpenAIUpstreamServiceTierFromObserver(upstreamResponseModelObserverFromContext(c), outboundBodyTier)
+}
+
 func observeOpenAISSEBody(observer *upstreamResponseModelObserver, body string) {
 	if observer == nil || strings.TrimSpace(body) == "" {
 		return
