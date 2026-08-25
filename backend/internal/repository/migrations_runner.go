@@ -93,6 +93,10 @@ var migrationChecksumCompatibilityRules = map[string]migrationChecksumCompatibil
 	"218_group_audio_voice_pricing.sql":              newMigrationChecksumCompatibilityRule("40ee9f3a2af0e0a5e99dabc878fd0fe98be1011f26bcfcefcac7197f7081f0e7", "c2a5e5b4ffd6968ad1c10593289fbc11192cdea19fec3ed9bce3a84eff9a8351"),
 	// 224 在 Nova 历史部署中已应用过同一 SQL 逻辑的旧格式版本；只兼容已确认的旧 checksum。
 	"224_channel_monitor_mode_v2_default.sql": newMigrationChecksumCompatibilityRule("1484fbf7f979f0bdc5915d2f0d73049713abb43af06d6dec45a8a1fa682b046e", "9afa1ba5cfe874c6b6da9e0fb84aed02dc20956b391c56178d2f54c52b049261"),
+	// 229 在 Windows 环境曾以 CRLF 换行应用；当前镜像使用 LF，SQL 语义相同。
+	"229_plugins.sql": newMigrationChecksumCompatibilityRule("b1e97991df385eba0f62426572d7d58a0ef5c96a876df356ba070cca68e88896", "4beb7dc798c9d7d53ebe66dd7d9e1e7ee7965840fb4ad6688e421e004d72389b"),
+	// 230 与 229 同批在 Windows 环境以 CRLF 换行应用；当前镜像使用 LF。
+	"230_plugin_artifacts.sql": newMigrationChecksumCompatibilityRule("f33a1a3fdf1f0645a6813a5f87c344a18017193243133c4f45471dad3748d664", "255058f5ea2b008869137fa5a3b5edafff301ede84504288e35fbc1ec3ce1ed4"),
 }
 
 // ApplyMigrations 将嵌入的 SQL 迁移文件应用到指定的数据库。
