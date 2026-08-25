@@ -17,10 +17,10 @@ func TestAdaptResponsesClientTools_LowersDeclarationsHistoryChoiceAndNamespaces(
 		},
 		"tool_choice": map[string]any{"type": "custom", "name": "exec"},
 		"input": []any{
-			map[string]any{"type": "custom_tool_call", "call_id": "c1", "name": "exec", "input": "dir"},
-			map[string]any{"type": "custom_tool_call_output", "call_id": "c1", "output": "ok"},
-			map[string]any{"type": "tool_search_call", "call_id": "s1", "arguments": map[string]any{"query": "git"}},
-			map[string]any{"type": "tool_search_output", "call_id": "s1", "output": map[string]any{"groups": []string{"git"}}},
+			map[string]any{"type": "custom_tool_call", "id": "ctc_client", "call_id": "c1", "name": "exec", "input": "dir"},
+			map[string]any{"type": "custom_tool_call_output", "id": "ctco_client", "call_id": "c1", "output": "ok"},
+			map[string]any{"type": "tool_search_call", "id": "tsc_client", "call_id": "s1", "arguments": map[string]any{"query": "git"}},
+			map[string]any{"type": "tool_search_output", "id": "tso_client", "call_id": "s1", "output": map[string]any{"groups": []string{"git"}}},
 			map[string]any{"type": "function_call", "call_id": "n1", "namespace": "team", "name": "send", "arguments": "{}"},
 		},
 	}
