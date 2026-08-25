@@ -66,3 +66,11 @@ jobs:
       - name: 检查 Compose 配置
         shell: bash
         run: bash deploy/tests/compose-config-test.sh
+
+      - name: 检查 Gateway 环境映射
+        shell: bash
+        run: bash deploy/tests/docker-compose-gateway-env-test.sh
+
+      - name: 检查 Nova 版本文件一致性
+        shell: bash
+        run: bash deploy/tests/version-consistency-test.sh
