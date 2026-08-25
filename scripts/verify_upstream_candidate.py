@@ -13,7 +13,13 @@ import tempfile
 from pathlib import Path
 from typing import Sequence
 
-from sync_upstream import nova_version, path_matches, sha256_bytes, sha256_file
+from sync_upstream import (
+    nova_version,
+    path_matches,
+    protected_patterns,
+    sha256_bytes,
+    sha256_file,
+)
 
 
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -171,12 +177,6 @@ def verify_candidate(
     if provenance.get("manifestSha256") != sha256_bytes(base_manifest):
         raise VerificationError("candidate customization policy differs from trusted base")
 
-    patch = git_bytes(root, "diff", "--binary", old, new)
-    if provenance.get("patchSha256") != sha256_bytes(patch):
-        raise VerificationError("provenance patch hash does not match upstream diff")
-    if candidate_sha is not None:
-        verify_candidate_tree(root, provenance, base_sha, candidate_sha, patch)
-
     try:
         manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
         policy = manifest["protectedPathPolicy"]
@@ -197,13 +197,39 @@ def verify_candidate(
     stop_deleted = sorted(
         path for path in deleted if path_matches(path, policy["stopOnDeletePaths"])
     )
+    protected = protected_patterns(policy)
+    preserved_protected = sorted(path for path in paths if path_matches(path, protected))
+    applied = sorted(path for path in paths if path not in preserved_protected)
+    version_paths = [
+        relative
+        for relative in ("FORK_VERSION", "backend/cmd/server/VERSION")
+        if (root / relative).exists()
+    ]
+    patch_args = ["diff", "--binary", "--no-renames", old, new, "--", *applied]
+    patch = git_bytes(root, *patch_args)
+    if provenance.get("patchSha256") != sha256_bytes(patch):
+        raise VerificationError("provenance filtered patch hash does not match upstream diff")
+    for field, expected in (
+        ("appliedPaths", applied),
+        ("preservedProtectedPaths", preserved_protected),
+        ("versionPaths", version_paths),
+    ):
+        if provenance.get(field) != expected:
+            raise VerificationError(f"provenance {field} does not match upstream classification")
+    if candidate_sha is not None:
+        verify_candidate_tree(root, provenance, base_sha, candidate_sha, patch)
+
     return {
         "oldUpstreamCommit": old,
         "newUpstreamCommit": new,
+        "conflicts": [],
         "criticalPaths": critical,
         "manualReviewPaths": manual,
         "stopOnDeletePaths": stop_deleted,
-        "eligible": not (critical or manual or stop_deleted),
+        "appliedPaths": applied,
+        "preservedProtectedPaths": preserved_protected,
+        "versionPaths": version_paths,
+        "eligible": True,
     }
 
 

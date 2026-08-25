@@ -108,9 +108,9 @@ state/nova-customizations.json
 
 规则：
 
-- `criticalPaths` 被上游修改时，自动同步 PR 必须暂停自动合并，添加 `nova-manual-review` 标签。
-- `manualReviewPaths` 被修改时，允许创建 PR，但需要额外的 Nova 专属测试和人工确认。
-- 上游删除 Nova 依赖文件、改变数据库迁移或修改 Docker 部署配置时，直接停止同步。
+- `criticalPaths`、`manualReviewPaths`、`stopOnDeletePaths` 统一视为保护路径；上游补丁命中这些路径时，过滤掉对应文件变更，保留当前 Nova 代码，并在报告的 `preservedProtectedPaths` 中记录。
+- `FORK_VERSION` 和 `backend/cmd/server/VERSION` 仍由 Nova 同步脚本更新为 Nova 版本，不接受上游版本文件覆盖。
+- 只有普通路径发生真实三方冲突时才阻止候选并要求人工处理；保护路径本身的修改或删除不会暂停自动同步。
 - 清单不是永久固定的，每新增一项 Nova 核心功能，就同时补充清单和测试。
 
 ## 5. 同步脚本
@@ -150,7 +150,8 @@ artifacts/upstream-sync-report.md
 - 上游版本变化。
 - 变更文件统计。
 - 冲突文件。
-- 受影响的 `criticalPaths` 和 `manualReviewPaths`。
+- 实际应用的 `appliedPaths`、保留 Nova 代码的 `preservedProtectedPaths`、版本元数据 `versionPaths`。
+- 受影响的保护路径分类（`criticalPaths`、`manualReviewPaths`、`stopOnDeletePaths`）。
 - 需要执行的额外测试。
 - 自动合并判定结果。
 
@@ -201,10 +202,7 @@ create PR
 5. 有冲突时创建失败报告，不创建可合并 PR。
 6. 无冲突时推送 `sync/*` 分支。
 7. 创建或更新一个同步 PR。
-8. 根据影响范围添加标签：
-   - `upstream-sync`
-   - `nova-manual-review`
-   - `nova-critical-change`
+8. 添加 `upstream-sync` 标签；保护路径命中情况只记录在报告中，不自动添加人工阻止标签。
 
 该工作流不直接修改 `main`。
 
@@ -312,9 +310,8 @@ GET /health
 同步 PR 只有同时满足以下条件才允许自动合并：
 
 - 上游差异成功应用。
-- 没有 Git 冲突。
-- 没有 `nova-critical-change` 标签。
-- 没有 `nova-manual-review` 标签，或人工已移除该标签。
+- 没有普通路径的 Git 三方冲突；保护路径已保留当前 Nova 版本。
+- 没有人工添加 `nova-critical-change`、`nova-manual-review` 或 `no-auto-merge` 标签。
 - 所有必需的 GitHub Checks 通过。
 - Nova 专属后端、前端和 Docker 冒烟测试通过。
 - PR 分支基于最新 `main`。
@@ -414,7 +411,7 @@ bash deploy/update.sh --rollback
 - 实现 `scripts/sync_upstream.py`。
 - 实现上游差异三方应用。
 - 生成同步报告。
-- 自动标记关键文件影响。
+- 报告保护路径影响，并自动保留 Nova 版本。
 - 新增定时同步工作流。
 
 验收：
@@ -433,13 +430,13 @@ bash deploy/update.sh --rollback
 - 配置 GitHub Auto-merge。
 - 静态检查和脚本回归对每个 PR 运行，并列为必需检查。
 - 使用可信 `main` 上的候选证据验证器，不执行候选分支中的验证代码。
-- 无关键文件影响时允许自动合并。
-- 关键文件、数据库迁移和部署文件变更时自动暂停。
+- 保护路径命中时仍允许自动合并，因为候选保留当前 Nova 代码。
+- 普通路径发生真实三方冲突时自动暂停。
 
 验收：
 
 - 普通上游更新可自动完成同步、测试和合并。
-- Nova 核心功能变化会等待人工确认。
+- Nova 核心功能路径由当前 Nova 代码保护；只有普通路径冲突或测试失败才等待人工处理。
 - 任何测试失败都不会合并。
 
 ### 阶段四：合并后发布和回滚
@@ -460,8 +457,8 @@ bash deploy/update.sh --rollback
 | --- | --- | --- | --- |
 | 上游无更新 | 否 | 否 | 正常结束 |
 | 无冲突、只改普通文件、全部测试通过 | 是 | 是 | 自动合并并发布 |
-| 修改 Nova 普通定制文件 | 是 | 否 | 标记人工审核 |
-| 修改额度透支、认证、支付、迁移或 Docker | 是 | 否 | 强制人工审核 |
+| 修改保护路径 | 是 | 是（通过检查后） | 自动保留 Nova 旧代码并记录路径 |
+| 普通路径无冲突 | 是 | 是（通过检查后） | 自动合并 |
 | 存在冲突 | 可生成报告 | 否 | 人工解决冲突 |
 | 测试或构建失败 | 是 | 否 | 修复后重新运行 |
 | GHCR 发布失败 | 已合并 | 否 | 不推进成功基线，创建告警 Issue |
@@ -473,7 +470,7 @@ bash deploy/update.sh --rollback
 
 ```text
 普通上游更新：自动同步、自动验证、自动合并、自动发布
-Nova 核心功能受影响：自动暂停，人工确认
+保护路径受影响：保留 Nova 旧代码，自动继续
 发生冲突或测试失败：自动停止
 发布后启动失败：保留旧版本并可回滚
 ```

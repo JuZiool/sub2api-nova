@@ -43,7 +43,7 @@ class VerifyUpstreamCandidateTests(unittest.TestCase):
                 json.dumps(
                     {
                         "protectedPathPolicy": {
-                            "criticalPaths": [],
+                            "criticalPaths": ["protected.txt"],
                             "manualReviewPaths": [],
                             "stopOnDeletePaths": [],
                         }
@@ -53,19 +53,25 @@ class VerifyUpstreamCandidateTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (root / "tracked.txt").write_text("old\n", encoding="utf-8")
+            (root / "protected.txt").write_text("nova\n", encoding="utf-8")
             git(root, "add", ".")
             git(root, "commit", "-m", "base")
             old = git(root, "rev-parse", "HEAD")
             (root / "tracked.txt").write_text("new\n", encoding="utf-8")
+            (root / "protected.txt").write_text("upstream\n", encoding="utf-8")
             git(root, "add", ".")
             git(root, "commit", "-m", "upstream")
             new = git(root, "rev-parse", "HEAD")
             patch = subprocess.run(
-                ["git", "diff", "--binary", old, new],
+                ["git", "diff", "--binary", "--no-renames", old, new, "--", "tracked.txt"],
                 cwd=root,
                 check=True,
                 stdout=subprocess.PIPE,
             ).stdout
+            git(root, "switch", "-c", "sync/test", old)
+            (root / "tracked.txt").write_text("new\n", encoding="utf-8")
+            git(root, "add", "tracked.txt")
+            git(root, "commit", "-m", "fusion")
             provenance = {
                 "schema": 1,
                 "generator": "scripts/sync_upstream.py",
@@ -81,6 +87,9 @@ class VerifyUpstreamCandidateTests(unittest.TestCase):
                 "manifestSha256": module.sha256_file(manifest_path),
                 "patchSha256": module.sha256_bytes(patch),
                 "applyStatus": "ready",
+                "appliedPaths": ["tracked.txt"],
+                "preservedProtectedPaths": ["protected.txt"],
+                "versionPaths": [],
             }
             provenance_path = root / ".nova-upstream-provenance.json"
             provenance_path.write_text(
@@ -101,7 +110,9 @@ class VerifyUpstreamCandidateTests(unittest.TestCase):
             )
 
         self.assertTrue(result["eligible"])
-        self.assertEqual(result["criticalPaths"], [])
+        self.assertEqual(result["criticalPaths"], ["protected.txt"])
+        self.assertEqual(result["preservedProtectedPaths"], ["protected.txt"])
+        self.assertEqual(result["appliedPaths"], ["tracked.txt"])
         self.assertEqual(result["manualReviewPaths"], [])
 
     def test_rejects_candidate_with_extra_changes(self):
@@ -155,6 +166,9 @@ class VerifyUpstreamCandidateTests(unittest.TestCase):
                 "manifestSha256": module.sha256_file(manifest_path),
                 "patchSha256": module.sha256_bytes(patch),
                 "applyStatus": "ready",
+                "appliedPaths": ["tracked.txt"],
+                "preservedProtectedPaths": [],
+                "versionPaths": [],
             }
             provenance_path = root / ".nova-upstream-provenance.json"
             provenance_path.write_text(json.dumps(provenance) + "\n", encoding="utf-8")

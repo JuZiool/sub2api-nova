@@ -60,8 +60,8 @@ class RecordUpstreamSuccessTests(unittest.TestCase):
                 module.update_state(path, invalid, NOVA, "")
             self.assertEqual(json.loads(path.read_text(encoding="utf-8")), state())
 
-    def test_rejects_conflicts_and_deletions(self):
-        for field in ("conflicts", "stopOnDeletePaths"):
+    def test_rejects_conflicts_but_allows_preserved_protected_deletes(self):
+        for field in ("conflicts",):
             with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
                 path = Path(directory) / "upstreams.json"
                 path.write_text(json.dumps(state()) + "\n", encoding="utf-8")
@@ -69,6 +69,14 @@ class RecordUpstreamSuccessTests(unittest.TestCase):
                 invalid[field] = ["blocked/path"]
                 with self.assertRaises(module.BaselineError):
                     module.update_state(path, invalid, NOVA, "")
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "upstreams.json"
+            path.write_text(json.dumps(state()) + "\n", encoding="utf-8")
+            preserved = report()
+            preserved["stopOnDeletePaths"] = ["protected/path"]
+            module.update_state(path, preserved, NOVA, "")
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["lastSuccessfulCommit"], NEW)
 
     def test_atomic_write_failure_preserves_original(self):
         with tempfile.TemporaryDirectory() as directory:

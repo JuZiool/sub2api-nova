@@ -129,11 +129,9 @@ jobs:
             --base-sha "$base_sha" \
             --candidate-branch "$head_ref" \
             --candidate-sha "$head_sha")"
-          critical_count="$(jq '.criticalPaths | length' <<< "$candidate_report")"
-          manual_count="$(jq '.manualReviewPaths | length' <<< "$candidate_report")"
-          stop_count="$(jq '.stopOnDeletePaths | length' <<< "$candidate_report")"
-          if [[ "$critical_count" -gt 0 || "$manual_count" -gt 0 || "$stop_count" -gt 0 ]]; then
-            echo "候选重新分类为人工复核，禁止自动合并。"
+          conflict_count="$(jq '.conflicts | length' <<< "$candidate_report")"
+          if [[ "$conflict_count" -gt 0 ]]; then
+            echo "候选包含实际三方冲突，禁止自动合并。"
             echo "$candidate_report"
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0

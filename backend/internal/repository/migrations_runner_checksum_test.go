@@ -162,6 +162,24 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 		require.True(t, ok)
 	})
 
+	t.Run("229 Windows换行checksum可兼容当前格式", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"229_plugins.sql",
+			"4beb7dc798c9d7d53ebe66dd7d9e1e7ee7965840fb4ad6688e421e004d72389b",
+			"b1e97991df385eba0f62426572d7d58a0ef5c96a876df356ba070cca68e88896",
+		)
+		require.True(t, ok)
+	})
+
+	t.Run("230 Windows换行checksum可兼容当前格式", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"230_plugin_artifacts.sql",
+			"255058f5ea2b008869137fa5a3b5edafff301ede84504288e35fbc1ec3ce1ed4",
+			"f33a1a3fdf1f0645a6813a5f87c344a18017193243133c4f45471dad3748d664",
+		)
+		require.True(t, ok)
+	})
+
 	t.Run("119未知checksum不兼容", func(t *testing.T) {
 		ok := isMigrationChecksumCompatible(
 			"119_enforce_payment_orders_out_trade_no_unique.sql",

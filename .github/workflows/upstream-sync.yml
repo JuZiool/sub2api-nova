@@ -173,23 +173,23 @@ jobs:
           CANDIDATE_BRANCH: ${{ steps.existing.outputs.branch }}
         run: |
           set -euo pipefail
-          critical="$(python3 -c 'import json, os; print("\n".join(json.load(open(os.environ["RESULT_FILE"], encoding="utf-8")).get("criticalPaths", [])))')"
-          manual="$(python3 -c 'import json, os; print("\n".join(json.load(open(os.environ["RESULT_FILE"], encoding="utf-8")).get("manualReviewPaths", [])))')"
+          preserved="$(python3 -c 'import json, os; print("\n".join(json.load(open(os.environ["RESULT_FILE"], encoding="utf-8")).get("preservedProtectedPaths", [])))')"
+          applied="$(python3 -c 'import json, os; print("\n".join(json.load(open(os.environ["RESULT_FILE"], encoding="utf-8")).get("appliedPaths", [])))')"
           {
             echo "本 PR 由上游同步工作流生成，目标分支为 main。"
             echo
             echo "同步脚本只生成候选，不更新 lastSuccessfulCommit；成功基线须在本 PR 验证并合并后单独更新。"
             echo
             echo "候选分支：$CANDIDATE_BRANCH"
-            if [[ -n "$critical" ]]; then
+            if [[ -n "$preserved" ]]; then
               echo
-              echo "本次变更命中 Nova Critical 路径，必须人工复核："
-              printf '%s\n' "$critical" | sed 's/^/- `/' | sed 's/$/`/'
+              echo "本次上游变更命中保护路径，已自动保留当前 Nova 代码："
+              printf '%s\n' "$preserved" | sed 's/^/- `/' | sed 's/$/`/'
             fi
-            if [[ -n "$manual" ]]; then
+            if [[ -n "$applied" ]]; then
               echo
-              echo "本次变更命中 Nova 人工复核路径："
-              printf '%s\n' "$manual" | sed 's/^/- `/' | sed 's/$/`/'
+              echo "本次实际应用的普通路径："
+              printf '%s\n' "$applied" | sed 's/^/- `/' | sed 's/$/`/'
             fi
             echo
             cat "$REPORT_FILE"
@@ -203,8 +203,6 @@ jobs:
         run: |
           set -euo pipefail
           gh label create upstream-sync --repo "$GITHUB_REPOSITORY" --color 1d76db --description "由上游同步工作流生成" || true
-          gh label create nova-critical-change --repo "$GITHUB_REPOSITORY" --color b60205 --description "涉及 Nova 关键定制路径" || true
-          gh label create nova-manual-review --repo "$GITHUB_REPOSITORY" --color fbca04 --description "需要 Nova 人工复核" || true
 
       - name: 创建或更新同步 PR
         if: steps.sync.outputs.updated == 'true'
@@ -215,14 +213,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          critical_count="$(python3 -c 'import json, os; print(len(json.load(open(os.environ["RESULT_FILE"], encoding="utf-8")).get("criticalPaths", [])))')"
-          manual_count="$(python3 -c 'import json, os; print(len(json.load(open(os.environ["RESULT_FILE"], encoding="utf-8")).get("manualReviewPaths", [])))')"
           labels=(upstream-sync)
-          if [[ "$critical_count" -gt 0 ]]; then
-            labels+=(nova-critical-change nova-manual-review)
-          elif [[ "$manual_count" -gt 0 ]]; then
-            labels+=(nova-manual-review)
-          fi
           label_args=()
           for label in "${labels[@]}"; do
             label_args+=(--label "$label")

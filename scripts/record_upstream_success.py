@@ -42,8 +42,6 @@ def load_report(path: Path) -> dict[str, Any]:
         raise BaselineError("同步报告不是 ready 状态，拒绝记录成功基线")
     if report.get("conflicts"):
         raise BaselineError("同步报告包含冲突文件，拒绝记录成功基线")
-    if report.get("stopOnDeletePaths"):
-        raise BaselineError("同步报告包含删除即停路径，拒绝记录成功基线")
     return report
 
 
@@ -83,8 +81,6 @@ def update_state(
         raise BaselineError("同步报告不是 ready 状态，拒绝记录成功基线")
     if report.get("conflicts"):
         raise BaselineError("同步报告包含冲突文件，拒绝记录成功基线")
-    if report.get("stopOnDeletePaths"):
-        raise BaselineError("同步报告包含删除即停路径，拒绝记录成功基线")
     old = required_string(state.get("lastSuccessfulCommit"), "lastSuccessfulCommit")
     report_old = required_string(report["oldUpstreamCommit"], "oldUpstreamCommit")
     if not re.fullmatch(r"[0-9a-f]{40}", report_old):
