@@ -30,10 +30,13 @@ func TestAliasOpenAIOAuthReservedToolNames_RewritesDeclarationsAndReferences(t *
 	require.NoError(t, err)
 	require.True(t, changed)
 	require.Equal(t, "python", reverse[codexPythonToolAlias])
-	require.Equal(t, codexPythonToolAlias, reqBody["tools"].([]any)[0].(map[string]any)["name"])
-	require.Equal(t, codexPythonToolAlias, reqBody["tool_choice"].(map[string]any)["name"])
-	require.Equal(t, codexPythonToolAlias, reqBody["input"].([]any)[0].(map[string]any)["name"])
-	nested := reqBody["input"].([]any)[1].(map[string]any)["tools"].([]any)[0].(map[string]any)["function"].(map[string]any)
+	tools := requireAnySlice(t, reqBody["tools"])
+	require.Equal(t, codexPythonToolAlias, requireAnyMap(t, tools[0])["name"])
+	require.Equal(t, codexPythonToolAlias, requireAnyMap(t, reqBody["tool_choice"])["name"])
+	input := requireAnySlice(t, reqBody["input"])
+	require.Equal(t, codexPythonToolAlias, requireAnyMap(t, input[0])["name"])
+	additionalTools := requireAnySlice(t, requireAnyMap(t, input[1])["tools"])
+	nested := requireAnyMap(t, requireAnyMap(t, additionalTools[0])["function"])
 	require.Equal(t, codexPythonToolAlias, nested["name"])
 }
 
@@ -63,7 +66,8 @@ func TestApplyCodexOAuthTransform_ReservedPythonNameIsOAuthOnly(t *testing.T) {
 	result := applyCodexOAuthTransform(reqBody, true, false)
 	require.NoError(t, result.Error)
 	require.Equal(t, "PYTHON", result.ToolNameReverse[codexPythonToolAlias])
-	require.Equal(t, codexPythonToolAlias, reqBody["tools"].([]any)[0].(map[string]any)["name"])
+	tools := requireAnySlice(t, reqBody["tools"])
+	require.Equal(t, codexPythonToolAlias, requireAnyMap(t, tools[0])["name"])
 
 	apiKeyBody := []byte(`{"type":"response.create","tools":[{"type":"function","name":"python"}]}`)
 	normalized, changed, err := normalizeOpenAIResponsesWebSocketCompatibilityBody(apiKeyBody, &Account{Platform: PlatformOpenAI, Type: AccountTypeAPIKey}, false)
@@ -158,9 +162,11 @@ func TestAliasOpenAIOAuthReservedToolNames_PromptCompatibilityRunsFirst(t *testi
 	require.NoError(t, err)
 	result := applyCodexOAuthTransform(reqBody, true, false)
 	require.NoError(t, result.Error)
-	require.Equal(t, codexPythonToolAlias, reqBody["input"].([]any)[0].(map[string]any)["name"])
-	require.Equal(t, codexPythonToolAlias, reqBody["tools"].([]any)[0].(map[string]any)["name"])
-	require.Equal(t, codexPythonToolAlias, reqBody["tool_choice"].(map[string]any)["name"])
+	input := requireAnySlice(t, reqBody["input"])
+	tools := requireAnySlice(t, reqBody["tools"])
+	require.Equal(t, codexPythonToolAlias, requireAnyMap(t, input[0])["name"])
+	require.Equal(t, codexPythonToolAlias, requireAnyMap(t, tools[0])["name"])
+	require.Equal(t, codexPythonToolAlias, requireAnyMap(t, reqBody["tool_choice"])["name"])
 	encoded, err := json.Marshal(reqBody)
 	require.NoError(t, err)
 	require.Equal(t, "900719925474099312345", gjson.GetBytes(encoded, "sequence").Raw)
@@ -198,6 +204,27 @@ func TestCodexToolNameReverse_WSSessionReplacementDoesNotChangeActiveTurn(t *tes
 func TestDecodeOpenAIJSONUseNumberRejectsTrailingDocument(t *testing.T) {
 	var decoded map[string]any
 	require.Error(t, decodeOpenAIJSONUseNumber([]byte(`{"name":"python"}{"extra":true}`), &decoded))
+}
+
+func requireAnyMap(t *testing.T, value any) map[string]any {
+	t.Helper()
+	result, ok := value.(map[string]any)
+	require.True(t, ok)
+	return result
+}
+
+func requireAnySlice(t *testing.T, value any) []any {
+	t.Helper()
+	result, ok := value.([]any)
+	require.True(t, ok)
+	return result
+}
+
+func requireAnyString(t *testing.T, value any) string {
+	t.Helper()
+	result, ok := value.(string)
+	require.True(t, ok)
+	return result
 }
 
 func TestRestoreCodexToolNamesFromSSEContextUsesEventLineTypeWithoutAddingType(t *testing.T) {

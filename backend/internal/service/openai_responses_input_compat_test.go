@@ -34,7 +34,7 @@ func TestSanitizeOpenAIResponsesOrphanToolOutputs(t *testing.T) {
 		reqBody := map[string]any{"input": input}
 
 		require.True(t, sanitizeOpenAIResponsesOrphanToolOutputs(reqBody, input, false))
-		got := reqBody["input"].([]any)
+		got := requireAnySlice(t, reqBody["input"])
 		require.Empty(t, got)
 	})
 
@@ -90,14 +90,14 @@ func TestOpenAIResponsesInputTextIsNeverSilentlyTruncated(t *testing.T) {
 	reqBody := map[string]any{"input": input}
 
 	require.False(t, truncateOpenAIResponsesInputText(reqBody))
-	require.Equal(t, atLimit, input[0].(map[string]any)["output"])
+	require.Equal(t, atLimit, requireAnyMap(t, input[0])["output"])
 	for _, rawItem := range input[1:5] {
-		item := rawItem.(map[string]any)
+		item := requireAnyMap(t, rawItem)
 		require.Equal(t, oversized, item["output"])
 	}
-	content := input[5].(map[string]any)["content"].([]any)
-	require.Equal(t, "short", content[0].(map[string]any)["text"])
-	require.Equal(t, oversized, content[1].(map[string]any)["text"])
+	content := requireAnySlice(t, requireAnyMap(t, input[5])["content"])
+	require.Equal(t, "short", requireAnyMap(t, content[0])["text"])
+	require.Equal(t, oversized, requireAnyMap(t, content[1])["text"])
 }
 
 func TestOpenAIResponsesInputNeverRequestsPreemptiveTruncation(t *testing.T) {

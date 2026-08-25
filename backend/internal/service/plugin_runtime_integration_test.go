@@ -28,6 +28,7 @@ func TestPluginRuntimeIntegration(t *testing.T) {
 	if packagePath == "" {
 		t.Skip("未提供 SUB2API_TEST_PLUGIN_PACKAGE，跳过本地插件进程集成测试")
 	}
+	// #nosec G703 -- this local integration-test path is explicitly user supplied.
 	packageFile, err := os.Open(packagePath)
 	require.NoError(t, err)
 	defer func() { _ = packageFile.Close() }()

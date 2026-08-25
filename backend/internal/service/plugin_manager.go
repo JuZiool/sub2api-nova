@@ -310,8 +310,7 @@ func (m *PluginManager) reconcileOnce(ctx context.Context) error {
 		healthErr := current.runtime.checkHealth(healthCtx)
 		cancel()
 		if healthErr != nil {
-			m.markRuntimeUnavailable(current, healthErr.Error())
-			return healthErr
+			return errors.Join(healthErr, m.markRuntimeUnavailable(current, healthErr.Error()))
 		}
 		if enabled.State == PluginStateError || (enabled.State == PluginStateStarting && m.startingStateExpired(enabled)) {
 			return m.repo.MarkRuntimeHealthy(ctx, enabled.ID, enabled.BinarySHA256, enabled.ConfigEncrypted)

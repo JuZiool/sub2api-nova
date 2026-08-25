@@ -690,15 +690,6 @@ func isOpenAICompatDoneSentinelLine(line string) bool {
 	return ok && strings.TrimSpace(payload) == "[DONE]"
 }
 
-// openAICompatBufferedReadError 只标记错误发生在上游响应体读取阶段；
-// 具体端点自行决定是否允许重放请求，避免共享读取器扩大重试范围。
-type openAICompatBufferedReadError struct {
-	cause error
-}
-
-func (e *openAICompatBufferedReadError) Error() string { return e.cause.Error() }
-func (e *openAICompatBufferedReadError) Unwrap() error { return e.cause }
-
 func openAICompatTerminalResponse(event *apicompat.ResponsesStreamEvent, payload []byte) *apicompat.ResponsesResponse {
 	if event == nil {
 		return nil

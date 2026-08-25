@@ -293,11 +293,11 @@ func TestApplyCodexOAuthTransform_NormalizesNativeToolCallPairsByType(t *testing
 
 	applyCodexOAuthTransform(reqBody, false, false)
 
-	input := reqBody["input"].([]any)
-	custom := input[0].(map[string]any)
-	customOutput := input[1].(map[string]any)
-	search := input[2].(map[string]any)
-	searchOutput := input[3].(map[string]any)
+	input := requireAnySlice(t, reqBody["input"])
+	custom := requireAnyMap(t, input[0])
+	customOutput := requireAnyMap(t, input[1])
+	search := requireAnyMap(t, input[2])
+	searchOutput := requireAnyMap(t, input[3])
 	require.NotContains(t, custom, "id", "the invalid replay item id must be removed, not fabricated")
 	require.Equal(t, "ctc_custom", custom["call_id"])
 	require.Equal(t, custom["call_id"], customOutput["call_id"])
@@ -319,13 +319,17 @@ func TestApplyCodexOAuthTransform_PreservesNativeCallIDsWhenRequested(t *testing
 
 	applyCodexOAuthTransformWithOptions(reqBody, codexOAuthTransformOptions{PreserveToolCallIDs: true})
 
-	input := reqBody["input"].([]any)
-	require.Equal(t, "ctc_custom", input[0].(map[string]any)["id"])
-	require.Equal(t, "call_custom", input[0].(map[string]any)["call_id"])
-	require.Equal(t, "call_custom", input[1].(map[string]any)["call_id"])
-	require.Equal(t, "tsc_search", input[2].(map[string]any)["id"])
-	require.Equal(t, "call_search", input[2].(map[string]any)["call_id"])
-	require.Equal(t, "call_search", input[3].(map[string]any)["call_id"])
+	input := requireAnySlice(t, reqBody["input"])
+	custom := requireAnyMap(t, input[0])
+	customOutput := requireAnyMap(t, input[1])
+	search := requireAnyMap(t, input[2])
+	searchOutput := requireAnyMap(t, input[3])
+	require.Equal(t, "ctc_custom", custom["id"])
+	require.Equal(t, "call_custom", custom["call_id"])
+	require.Equal(t, "call_custom", customOutput["call_id"])
+	require.Equal(t, "tsc_search", search["id"])
+	require.Equal(t, "call_search", search["call_id"])
+	require.Equal(t, "call_search", searchOutput["call_id"])
 }
 
 func TestApplyCodexOAuthTransform_BoundsEquivalentNativeToolCallIDsWithPairing(t *testing.T) {
@@ -340,9 +344,9 @@ func TestApplyCodexOAuthTransform_BoundsEquivalentNativeToolCallIDsWithPairing(t
 
 	applyCodexOAuthTransformWithOptions(reqBody, codexOAuthTransformOptions{PreserveToolCallIDs: true})
 
-	input := reqBody["input"].([]any)
-	callID := input[0].(map[string]any)["call_id"].(string)
-	outputCallID := input[1].(map[string]any)["call_id"].(string)
+	input := requireAnySlice(t, reqBody["input"])
+	callID := requireAnyString(t, requireAnyMap(t, input[0])["call_id"])
+	outputCallID := requireAnyString(t, requireAnyMap(t, input[1])["call_id"])
 	require.LessOrEqual(t, len(callID), codexCallIDMaxLength)
 	require.True(t, strings.HasPrefix(callID, "ctc_"))
 	require.Equal(t, callID, outputCallID)
@@ -1763,9 +1767,9 @@ func TestNormalizeOpenAIResponsesImageGenerationTools_StripsGPTImage2InputFideli
 	}}
 
 	require.True(t, normalizeOpenAIResponsesImageGenerationTools(reqBody))
-	tools := reqBody["tools"].([]any)
-	require.NotContains(t, tools[0].(map[string]any), "input_fidelity")
-	require.Equal(t, "high", tools[1].(map[string]any)["input_fidelity"])
+	tools := requireAnySlice(t, reqBody["tools"])
+	require.NotContains(t, requireAnyMap(t, tools[0]), "input_fidelity")
+	require.Equal(t, "high", requireAnyMap(t, tools[1])["input_fidelity"])
 }
 
 func TestOpenAIRequestBodyImageGenerationToolNeedsNormalization_GPTImage2InputFidelity(t *testing.T) {

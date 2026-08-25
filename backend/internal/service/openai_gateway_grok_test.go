@@ -23,6 +23,8 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+const legacyGrokUpstreamUserAgent = "sub2api-grok/1.0"
+
 func TestPatchGrokResponsesBodySetsMappedModelAndDropsUnsupportedFields(t *testing.T) {
 	t.Parallel()
 
@@ -812,7 +814,7 @@ func TestBuildGrokResponsesRequestAllowsPublicAPIKeyBaseURLByDefault(t *testing.
 	require.Equal(t, "https://grok.example.test/v1/responses", req.URL.String())
 	require.Equal(t, "Bearer api-key", req.Header.Get("Authorization"))
 	require.Empty(t, req.Header.Get("X-Grok-Client-Version"))
-	require.NotEqual(t, grokUpstreamUserAgent, req.Header.Get("User-Agent"))
+	require.NotEqual(t, legacyGrokUpstreamUserAgent, req.Header.Get("User-Agent"))
 }
 
 func TestBuildGrokResponsesRequestHonorsOAuthOfficialEndpointSwitch(t *testing.T) {
@@ -1116,7 +1118,7 @@ func TestForwardGrokMediaImagesGenerationNormalizesImagineAlias(t *testing.T) {
 	require.Equal(t, "Bearer api-key", upstream.lastReq.Header.Get("Authorization"))
 	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Content-Type"))
 	require.Empty(t, upstream.lastReq.Header.Get("X-Grok-Client-Version"))
-	require.NotEqual(t, grokUpstreamUserAgent, upstream.lastReq.Header.Get("User-Agent"))
+	require.NotEqual(t, legacyGrokUpstreamUserAgent, upstream.lastReq.Header.Get("User-Agent"))
 	require.JSONEq(t, `{"model":"grok-imagine-image-quality","prompt":"draw a cat"}`, string(upstream.lastBody))
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.JSONEq(t, `{"data":[{"url":"https://images.test/cat.png"}]}`, recorder.Body.String())
@@ -1630,7 +1632,7 @@ func TestForwardGrokMediaVideoStatusUsesGETWithoutBody(t *testing.T) {
 	require.Equal(t, http.MethodGet, upstream.lastReq.Method)
 	require.Equal(t, "Bearer api-key", upstream.lastReq.Header.Get("Authorization"))
 	require.Empty(t, upstream.lastReq.Header.Get("X-Grok-Client-Version"))
-	require.NotEqual(t, grokUpstreamUserAgent, upstream.lastReq.Header.Get("User-Agent"))
+	require.NotEqual(t, legacyGrokUpstreamUserAgent, upstream.lastReq.Header.Get("User-Agent"))
 	require.Empty(t, upstream.lastReq.Header.Get("Content-Type"))
 	require.Empty(t, upstream.lastBody)
 	require.Equal(t, http.StatusOK, recorder.Code)
@@ -1966,7 +1968,7 @@ func TestForwardGrokResponsesAPIKeyUsesXAIResponses(t *testing.T) {
 	require.Equal(t, "https://api.x.ai/v1/responses", upstream.lastReq.URL.String())
 	require.Equal(t, "Bearer xai-test-key", upstream.lastReq.Header.Get("Authorization"))
 	require.Empty(t, upstream.lastReq.Header.Get("X-Grok-Client-Version"))
-	require.NotEqual(t, grokUpstreamUserAgent, upstream.lastReq.Header.Get("User-Agent"))
+	require.NotEqual(t, legacyGrokUpstreamUserAgent, upstream.lastReq.Header.Get("User-Agent"))
 	require.Equal(t, "grok-4.6", gjson.GetBytes(upstream.lastBody, "model").String())
 	require.Equal(t, "resp_grok_api_key", result.ResponseID)
 	require.Equal(t, 2, result.Usage.InputTokens)
@@ -2243,7 +2245,7 @@ func TestForwardAsChatCompletionsForGrokAPIKeyUsesConfiguredRawEndpointWithoutOA
 	require.Equal(t, "https://grok.example.test/v1/chat/completions", upstream.lastReq.URL.String())
 	require.Equal(t, "Bearer third-party-key", upstream.lastReq.Header.Get("Authorization"))
 	require.Empty(t, upstream.lastReq.Header.Get("X-Grok-Client-Version"))
-	require.NotEqual(t, grokUpstreamUserAgent, upstream.lastReq.Header.Get("User-Agent"))
+	require.NotEqual(t, legacyGrokUpstreamUserAgent, upstream.lastReq.Header.Get("User-Agent"))
 }
 
 func TestForwardAsChatCompletionsForGrokAPIKeyRejectsNonStreamingResponseWithoutUsage(t *testing.T) {

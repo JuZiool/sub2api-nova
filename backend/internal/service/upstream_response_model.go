@@ -227,10 +227,6 @@ func resolvedOpenAIUpstreamServiceTierFromObserver(observer *upstreamResponseMod
 	return outboundBodyTier
 }
 
-func resolvedOpenAIUpstreamServiceTier(c *gin.Context, outboundBodyTier *string) *string {
-	return resolvedOpenAIUpstreamServiceTierFromObserver(upstreamResponseModelObserverFromContext(c), outboundBodyTier)
-}
-
 func observeOpenAISSEBody(observer *upstreamResponseModelObserver, body string) {
 	if observer == nil || strings.TrimSpace(body) == "" {
 		return
