@@ -1514,7 +1514,15 @@ func (s *OpenAIGatewayService) handleOpenAIStreamTerminalAccountSideEffects(
 		if c != nil && c.Request != nil {
 			ctx = c.Request.Context()
 		}
-		return statusCode, s.handleOpenAIAccountUpstreamError(ctx, account, statusCode, headers, payload)
+		// A response.failed event is carried by an HTTP 200 stream. Its
+		// x-codex-* headers are a successful-stream quota snapshot, not the
+		// headers of a real HTTP 429. Do not let them trigger account quota
+		// cooldown; the stream's semantic status still drives retry handling.
+		classificationHeaders := headers
+		if statusCode == http.StatusTooManyRequests {
+			classificationHeaders = nil
+		}
+		return statusCode, s.handleOpenAIAccountUpstreamError(ctx, account, statusCode, classificationHeaders, payload)
 	default:
 		return statusCode, false
 	}
@@ -1613,7 +1621,14 @@ func (s *OpenAIGatewayService) newOpenAIStreamFailoverError(
 		},
 	})
 	retryableOnSameAccount := openAIStreamFailedEventRetryableOnSameAccount(account, payload, message)
-	failoverErr := s.newOpenAIAccountFailoverError(account, statusCode, headers, payload, message, shouldDisable, retryableOnSameAccount)
+	// 流终止事件承载在 HTTP 200 内，外层响应头描述的是成功流状态，而不是语义上的
+	// 429 事件。仅在配额分类时忽略这些头；故障转移错误仍保留它们，使 Retry-After
+	// 和请求 ID 能继续传递给后续处理。
+	classificationHeaders := headers
+	if statusCode == http.StatusTooManyRequests {
+		classificationHeaders = nil
+	}
+	failoverErr := s.newOpenAIAccountFailoverErrorWithClassificationHeaders(account, statusCode, headers, classificationHeaders, payload, message, shouldDisable, retryableOnSameAccount)
 	if failoverErr.IsCredentialFailure() || failoverErr.RequestScopedTransient {
 		return failoverErr
 	}
