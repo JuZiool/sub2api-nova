@@ -1514,7 +1514,15 @@ func (s *OpenAIGatewayService) handleOpenAIStreamTerminalAccountSideEffects(
 		if c != nil && c.Request != nil {
 			ctx = c.Request.Context()
 		}
-		return statusCode, s.handleOpenAIAccountUpstreamError(ctx, account, statusCode, headers, payload)
+		// A response.failed event is carried by an HTTP 200 stream. Its
+		// x-codex-* headers are a successful-stream quota snapshot, not the
+		// headers of a real HTTP 429. Do not let them trigger account quota
+		// cooldown; the stream's semantic status still drives retry handling.
+		classificationHeaders := headers
+		if statusCode == http.StatusTooManyRequests {
+			classificationHeaders = nil
+		}
+		return statusCode, s.handleOpenAIAccountUpstreamError(ctx, account, statusCode, classificationHeaders, payload)
 	default:
 		return statusCode, false
 	}
