@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "generator": "scripts/sync_upstream.py",
+  "upstreamRepository": "Wei-Shaw/sub2api",
+  "upstreamRemote": "upstream",
+  "upstreamRef": "main",
+  "oldUpstreamCommit": "aa2c4e8d136b13553ac7bae3d76c25715333a554",
+  "newUpstreamCommit": "7634e3c23b5b9afc588c37b170820f63f1d41bbb",
+  "oldVersion": "0.1.182",
+  "newVersion": "0.1.183",
+  "targetRef": "main",
+  "candidateBranch": "sync/upstream-7634e3c23-2026-08-25",
+  "baseNovaCommit": "90d1503d45ad971cd86673a64d6c0ba378efb493",
+  "manifestPath": "state/nova-customizations.json",
+  "manifestSha256": "820a5c3b34aef58aac3ad71366255b206c4b84843b4886b1f1126ccd16fabeb2",
+  "patchSha256": "23d753c2aeac1df2723b1aeb2ab51ed518125e6c2a47b9d31580bb0686c90882",
+  "applyStatus": "ready"
+}
