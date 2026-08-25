@@ -122,18 +122,20 @@ class SyncUpstreamFixtureTests(unittest.TestCase):
             self.assertEqual(json.loads((fixture.root / "state/upstreams.json").read_text(encoding="utf-8"))["lastSuccessfulCommit"], fixture.success_baseline)
             self.assertIn("blocked", (fixture.root / "artifacts/report.md").read_text(encoding="utf-8"))
 
-    def test_critical_change_is_applied_but_marked_manual_review(self):
+    def test_protected_change_preserves_nova_code_and_stays_mergeable(self):
         with tempfile.TemporaryDirectory() as directory:
             policy = {"criticalPaths": ["critical.txt"], "manualReviewPaths": [], "stopOnDeletePaths": []}
             fixture = SyncFixture(Path(directory), policy)
             new = fixture.upstream_commit("critical.txt", "upstream\n", "upstream critical change")
             result = fixture.run(new, "--branch", "sync/critical")
             self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual((fixture.root / "critical.txt").read_text(encoding="utf-8"), "base\n")
             report = (fixture.root / "artifacts/report.md").read_text(encoding="utf-8")
             self.assertIn("critical.txt", report)
-            self.assertIn("blocked", report)
+            self.assertIn("eligible-after-required-checks", report)
+            self.assertIn("已保留 Nova 代码的保护路径", report)
 
-    def test_stop_on_delete_does_not_apply_or_create_branch(self):
+    def test_protected_delete_preserves_nova_file_and_stays_mergeable(self):
         with tempfile.TemporaryDirectory() as directory:
             policy = {"criticalPaths": [], "manualReviewPaths": [], "stopOnDeletePaths": ["stop.txt"]}
             fixture = SyncFixture(Path(directory), policy)
@@ -143,8 +145,8 @@ class SyncUpstreamFixtureTests(unittest.TestCase):
             git(fixture.root, "switch", "main")
             git(fixture.root, "branch", "-D", "upstream-work")
             result = fixture.run(new, "--branch", "sync/delete")
-            self.assertEqual(result.returncode, 2, result.stderr)
-            self.assertNotIn("sync/delete", git(fixture.root, "branch"))
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("sync/delete", git(fixture.root, "branch"))
             self.assertTrue((fixture.root / "stop.txt").exists())
 
 

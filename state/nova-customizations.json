@@ -45,10 +45,10 @@
     ]
   },
   "classificationRules": {
-    "criticalChange": "If an upstream candidate changes, deletes, or renames a critical path, block automatic merge and require the nova-manual-review label.",
-    "manualReviewChange": "If an upstream candidate changes a manualReviewPath, allow PR creation but require Nova-specific review before merge.",
-    "deleteChange": "If an upstream candidate deletes a stopOnDeletePath, stop synchronization and do not create an auto-mergeable PR.",
-    "unlistedChange": "Changes outside these paths may use the normal validation and automatic merge policy after all required checks pass."
+    "protectedChange": "If an upstream candidate changes, deletes, or renames any protected path, omit that path from the fusion patch and preserve the current Nova tree. Record the path in preservedProtectedPaths.",
+    "conflictChange": "Only a real three-way conflict in an unprotected path blocks the candidate and requires manual resolution.",
+    "versionChange": "FORK_VERSION and backend/cmd/server/VERSION remain Nova-controlled metadata and are updated by update_nova_versions() after the filtered patch is applied.",
+    "unlistedChange": "Changes outside protected paths use the normal validation and automatic merge policy after all required checks pass."
   },
   "validationRequirements": [
     "Validate fusion candidate",
@@ -57,5 +57,5 @@
     "frontend lint, typecheck, tests, and build",
     "Nova Docker Compose build, startup, and health smoke checks"
   ],
-  "updatedAt": "2026-08-21T19:32:47Z"
+  "updatedAt": "2026-08-26T00:00:00Z"
 }

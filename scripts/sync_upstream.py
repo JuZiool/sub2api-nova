@@ -102,9 +102,12 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def patch_bytes(config: Config, old: str, new: str) -> bytes:
+def patch_bytes(config: Config, old: str, new: str, paths: Sequence[str] | None = None) -> bytes:
+    args = ["git", "diff", "--binary", "--no-renames", old, new]
+    if paths is not None:
+        args.extend(["--", *paths])
     return subprocess.run(
-        ["git", "diff", "--binary", old, new],
+        args,
         cwd=config.root,
         check=True,
         stdout=subprocess.PIPE,
@@ -151,6 +154,9 @@ def write_provenance(config: Config, report: dict, patch: bytes) -> str:
         "manifestSha256": manifest_hash,
         "patchSha256": sha256_bytes(patch),
         "applyStatus": report["applyStatus"],
+        "appliedPaths": report.get("appliedPaths", []),
+        "preservedProtectedPaths": report.get("preservedProtectedPaths", []),
+        "versionPaths": report.get("versionPaths", []),
     }
     provenance_path.write_text(
         json.dumps(provenance, ensure_ascii=False, indent=2) + "\n",
@@ -170,13 +176,31 @@ def path_matches(path: str, patterns: Iterable[str]) -> bool:
     return False
 
 
+def protected_patterns(policy: dict) -> list[str]:
+    """Return the union of every path class that must retain Nova's code."""
+    patterns: list[str] = []
+    for key in ("criticalPaths", "manualReviewPaths", "stopOnDeletePaths"):
+        patterns.extend(policy.get(key, []))
+    return list(dict.fromkeys(patterns))
+
+
+def split_protected_paths(paths: Iterable[str], policy: dict) -> tuple[list[str], list[str]]:
+    protected = protected_patterns(policy)
+    preserved = sorted({path for path in paths if path_matches(path, protected)})
+    applied = sorted({path for path in paths if path not in preserved})
+    return applied, preserved
+
+
 def changed_paths(config: Config, old: str, new: str) -> list[str]:
     output = run_git(config, "diff", "--name-only", "--no-renames", old, new)
     return sorted({line for line in output.splitlines() if line})
 
 
-def diff_stat(config: Config, old: str, new: str) -> list[str]:
-    output = run_git(config, "diff", "--stat", "--no-renames", old, new)
+def diff_stat(config: Config, old: str, new: str, paths: Sequence[str] | None = None) -> list[str]:
+    args = ["diff", "--stat", "--no-renames", old, new]
+    if paths is not None:
+        args.extend(["--", *paths])
+    output = run_git(config, *args)
     return [line for line in output.splitlines() if line.strip()]
 
 
@@ -299,10 +323,13 @@ def write_report(config: Config, report: dict) -> None:
     ]
     lines.extend(f"- `{item}`" for item in report["diffStat"] or ["无变更"])
     for title, key in (
+        ("实际应用路径", "appliedPaths"),
+        ("已保留 Nova 代码的保护路径", "preservedProtectedPaths"),
+        ("版本元数据路径", "versionPaths"),
         ("冲突文件", "conflicts"),
         ("Critical 路径影响", "criticalPaths"),
         ("人工复核路径影响", "manualReviewPaths"),
-        ("删除即停路径", "stopOnDeletePaths"),
+        ("保护路径删除影响", "stopOnDeletePaths"),
     ):
         lines.extend(["", f"## {title}", ""])
         values = report[key]
@@ -406,12 +433,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise SyncError(f"上游新提交不是旧成功基线的后代：{old} -> {new}")
         paths = changed_paths(config, old, new)
         policy = manifest["protectedPathPolicy"]
+        applied_paths, preserved_protected_paths = split_protected_paths(paths, policy)
         critical = [path for path in paths if path_matches(path, policy["criticalPaths"])]
         manual = [path for path in paths if path_matches(path, policy["manualReviewPaths"])]
         stop_deleted = [path for path in deleted_paths(config, old, new) if path_matches(path, policy["stopOnDeletePaths"])]
-        patch = patch_bytes(config, old, new)
+        patch = patch_bytes(config, old, new, applied_paths)
         conflicts = preflight_three_way(config, patch)
-        blocked = bool(conflicts or stop_deleted)
+        version_paths = [
+            relative
+            for relative in ("FORK_VERSION", "backend/cmd/server/VERSION")
+            if (config.root / relative).exists()
+        ]
+        blocked = bool(conflicts)
         report = {
             "generatedAt": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "oldUpstreamCommit": old,
@@ -422,9 +455,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             "targetRef": config.target_ref,
             "candidateBranch": None,
             "applyStatus": "blocked" if blocked else "ready",
-            "autoMergeDecision": "blocked" if blocked or critical or manual else "eligible-after-required-checks",
-            "diffStat": diff_stat(config, old, new),
+            "autoMergeDecision": "blocked" if blocked else "eligible-after-required-checks",
+            "diffStat": diff_stat(config, old, new, applied_paths) if applied_paths else [],
             "conflicts": conflicts,
+            "appliedPaths": applied_paths,
+            "preservedProtectedPaths": preserved_protected_paths,
+            "versionPaths": version_paths,
             "criticalPaths": critical,
             "manualReviewPaths": manual,
             "stopOnDeletePaths": stop_deleted,
@@ -442,7 +478,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             config.report_path.parent.mkdir(parents=True, exist_ok=True)
             write_report(config, report)
             if config.commit:
-                stage_paths = [*paths, *updated_versions, provenance_path]
+                stage_paths = [*applied_paths, *updated_versions, provenance_path]
                 try:
                     stage_paths.append(str(config.report_path.relative_to(config.root)))
                 except ValueError:
