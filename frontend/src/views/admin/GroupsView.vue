@@ -609,7 +609,7 @@
           </select>
           <div v-for="(rule, index) in createForm.model_rate_multipliers" :key="`${rule.pattern}-${index}`" class="flex gap-2">
             <input v-model.trim="rule.pattern" class="input flex-1" placeholder="模型名称或前缀，例如 gpt-5.6-*" />
-            <input v-model.number="rule.multiplier" class="input w-28" type="number" min="0.0001" max="1000" step="0.001" />
+            <input v-model.number="rule.multiplier" class="input w-28" type="number" min="0" max="1000" step="any" />
             <button type="button" class="btn btn-danger btn-sm" @click="createForm.model_rate_multipliers.splice(index, 1)">删除</button>
           </div>
         </div>
@@ -2237,7 +2237,7 @@
           </select>
           <div v-for="(rule, index) in editForm.model_rate_multipliers" :key="`${rule.pattern}-${index}`" class="flex gap-2">
             <input v-model.trim="rule.pattern" class="input flex-1" placeholder="模型名称或前缀，例如 gpt-5.6-*" />
-            <input v-model.number="rule.multiplier" class="input w-28" type="number" min="0.0001" max="1000" step="0.001" />
+            <input v-model.number="rule.multiplier" class="input w-28" type="number" min="0" max="1000" step="any" />
             <button type="button" class="btn btn-danger btn-sm" @click="editForm.model_rate_multipliers.splice(index, 1)">删除</button>
           </div>
         </div>
