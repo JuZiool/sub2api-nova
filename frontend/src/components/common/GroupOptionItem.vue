@@ -35,7 +35,7 @@
             <span class="font-bold">{{ userRateMultiplier }}x</span>
           </template>
           <template v-else>
-            {{ rateMultiplier }}x
+            {{ ratePrefix ? `${ratePrefix} ` : '' }}{{ rateMultiplier }}x
           </template>
         </span>
         <span
@@ -77,6 +77,7 @@ interface Props {
   subscriptionType?: SubscriptionType
   rateMultiplier?: number
   userRateMultiplier?: number | null
+  ratePrefix?: string
   peakRateEnabled?: boolean
   peakStart?: string
   peakEnd?: string
@@ -92,6 +93,7 @@ const props = withDefaults(defineProps<Props>(), {
   selected: false,
   showCheckmark: true,
   userRateMultiplier: null,
+  ratePrefix: '',
   peakRateEnabled: false,
   showFullDescription: false
 })
