@@ -336,12 +336,14 @@ func (s *OpenAIGatewayService) ResolveGrokMediaVideoRequestAccount(
 // first observes a completed video URL. Status may omit model/duration; we fall
 // back to this snapshot, then defaults.
 type GrokVideoPendingBilling struct {
-	Model                string `json:"model"`
-	BillingModel         string `json:"billing_model,omitempty"`
-	UpstreamModel        string `json:"upstream_model,omitempty"`
-	VideoResolution      string `json:"video_resolution,omitempty"`
-	VideoDurationSeconds int    `json:"video_duration_seconds,omitempty"`
-	OriginalModel        string `json:"original_model,omitempty"`
+	Model                string          `json:"model"`
+	BillingModel         string          `json:"billing_model,omitempty"`
+	UpstreamModel        string          `json:"upstream_model,omitempty"`
+	VideoResolution      string          `json:"video_resolution,omitempty"`
+	VideoDurationSeconds int             `json:"video_duration_seconds,omitempty"`
+	OriginalModel        string          `json:"original_model,omitempty"`
+	PricingAt            time.Time       `json:"pricing_at,omitempty"`
+	RateResolution       *RateResolution `json:"rate_resolution,omitempty"`
 	// CreatedAt is when the gateway accepted the async create (RFC3339Nano UTC).
 	// duration_ms for deferred billing is measured from this instant until the
 	// first official done+video.url observation (status poll or content download),
@@ -418,6 +420,12 @@ func (s *OpenAIGatewayService) StoreGrokVideoPendingBilling(
 	pending.BillingModel = strings.TrimSpace(pending.BillingModel)
 	pending.UpstreamModel = strings.TrimSpace(pending.UpstreamModel)
 	pending.OriginalModel = strings.TrimSpace(pending.OriginalModel)
+	if err := ValidateRateResolution(pending.RateResolution); err != nil {
+		return fmt.Errorf("invalid grok video rate resolution: %w", err)
+	}
+	if pending.PricingAt.IsZero() {
+		return fmt.Errorf("grok video pending billing pricing time is missing")
+	}
 	if pending.VideoResolution != "" {
 		pending.VideoResolution = NormalizeVideoBillingResolutionOrDefault(pending.VideoResolution)
 	}
@@ -457,6 +465,15 @@ func (s *OpenAIGatewayService) LoadGrokVideoPendingBilling(
 	var pending GrokVideoPendingBilling
 	if err := json.Unmarshal(payload, &pending); err != nil {
 		return nil, err
+	}
+	if pending.RateResolution == nil {
+		return nil, fmt.Errorf("grok video pending billing rate resolution is missing")
+	}
+	if err := ValidateRateResolution(pending.RateResolution); err != nil {
+		return nil, fmt.Errorf("grok video pending billing rate resolution is invalid: %w", err)
+	}
+	if pending.PricingAt.IsZero() {
+		return nil, fmt.Errorf("grok video pending billing pricing time is missing")
 	}
 	return &pending, nil
 }

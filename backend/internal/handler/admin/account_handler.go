@@ -2787,6 +2787,14 @@ func (h *AccountHandler) SyncUpstreamModels(c *gin.Context) {
 		return
 	}
 
+	if err := h.adminService.UpdateAccountExtra(c.Request.Context(), accountID, map[string]any{
+		"supported_models": models,
+	}); err != nil {
+		slog.Warn("persist_upstream_models_failed", "account_id", accountID, "error", err)
+		response.Error(c, http.StatusInternalServerError, "Failed to save synced upstream models")
+		return
+	}
+
 	response.Success(c, gin.H{"models": models})
 }
 

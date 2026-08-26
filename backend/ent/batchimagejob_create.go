@@ -262,6 +262,26 @@ func (_c *BatchImageJobCreate) SetNillableActualCost(v *float64) *BatchImageJobC
 	return _c
 }
 
+// SetPricingAt sets the "pricing_at" field.
+func (_c *BatchImageJobCreate) SetPricingAt(v time.Time) *BatchImageJobCreate {
+	_c.mutation.SetPricingAt(v)
+	return _c
+}
+
+// SetNillablePricingAt sets the "pricing_at" field if the given value is not nil.
+func (_c *BatchImageJobCreate) SetNillablePricingAt(v *time.Time) *BatchImageJobCreate {
+	if v != nil {
+		_c.SetPricingAt(*v)
+	}
+	return _c
+}
+
+// SetRateResolutionSnapshot sets the "rate_resolution_snapshot" field.
+func (_c *BatchImageJobCreate) SetRateResolutionSnapshot(v map[string]interface{}) *BatchImageJobCreate {
+	_c.mutation.SetRateResolutionSnapshot(v)
+	return _c
+}
+
 // SetCurrency sets the "currency" field.
 func (_c *BatchImageJobCreate) SetCurrency(v string) *BatchImageJobCreate {
 	_c.mutation.SetCurrency(v)
@@ -860,6 +880,14 @@ func (_c *BatchImageJobCreate) createSpec() (*BatchImageJob, *sqlgraph.CreateSpe
 		_spec.SetField(batchimagejob.FieldActualCost, field.TypeFloat64, value)
 		_node.ActualCost = &value
 	}
+	if value, ok := _c.mutation.PricingAt(); ok {
+		_spec.SetField(batchimagejob.FieldPricingAt, field.TypeTime, value)
+		_node.PricingAt = &value
+	}
+	if value, ok := _c.mutation.RateResolutionSnapshot(); ok {
+		_spec.SetField(batchimagejob.FieldRateResolutionSnapshot, field.TypeJSON, value)
+		_node.RateResolutionSnapshot = value
+	}
 	if value, ok := _c.mutation.Currency(); ok {
 		_spec.SetField(batchimagejob.FieldCurrency, field.TypeString, value)
 		_node.Currency = value
@@ -1331,6 +1359,42 @@ func (u *BatchImageJobUpsert) AddActualCost(v float64) *BatchImageJobUpsert {
 // ClearActualCost clears the value of the "actual_cost" field.
 func (u *BatchImageJobUpsert) ClearActualCost() *BatchImageJobUpsert {
 	u.SetNull(batchimagejob.FieldActualCost)
+	return u
+}
+
+// SetPricingAt sets the "pricing_at" field.
+func (u *BatchImageJobUpsert) SetPricingAt(v time.Time) *BatchImageJobUpsert {
+	u.Set(batchimagejob.FieldPricingAt, v)
+	return u
+}
+
+// UpdatePricingAt sets the "pricing_at" field to the value that was provided on create.
+func (u *BatchImageJobUpsert) UpdatePricingAt() *BatchImageJobUpsert {
+	u.SetExcluded(batchimagejob.FieldPricingAt)
+	return u
+}
+
+// ClearPricingAt clears the value of the "pricing_at" field.
+func (u *BatchImageJobUpsert) ClearPricingAt() *BatchImageJobUpsert {
+	u.SetNull(batchimagejob.FieldPricingAt)
+	return u
+}
+
+// SetRateResolutionSnapshot sets the "rate_resolution_snapshot" field.
+func (u *BatchImageJobUpsert) SetRateResolutionSnapshot(v map[string]interface{}) *BatchImageJobUpsert {
+	u.Set(batchimagejob.FieldRateResolutionSnapshot, v)
+	return u
+}
+
+// UpdateRateResolutionSnapshot sets the "rate_resolution_snapshot" field to the value that was provided on create.
+func (u *BatchImageJobUpsert) UpdateRateResolutionSnapshot() *BatchImageJobUpsert {
+	u.SetExcluded(batchimagejob.FieldRateResolutionSnapshot)
+	return u
+}
+
+// ClearRateResolutionSnapshot clears the value of the "rate_resolution_snapshot" field.
+func (u *BatchImageJobUpsert) ClearRateResolutionSnapshot() *BatchImageJobUpsert {
+	u.SetNull(batchimagejob.FieldRateResolutionSnapshot)
 	return u
 }
 
@@ -2108,6 +2172,48 @@ func (u *BatchImageJobUpsertOne) UpdateActualCost() *BatchImageJobUpsertOne {
 func (u *BatchImageJobUpsertOne) ClearActualCost() *BatchImageJobUpsertOne {
 	return u.Update(func(s *BatchImageJobUpsert) {
 		s.ClearActualCost()
+	})
+}
+
+// SetPricingAt sets the "pricing_at" field.
+func (u *BatchImageJobUpsertOne) SetPricingAt(v time.Time) *BatchImageJobUpsertOne {
+	return u.Update(func(s *BatchImageJobUpsert) {
+		s.SetPricingAt(v)
+	})
+}
+
+// UpdatePricingAt sets the "pricing_at" field to the value that was provided on create.
+func (u *BatchImageJobUpsertOne) UpdatePricingAt() *BatchImageJobUpsertOne {
+	return u.Update(func(s *BatchImageJobUpsert) {
+		s.UpdatePricingAt()
+	})
+}
+
+// ClearPricingAt clears the value of the "pricing_at" field.
+func (u *BatchImageJobUpsertOne) ClearPricingAt() *BatchImageJobUpsertOne {
+	return u.Update(func(s *BatchImageJobUpsert) {
+		s.ClearPricingAt()
+	})
+}
+
+// SetRateResolutionSnapshot sets the "rate_resolution_snapshot" field.
+func (u *BatchImageJobUpsertOne) SetRateResolutionSnapshot(v map[string]interface{}) *BatchImageJobUpsertOne {
+	return u.Update(func(s *BatchImageJobUpsert) {
+		s.SetRateResolutionSnapshot(v)
+	})
+}
+
+// UpdateRateResolutionSnapshot sets the "rate_resolution_snapshot" field to the value that was provided on create.
+func (u *BatchImageJobUpsertOne) UpdateRateResolutionSnapshot() *BatchImageJobUpsertOne {
+	return u.Update(func(s *BatchImageJobUpsert) {
+		s.UpdateRateResolutionSnapshot()
+	})
+}
+
+// ClearRateResolutionSnapshot clears the value of the "rate_resolution_snapshot" field.
+func (u *BatchImageJobUpsertOne) ClearRateResolutionSnapshot() *BatchImageJobUpsertOne {
+	return u.Update(func(s *BatchImageJobUpsert) {
+		s.ClearRateResolutionSnapshot()
 	})
 }
 
@@ -3106,6 +3212,48 @@ func (u *BatchImageJobUpsertBulk) UpdateActualCost() *BatchImageJobUpsertBulk {
 func (u *BatchImageJobUpsertBulk) ClearActualCost() *BatchImageJobUpsertBulk {
 	return u.Update(func(s *BatchImageJobUpsert) {
 		s.ClearActualCost()
+	})
+}
+
+// SetPricingAt sets the "pricing_at" field.
+func (u *BatchImageJobUpsertBulk) SetPricingAt(v time.Time) *BatchImageJobUpsertBulk {
+	return u.Update(func(s *BatchImageJobUpsert) {
+		s.SetPricingAt(v)
+	})
+}
+
+// UpdatePricingAt sets the "pricing_at" field to the value that was provided on create.
+func (u *BatchImageJobUpsertBulk) UpdatePricingAt() *BatchImageJobUpsertBulk {
+	return u.Update(func(s *BatchImageJobUpsert) {
+		s.UpdatePricingAt()
+	})
+}
+
+// ClearPricingAt clears the value of the "pricing_at" field.
+func (u *BatchImageJobUpsertBulk) ClearPricingAt() *BatchImageJobUpsertBulk {
+	return u.Update(func(s *BatchImageJobUpsert) {
+		s.ClearPricingAt()
+	})
+}
+
+// SetRateResolutionSnapshot sets the "rate_resolution_snapshot" field.
+func (u *BatchImageJobUpsertBulk) SetRateResolutionSnapshot(v map[string]interface{}) *BatchImageJobUpsertBulk {
+	return u.Update(func(s *BatchImageJobUpsert) {
+		s.SetRateResolutionSnapshot(v)
+	})
+}
+
+// UpdateRateResolutionSnapshot sets the "rate_resolution_snapshot" field to the value that was provided on create.
+func (u *BatchImageJobUpsertBulk) UpdateRateResolutionSnapshot() *BatchImageJobUpsertBulk {
+	return u.Update(func(s *BatchImageJobUpsert) {
+		s.UpdateRateResolutionSnapshot()
+	})
+}
+
+// ClearRateResolutionSnapshot clears the value of the "rate_resolution_snapshot" field.
+func (u *BatchImageJobUpsertBulk) ClearRateResolutionSnapshot() *BatchImageJobUpsertBulk {
+	return u.Update(func(s *BatchImageJobUpsert) {
+		s.ClearRateResolutionSnapshot()
 	})
 }
 

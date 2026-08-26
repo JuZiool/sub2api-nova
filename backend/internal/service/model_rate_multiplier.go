@@ -189,6 +189,31 @@ func validModelRateMultiplier(value float64) bool {
 	return !math.IsNaN(value) && !math.IsInf(value, 0) && value > 0 && value <= maxModelRateMultiplier
 }
 
+// ValidateRateResolution verifies a persisted request pricing snapshot before it
+// is used by a deferred billing path. Invalid or incomplete snapshots must fail
+// closed instead of being replaced with current group rules.
+func ValidateRateResolution(resolution *RateResolution) error {
+	if resolution == nil {
+		return errors.New("rate resolution is missing")
+	}
+	if resolution.PricingGroupID <= 0 {
+		return errors.New("pricing group id is required")
+	}
+	if strings.TrimSpace(resolution.RequestedModel) == "" || strings.TrimSpace(resolution.MatchModel) == "" {
+		return errors.New("request model is required")
+	}
+	if !validModelRateMultiplier(resolution.BaseMultiplier) ||
+		!validModelRateMultiplier(resolution.TokenMultiplier) ||
+		!validModelRateMultiplier(resolution.ImageMultiplier) ||
+		!validModelRateMultiplier(resolution.VideoMultiplier) {
+		return errors.New("rate multiplier is invalid")
+	}
+	if resolution.RateConfigVersion <= 0 {
+		return errors.New("rate config version is required")
+	}
+	return nil
+}
+
 // ApplyRateResolutionToUsageLog copies the immutable request pricing decision into
 // the append-only usage log. Keeping it as explicit fields makes later billing
 // reconciliation independent of changed group rules or cached auth snapshots.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -740,6 +741,14 @@ func (r *batchImageRepository) AppendBatchImageEvent(ctx context.Context, batchI
 }
 
 func createBatchImageJobWithSQL(ctx context.Context, sqlq batchImageSQLExecutor, params service.CreateBatchImageJobParams) (*service.BatchImageJob, error) {
+	var rateResolutionSnapshot any
+	if params.RateResolution != nil {
+		payload, err := json.Marshal(params.RateResolution)
+		if err != nil {
+			return nil, fmt.Errorf("marshal batch image rate resolution snapshot: %w", err)
+		}
+		rateResolutionSnapshot = string(payload)
+	}
 	return scanBatchImageJob(sqlq.QueryRowContext(ctx, `
 INSERT INTO batch_image_jobs (
     batch_id, user_id, api_key_id, account_id, provider, model, task_name, parent_batch_id, status,
@@ -748,7 +757,7 @@ INSERT INTO batch_image_jobs (
     estimated_cost, hold_amount, actual_cost,
     base_unit_price, group_rate_multiplier, account_rate_multiplier,
     batch_discount_multiplier, hold_multiplier, billable_unit_price, hold_unit_price,
-    pricing_snapshot_version,
+    pricing_snapshot_version, pricing_at, rate_resolution_snapshot,
     currency, hold_id,
     idempotency_key, request_hash, manifest_hash, retry_count, session_id, output_expires_at
 ) VALUES (
@@ -758,9 +767,9 @@ INSERT INTO batch_image_jobs (
     $19, $20, $21,
     $22, $23, $24,
     $25, $26, $27, $28,
-    $29,
-    $30, $31,
-    $32, $33, $34, $35, $36, $37
+    $29, $30, $31,
+    $32, $33,
+    $34, $35, $36, $37, $38, $39
 )
 RETURNING `+batchImageJobColumns,
 		params.BatchID, params.UserID, params.APIKeyID, params.AccountID, params.Provider, params.Model, params.TaskName, params.ParentBatchID, params.Status,
@@ -769,7 +778,7 @@ RETURNING `+batchImageJobColumns,
 		params.EstimatedCost, params.HoldAmount, params.ActualCost,
 		params.BaseUnitPrice, params.GroupRateMultiplier, params.AccountRateMultiplier,
 		params.BatchDiscountMultiplier, params.HoldMultiplier, params.BillableUnitPrice, params.HoldUnitPrice,
-		params.PricingSnapshotVersion,
+		params.PricingSnapshotVersion, params.PricingAt, rateResolutionSnapshot,
 		params.Currency, params.HoldID,
 		params.IdempotencyKey, params.RequestHash, params.ManifestHash, params.RetryCount, params.SessionID, params.OutputExpiresAt,
 	))
@@ -822,7 +831,7 @@ item_count, success_count, fail_count, cancelled_count,
 estimated_cost, hold_amount, actual_cost,
 base_unit_price, group_rate_multiplier, account_rate_multiplier,
 batch_discount_multiplier, hold_multiplier, billable_unit_price, hold_unit_price,
-pricing_snapshot_version,
+pricing_snapshot_version, pricing_at, rate_resolution_snapshot,
 currency, hold_id,
 idempotency_key, request_hash, manifest_hash,
 retry_count, version, session_id, output_expires_at, input_deleted_at, output_deleted_at, downloaded_at, user_deleted_at,
@@ -837,6 +846,8 @@ func scanBatchImageJob(row rowScanner) (*service.BatchImageJob, error) {
 	var providerJobName, providerInputRef, providerOutputRef, gcsInputURI, gcsOutputURI sql.NullString
 	var parentBatchID sql.NullString
 	var holdAmount, actualCost sql.NullFloat64
+	var pricingAt sql.NullTime
+	var rateResolutionSnapshot sql.NullString
 	var holdID, idempotencyKey, requestHash, manifestHash sql.NullString
 	var sessionID sql.NullString
 	var outputExpiresAt, inputDeletedAt, outputDeletedAt, downloadedAt, userDeletedAt sql.NullTime
@@ -850,7 +861,7 @@ func scanBatchImageJob(row rowScanner) (*service.BatchImageJob, error) {
 		&job.EstimatedCost, &holdAmount, &actualCost,
 		&job.BaseUnitPrice, &job.GroupRateMultiplier, &job.AccountRateMultiplier,
 		&job.BatchDiscountMultiplier, &job.HoldMultiplier, &job.BillableUnitPrice, &job.HoldUnitPrice,
-		&job.PricingSnapshotVersion,
+		&job.PricingSnapshotVersion, &pricingAt, &rateResolutionSnapshot,
 		&job.Currency, &holdID,
 		&idempotencyKey, &requestHash, &manifestHash,
 		&job.RetryCount, &job.Version, &sessionID, &outputExpiresAt, &inputDeletedAt, &outputDeletedAt, &downloadedAt, &userDeletedAt,
@@ -876,6 +887,14 @@ func scanBatchImageJob(row rowScanner) (*service.BatchImageJob, error) {
 	job.RequestHash = batchImageNullStringPtr(requestHash)
 	job.ManifestHash = batchImageNullStringPtr(manifestHash)
 	job.SessionID = batchImageNullStringPtr(sessionID)
+	job.PricingAt = batchImageNullTimePtr(pricingAt)
+	if rateResolutionSnapshot.Valid && rateResolutionSnapshot.String != "" {
+		var resolution service.RateResolution
+		if err := json.Unmarshal([]byte(rateResolutionSnapshot.String), &resolution); err != nil {
+			return nil, fmt.Errorf("decode batch image rate resolution snapshot: %w", err)
+		}
+		job.RateResolution = &resolution
+	}
 	job.OutputExpiresAt = batchImageNullTimePtr(outputExpiresAt)
 	job.InputDeletedAt = batchImageNullTimePtr(inputDeletedAt)
 	job.OutputDeletedAt = batchImageNullTimePtr(outputDeletedAt)

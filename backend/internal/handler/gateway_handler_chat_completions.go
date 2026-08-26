@@ -95,6 +95,10 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 	setOpsEndpointContext(c, "", int16(service.RequestTypeFromLegacy(reqStream, false)))
 	pricingCtx, pricingAt := service.WithGatewayTokenRequestPricing(c.Request.Context())
 	c.Request = c.Request.WithContext(pricingCtx)
+	if err := freezeRequestRateResolution(c, apiKey, reqModel, pricingAt, h.gatewayService, h.openAIGatewayService); err != nil {
+		h.chatCompletionsErrorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
+		return
+	}
 
 	// 解析渠道级模型映射
 	channelMapping, _ := h.gatewayService.ResolveChannelMappingAndRestrict(c.Request.Context(), apiKey.GroupID, reqModel)

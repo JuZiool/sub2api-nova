@@ -11307,65 +11307,67 @@ func (m *BatchImageItemMutation) ResetEdge(name string) error {
 // BatchImageJobMutation represents an operation that mutates the BatchImageJob nodes in the graph.
 type BatchImageJobMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *int64
-	batch_id            *string
-	user_id             *int64
-	adduser_id          *int64
-	api_key_id          *int64
-	addapi_key_id       *int64
-	account_id          *int64
-	addaccount_id       *int64
-	provider            *string
-	model               *string
-	task_name           *string
-	status              *string
-	provider_job_name   *string
-	provider_input_ref  *string
-	provider_output_ref *string
-	gcs_input_uri       *string
-	gcs_output_uri      *string
-	item_count          *int
-	additem_count       *int
-	success_count       *int
-	addsuccess_count    *int
-	fail_count          *int
-	addfail_count       *int
-	cancelled_count     *int
-	addcancelled_count  *int
-	estimated_cost      *float64
-	addestimated_cost   *float64
-	hold_amount         *float64
-	addhold_amount      *float64
-	actual_cost         *float64
-	addactual_cost      *float64
-	currency            *string
-	hold_id             *string
-	idempotency_key     *string
-	request_hash        *string
-	manifest_hash       *string
-	retry_count         *int
-	addretry_count      *int
-	version             *int
-	addversion          *int
-	output_expires_at   *time.Time
-	input_deleted_at    *time.Time
-	output_deleted_at   *time.Time
-	downloaded_at       *time.Time
-	user_deleted_at     *time.Time
-	last_error_code     *string
-	last_error_message  *string
-	created_at          *time.Time
-	updated_at          *time.Time
-	submitted_at        *time.Time
-	started_at          *time.Time
-	finished_at         *time.Time
-	settled_at          *time.Time
-	clearedFields       map[string]struct{}
-	done                bool
-	oldValue            func(context.Context) (*BatchImageJob, error)
-	predicates          []predicate.BatchImageJob
+	op                       Op
+	typ                      string
+	id                       *int64
+	batch_id                 *string
+	user_id                  *int64
+	adduser_id               *int64
+	api_key_id               *int64
+	addapi_key_id            *int64
+	account_id               *int64
+	addaccount_id            *int64
+	provider                 *string
+	model                    *string
+	task_name                *string
+	status                   *string
+	provider_job_name        *string
+	provider_input_ref       *string
+	provider_output_ref      *string
+	gcs_input_uri            *string
+	gcs_output_uri           *string
+	item_count               *int
+	additem_count            *int
+	success_count            *int
+	addsuccess_count         *int
+	fail_count               *int
+	addfail_count            *int
+	cancelled_count          *int
+	addcancelled_count       *int
+	estimated_cost           *float64
+	addestimated_cost        *float64
+	hold_amount              *float64
+	addhold_amount           *float64
+	actual_cost              *float64
+	addactual_cost           *float64
+	pricing_at               *time.Time
+	rate_resolution_snapshot *map[string]interface{}
+	currency                 *string
+	hold_id                  *string
+	idempotency_key          *string
+	request_hash             *string
+	manifest_hash            *string
+	retry_count              *int
+	addretry_count           *int
+	version                  *int
+	addversion               *int
+	output_expires_at        *time.Time
+	input_deleted_at         *time.Time
+	output_deleted_at        *time.Time
+	downloaded_at            *time.Time
+	user_deleted_at          *time.Time
+	last_error_code          *string
+	last_error_message       *string
+	created_at               *time.Time
+	updated_at               *time.Time
+	submitted_at             *time.Time
+	started_at               *time.Time
+	finished_at              *time.Time
+	settled_at               *time.Time
+	clearedFields            map[string]struct{}
+	done                     bool
+	oldValue                 func(context.Context) (*BatchImageJob, error)
+	predicates               []predicate.BatchImageJob
 }
 
 var _ ent.Mutation = (*BatchImageJobMutation)(nil)
@@ -12507,6 +12509,104 @@ func (m *BatchImageJobMutation) ResetActualCost() {
 	delete(m.clearedFields, batchimagejob.FieldActualCost)
 }
 
+// SetPricingAt sets the "pricing_at" field.
+func (m *BatchImageJobMutation) SetPricingAt(t time.Time) {
+	m.pricing_at = &t
+}
+
+// PricingAt returns the value of the "pricing_at" field in the mutation.
+func (m *BatchImageJobMutation) PricingAt() (r time.Time, exists bool) {
+	v := m.pricing_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPricingAt returns the old "pricing_at" field's value of the BatchImageJob entity.
+// If the BatchImageJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BatchImageJobMutation) OldPricingAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPricingAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPricingAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPricingAt: %w", err)
+	}
+	return oldValue.PricingAt, nil
+}
+
+// ClearPricingAt clears the value of the "pricing_at" field.
+func (m *BatchImageJobMutation) ClearPricingAt() {
+	m.pricing_at = nil
+	m.clearedFields[batchimagejob.FieldPricingAt] = struct{}{}
+}
+
+// PricingAtCleared returns if the "pricing_at" field was cleared in this mutation.
+func (m *BatchImageJobMutation) PricingAtCleared() bool {
+	_, ok := m.clearedFields[batchimagejob.FieldPricingAt]
+	return ok
+}
+
+// ResetPricingAt resets all changes to the "pricing_at" field.
+func (m *BatchImageJobMutation) ResetPricingAt() {
+	m.pricing_at = nil
+	delete(m.clearedFields, batchimagejob.FieldPricingAt)
+}
+
+// SetRateResolutionSnapshot sets the "rate_resolution_snapshot" field.
+func (m *BatchImageJobMutation) SetRateResolutionSnapshot(value map[string]interface{}) {
+	m.rate_resolution_snapshot = &value
+}
+
+// RateResolutionSnapshot returns the value of the "rate_resolution_snapshot" field in the mutation.
+func (m *BatchImageJobMutation) RateResolutionSnapshot() (r map[string]interface{}, exists bool) {
+	v := m.rate_resolution_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRateResolutionSnapshot returns the old "rate_resolution_snapshot" field's value of the BatchImageJob entity.
+// If the BatchImageJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BatchImageJobMutation) OldRateResolutionSnapshot(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRateResolutionSnapshot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRateResolutionSnapshot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRateResolutionSnapshot: %w", err)
+	}
+	return oldValue.RateResolutionSnapshot, nil
+}
+
+// ClearRateResolutionSnapshot clears the value of the "rate_resolution_snapshot" field.
+func (m *BatchImageJobMutation) ClearRateResolutionSnapshot() {
+	m.rate_resolution_snapshot = nil
+	m.clearedFields[batchimagejob.FieldRateResolutionSnapshot] = struct{}{}
+}
+
+// RateResolutionSnapshotCleared returns if the "rate_resolution_snapshot" field was cleared in this mutation.
+func (m *BatchImageJobMutation) RateResolutionSnapshotCleared() bool {
+	_, ok := m.clearedFields[batchimagejob.FieldRateResolutionSnapshot]
+	return ok
+}
+
+// ResetRateResolutionSnapshot resets all changes to the "rate_resolution_snapshot" field.
+func (m *BatchImageJobMutation) ResetRateResolutionSnapshot() {
+	m.rate_resolution_snapshot = nil
+	delete(m.clearedFields, batchimagejob.FieldRateResolutionSnapshot)
+}
+
 // SetCurrency sets the "currency" field.
 func (m *BatchImageJobMutation) SetCurrency(s string) {
 	m.currency = &s
@@ -13496,7 +13596,7 @@ func (m *BatchImageJobMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BatchImageJobMutation) Fields() []string {
-	fields := make([]string, 0, 40)
+	fields := make([]string, 0, 42)
 	if m.batch_id != nil {
 		fields = append(fields, batchimagejob.FieldBatchID)
 	}
@@ -13556,6 +13656,12 @@ func (m *BatchImageJobMutation) Fields() []string {
 	}
 	if m.actual_cost != nil {
 		fields = append(fields, batchimagejob.FieldActualCost)
+	}
+	if m.pricing_at != nil {
+		fields = append(fields, batchimagejob.FieldPricingAt)
+	}
+	if m.rate_resolution_snapshot != nil {
+		fields = append(fields, batchimagejob.FieldRateResolutionSnapshot)
 	}
 	if m.currency != nil {
 		fields = append(fields, batchimagejob.FieldCurrency)
@@ -13665,6 +13771,10 @@ func (m *BatchImageJobMutation) Field(name string) (ent.Value, bool) {
 		return m.HoldAmount()
 	case batchimagejob.FieldActualCost:
 		return m.ActualCost()
+	case batchimagejob.FieldPricingAt:
+		return m.PricingAt()
+	case batchimagejob.FieldRateResolutionSnapshot:
+		return m.RateResolutionSnapshot()
 	case batchimagejob.FieldCurrency:
 		return m.Currency()
 	case batchimagejob.FieldHoldID:
@@ -13754,6 +13864,10 @@ func (m *BatchImageJobMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldHoldAmount(ctx)
 	case batchimagejob.FieldActualCost:
 		return m.OldActualCost(ctx)
+	case batchimagejob.FieldPricingAt:
+		return m.OldPricingAt(ctx)
+	case batchimagejob.FieldRateResolutionSnapshot:
+		return m.OldRateResolutionSnapshot(ctx)
 	case batchimagejob.FieldCurrency:
 		return m.OldCurrency(ctx)
 	case batchimagejob.FieldHoldID:
@@ -13942,6 +14056,20 @@ func (m *BatchImageJobMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetActualCost(v)
+		return nil
+	case batchimagejob.FieldPricingAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPricingAt(v)
+		return nil
+	case batchimagejob.FieldRateResolutionSnapshot:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRateResolutionSnapshot(v)
 		return nil
 	case batchimagejob.FieldCurrency:
 		v, ok := value.(string)
@@ -14287,6 +14415,12 @@ func (m *BatchImageJobMutation) ClearedFields() []string {
 	if m.FieldCleared(batchimagejob.FieldActualCost) {
 		fields = append(fields, batchimagejob.FieldActualCost)
 	}
+	if m.FieldCleared(batchimagejob.FieldPricingAt) {
+		fields = append(fields, batchimagejob.FieldPricingAt)
+	}
+	if m.FieldCleared(batchimagejob.FieldRateResolutionSnapshot) {
+		fields = append(fields, batchimagejob.FieldRateResolutionSnapshot)
+	}
 	if m.FieldCleared(batchimagejob.FieldHoldID) {
 		fields = append(fields, batchimagejob.FieldHoldID)
 	}
@@ -14372,6 +14506,12 @@ func (m *BatchImageJobMutation) ClearField(name string) error {
 		return nil
 	case batchimagejob.FieldActualCost:
 		m.ClearActualCost()
+		return nil
+	case batchimagejob.FieldPricingAt:
+		m.ClearPricingAt()
+		return nil
+	case batchimagejob.FieldRateResolutionSnapshot:
+		m.ClearRateResolutionSnapshot()
 		return nil
 	case batchimagejob.FieldHoldID:
 		m.ClearHoldID()
@@ -14485,6 +14625,12 @@ func (m *BatchImageJobMutation) ResetField(name string) error {
 		return nil
 	case batchimagejob.FieldActualCost:
 		m.ResetActualCost()
+		return nil
+	case batchimagejob.FieldPricingAt:
+		m.ResetPricingAt()
+		return nil
+	case batchimagejob.FieldRateResolutionSnapshot:
+		m.ResetRateResolutionSnapshot()
 		return nil
 	case batchimagejob.FieldCurrency:
 		m.ResetCurrency()

@@ -608,7 +608,7 @@ export default {
     filters: {
       platformLabel: '平台',
       groupLabel: '分组',
-      rateLabel: '倍率',
+      rateLabel: '默认倍率',
       modelLabel: '模型',
       searchPlaceholder: '搜索模型名称',
       all: '全部'
@@ -620,7 +620,8 @@ export default {
     detail: {
       noModels: '该分组暂未配置模型',
       noPricing: '未配置定价',
-      peakNote: '高峰时段 {window} 计费倍率 ×{multiplier}'
+      peakNote: '高峰时段 {window} 计费倍率 ×{multiplier}',
+      defaultRate: '默认倍率'
     },
     table: {
       model: '模型',

@@ -46,8 +46,14 @@ func (h *OpenAIGatewayHandler) GrokRealtime(c *gin.Context) {
 
 	reqLog := requestLogger(c, "handler.openai_gateway.grok_realtime")
 	model := c.Query("model")
+	pricingCtx, pricingAt := h.gatewayService.WithOpenAIRequestPricingContext(c.Request.Context(), apiKey.GroupID)
+	c.Request = c.Request.WithContext(pricingCtx)
 	if strings.TrimSpace(model) == "" {
 		model = "grok-voice-latest"
+	}
+	if err := freezeRequestRateResolution(c, apiKey, model, pricingAt, nil, h.gatewayService); err != nil {
+		h.errorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
+		return
 	}
 	// Keep the HTTP response uncommitted while selecting and probing an account.
 	// Realtime is not an HTTP streaming response; using reqStream=true here would

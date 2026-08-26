@@ -157,6 +157,10 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 	ccPricingCtx := service.WithCodexQuotaOverdraftScheduling(c.Request.Context())
 	ccPricingCtx, pricingAt := h.gatewayService.WithOpenAIRequestPricingContext(ccPricingCtx, apiKey.GroupID)
 	c.Request = c.Request.WithContext(ccPricingCtx)
+	if err := freezeRequestRateResolution(c, apiKey, reqModel, pricingAt, nil, h.gatewayService); err != nil {
+		h.errorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
+		return
+	}
 
 	for {
 		if failoverClientGone(c) {
