@@ -22,6 +22,12 @@ LOCK_FILE="/var/lock/sub2api-nova-install.lock"
 TEMP_FILES=()
 DEPLOY_DIR=""
 ACCESS_PORT=""
+PLATFORM_ID="unknown"
+PLATFORM_NAME="unknown Linux"
+PACKAGE_MANAGER=""
+PACKAGE_INDEX_REFRESHED=false
+COMPOSE_MODE=""
+COMPOSE_COMMAND_LABEL="docker compose"
 
 if [[ -n "${SUB2API_INSTALL_DIR:-}" ]]; then
   INSTALL_DIR_EXPLICIT=true
@@ -71,7 +77,7 @@ Sub2API Nova Linux 一键安装与更新脚本
   --health-timeout <秒> 健康检查超时，默认 180
   --update-only         仅更新，目标目录不存在时退出
   --no-backup           更新前不执行 PostgreSQL 逻辑备份
-  --no-install-docker   Docker 缺失时不自动安装
+  --no-install-docker   Docker/Compose 缺失时不自动安装
   --build               不拉取 GHCR 镜像，改为在服务器从源码构建
   -h, --help            显示帮助
 
@@ -174,24 +180,174 @@ require_root() {
   fi
 }
 
-install_base_dependencies() {
-  log "安装基础依赖。"
+detect_platform() {
+  local os_id=""
+  local os_name=""
+  local os_like=""
 
-  if command -v apt-get >/dev/null 2>&1; then
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update
-    apt-get install -y ca-certificates curl git gzip openssl util-linux
-  elif command -v dnf >/dev/null 2>&1; then
-    dnf install -y ca-certificates curl git gzip openssl util-linux
-  elif command -v yum >/dev/null 2>&1; then
-    yum install -y ca-certificates curl git gzip openssl util-linux
-  elif command -v zypper >/dev/null 2>&1; then
-    zypper --non-interactive install ca-certificates curl git gzip openssl util-linux
-  elif command -v apk >/dev/null 2>&1; then
-    apk add --no-cache bash ca-certificates curl git gzip openssl util-linux
-  else
-    die "不支持当前包管理器，请先安装 curl、git、gzip、openssl 和 flock。"
+  if [[ -r /etc/os-release ]]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    os_id="${ID:-}"
+    os_name="${NAME:-}"
+    os_like="${ID_LIKE:-}"
   fi
+
+  if [[ -z "$os_id" ]]; then
+    os_id="$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+  fi
+  PLATFORM_ID="$os_id"
+
+  case "$os_id" in
+    openwrt)
+      PLATFORM_NAME="${os_name:-OpenWrt/iStoreOS}"
+      ;;
+    debian | ubuntu | linuxmint)
+      PLATFORM_NAME="${os_name:-Debian-based Linux}"
+      ;;
+    rhel | centos | rocky | almalinux | fedora)
+      PLATFORM_NAME="${os_name:-Red Hat-based Linux}"
+      ;;
+    alpine)
+      PLATFORM_NAME="${os_name:-Alpine Linux}"
+      ;;
+    arch | manjaro)
+      PLATFORM_NAME="${os_name:-Arch-based Linux}"
+      ;;
+    *)
+      if [[ "$os_like" == *debian* ]]; then
+        PLATFORM_NAME="${os_name:-Debian-compatible Linux}"
+      elif [[ "$os_like" == *rhel* || "$os_like" == *fedora* ]]; then
+        PLATFORM_NAME="${os_name:-Red Hat-compatible Linux}"
+      elif [[ "$os_like" == *alpine* ]]; then
+        PLATFORM_NAME="${os_name:-Alpine-compatible Linux}"
+      else
+        PLATFORM_NAME="${os_name:-$os_id}"
+      fi
+      ;;
+  esac
+
+  if command -v opkg >/dev/null 2>&1; then
+    PACKAGE_MANAGER="opkg"
+  elif command -v apt-get >/dev/null 2>&1; then
+    PACKAGE_MANAGER="apt-get"
+  elif command -v dnf >/dev/null 2>&1; then
+    PACKAGE_MANAGER="dnf"
+  elif command -v yum >/dev/null 2>&1; then
+    PACKAGE_MANAGER="yum"
+  elif command -v zypper >/dev/null 2>&1; then
+    PACKAGE_MANAGER="zypper"
+  elif command -v apk >/dev/null 2>&1; then
+    PACKAGE_MANAGER="apk"
+  elif command -v pacman >/dev/null 2>&1; then
+    PACKAGE_MANAGER="pacman"
+  fi
+
+  log "检测平台：$PLATFORM_NAME（$PLATFORM_ID）"
+  if [[ -n "$PACKAGE_MANAGER" ]]; then
+    log "检测包管理器：$PACKAGE_MANAGER"
+  else
+    warn "未检测到支持的包管理器。"
+  fi
+}
+
+refresh_package_index() {
+  [[ "$PACKAGE_INDEX_REFRESHED" == true ]] && return 0
+
+  case "$PACKAGE_MANAGER" in
+    opkg)
+      opkg update
+      ;;
+    apt-get)
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update
+      ;;
+    pacman)
+      pacman -Sy --noconfirm
+      ;;
+    *)
+      ;;
+  esac
+  PACKAGE_INDEX_REFRESHED=true
+}
+
+install_package() {
+  local package_name="$1"
+
+  case "$PACKAGE_MANAGER" in
+    opkg)
+      refresh_package_index
+      opkg install "$package_name"
+      ;;
+    apt-get)
+      refresh_package_index
+      apt-get install -y "$package_name"
+      ;;
+    dnf)
+      dnf install -y "$package_name"
+      ;;
+    yum)
+      yum install -y "$package_name"
+      ;;
+    zypper)
+      zypper --non-interactive install "$package_name"
+      ;;
+    apk)
+      apk add --no-cache "$package_name"
+      ;;
+    pacman)
+      pacman -S --noconfirm "$package_name"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+install_command_candidates() {
+  local command_name="$1"
+  shift
+  local package_name
+
+  command -v "$command_name" >/dev/null 2>&1 && return 0
+  for package_name in "$@"; do
+    if install_package "$package_name" && command -v "$command_name" >/dev/null 2>&1; then
+      return 0
+    fi
+    warn "安装 $package_name 后仍未找到 $command_name，继续尝试其他包名。"
+  done
+  return 1
+}
+
+install_base_dependencies() {
+  local command_name
+  local -a package_candidates
+
+  [[ -n "$PACKAGE_MANAGER" ]] || die "无法自动安装依赖，请先安装 bash、curl、git、gzip、openssl 和 flock。"
+  log "安装缺少的基础工具。"
+
+  case "$PACKAGE_MANAGER" in
+    opkg)
+      install_package ca-bundle || true
+      ;;
+    apt-get | dnf | yum | zypper | apk | pacman)
+      install_package ca-certificates || true
+      ;;
+  esac
+
+  for command_name in curl git gzip openssl flock; do
+    case "$command_name:$PACKAGE_MANAGER" in
+      curl:opkg) package_candidates=(curl) ;;
+      git:opkg) package_candidates=(git-http git) ;;
+      gzip:opkg) package_candidates=(gzip) ;;
+      openssl:opkg) package_candidates=(openssl-util openssl) ;;
+      flock:opkg) package_candidates=(util-linux-flock flock util-linux) ;;
+      flock:apt-get | flock:dnf | flock:yum | flock:zypper | flock:apk | flock:pacman) package_candidates=(util-linux) ;;
+      *) package_candidates=("$command_name") ;;
+    esac
+    install_command_candidates "$command_name" "${package_candidates[@]}" ||
+      die "无法安装必要工具 $command_name（平台：$PLATFORM_NAME，包管理器：$PACKAGE_MANAGER）。请手动安装后重试。"
+  done
 }
 
 ensure_base_dependencies() {
@@ -214,23 +370,119 @@ ensure_base_dependencies() {
   done
 }
 
+detect_docker_compose() {
+  if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    COMPOSE_MODE="plugin"
+    COMPOSE_COMMAND_LABEL="docker compose"
+    return 0
+  fi
+  if command -v docker-compose >/dev/null 2>&1 && docker-compose version >/dev/null 2>&1; then
+    COMPOSE_MODE="standalone"
+    COMPOSE_COMMAND_LABEL="docker-compose"
+    return 0
+  fi
+  return 1
+}
+
+docker_compose() {
+  case "$COMPOSE_MODE" in
+    plugin)
+      docker compose "$@"
+      ;;
+    standalone)
+      docker-compose "$@"
+      ;;
+    *)
+      die "未检测到 Docker Compose。"
+      ;;
+  esac
+}
+
 install_docker() {
   local installer
 
-  [[ "$DOCKER_INSTALL_ENABLED" == true ]] || die "未检测到可用的 Docker Compose v2。"
+  [[ "$DOCKER_INSTALL_ENABLED" == true ]] || die "未检测到可用的 Docker 或 Compose。"
 
-  if command -v apk >/dev/null 2>&1; then
-    log "使用 apk 安装 Docker 和 Docker Compose。"
-    apk add --no-cache docker docker-cli-compose
-    return
+  if ! command -v docker >/dev/null 2>&1; then
+    log "未检测到 Docker，按平台自动安装。"
+    case "$PACKAGE_MANAGER" in
+      opkg)
+        install_command_candidates docker dockerd || die "无法通过 opkg 安装 Docker，请在 iStoreOS Docker 管理器中安装后重试。"
+        ;;
+      apt-get)
+        install_command_candidates docker docker.io || true
+        ;;
+      dnf | yum)
+        install_command_candidates docker docker-ce || true
+        ;;
+      apk)
+        install_command_candidates docker docker-cli || true
+        ;;
+      pacman)
+        install_command_candidates docker || true
+        ;;
+      *)
+        ;;
+    esac
   fi
 
-  warn "未检测到可用的 Docker Compose v2，将运行 Docker 官方安装脚本。"
+  if ! command -v docker >/dev/null 2>&1; then
+    warn "未检测到可通过包管理器安装的 Docker，将运行 Docker 官方安装脚本。"
+    [[ "$PACKAGE_MANAGER" != opkg ]] || die "iStoreOS 不支持通过 Docker 官方脚本安装，请先在系统 Docker 管理器中安装 Docker。"
+    installer="$(mktemp)"
+    TEMP_FILES+=("$installer")
+    curl --proto '=https' --tlsv1.2 -fsSL https://get.docker.com -o "$installer"
+    sh "$installer"
+  fi
+}
 
-  installer="$(mktemp)"
-  TEMP_FILES+=("$installer")
-  curl --proto '=https' --tlsv1.2 -fsSL https://get.docker.com -o "$installer"
-  sh "$installer"
+install_docker_compose() {
+  local package_name
+
+  [[ "$DOCKER_INSTALL_ENABLED" == true ]] || die "未检测到可用的 Docker Compose。"
+  log "未检测到 Docker Compose，按平台自动安装。"
+
+  case "$PACKAGE_MANAGER" in
+    opkg)
+      for package_name in docker-compose docker-cli-compose docker-compose-v2; do
+        if install_package "$package_name" && detect_docker_compose; then
+          return 0
+        fi
+        warn "安装 $package_name 后仍未检测到可用的 Docker Compose，继续尝试其他包名。"
+      done
+      ;;
+    apt-get)
+      for package_name in docker-compose-plugin docker-compose-v2 docker-compose; do
+        if install_package "$package_name" && detect_docker_compose; then
+          return 0
+        fi
+        warn "安装 $package_name 后仍未检测到可用的 Docker Compose，继续尝试其他包名。"
+      done
+      ;;
+    dnf | yum)
+      for package_name in docker-compose-plugin docker-compose; do
+        if install_package "$package_name" && detect_docker_compose; then
+          return 0
+        fi
+        warn "安装 $package_name 后仍未检测到可用的 Docker Compose，继续尝试其他包名。"
+      done
+      ;;
+    apk)
+      for package_name in docker-cli-compose docker-compose; do
+        if install_package "$package_name" && detect_docker_compose; then
+          return 0
+        fi
+        warn "安装 $package_name 后仍未检测到可用的 Docker Compose，继续尝试其他包名。"
+      done
+      ;;
+    pacman)
+      if install_package docker-compose && detect_docker_compose; then
+        return 0
+      fi
+      ;;
+  esac
+
+  return 1
 }
 
 start_docker() {
@@ -239,7 +491,13 @@ start_docker() {
   fi
 
   log "启动 Docker 服务。"
-  if command -v systemctl >/dev/null 2>&1 && systemctl enable --now docker; then
+  if [[ -x /etc/init.d/dockerd ]]; then
+    /etc/init.d/dockerd enable >/dev/null 2>&1 || warn "无法设置 dockerd 开机启动，将继续尝试启动服务。"
+    /etc/init.d/dockerd start
+  elif [[ -x /etc/init.d/docker ]]; then
+    /etc/init.d/docker enable >/dev/null 2>&1 || warn "无法设置 docker 开机启动，将继续尝试启动服务。"
+    /etc/init.d/docker start
+  elif command -v systemctl >/dev/null 2>&1 && systemctl enable --now docker; then
     :
   elif command -v rc-service >/dev/null 2>&1; then
     rc-update add docker default >/dev/null 2>&1 || true
@@ -250,16 +508,24 @@ start_docker() {
     die "无法自动启动 Docker 服务。"
   fi
 
-  docker info >/dev/null 2>&1 || die "Docker 服务未正常运行。"
+  local attempt
+  for attempt in {1..15}; do
+    docker info >/dev/null 2>&1 && return
+    sleep 2
+  done
+  die "Docker 服务未正常运行。"
 }
 
 ensure_docker() {
-  if ! command -v docker >/dev/null 2>&1 || ! docker compose version >/dev/null 2>&1; then
+  if ! command -v docker >/dev/null 2>&1; then
     install_docker
   fi
 
   command -v docker >/dev/null 2>&1 || die "Docker 安装失败。"
-  docker compose version >/dev/null 2>&1 || die "Docker Compose v2 安装失败。"
+  if ! detect_docker_compose; then
+    install_docker_compose || true
+    detect_docker_compose || die "Docker Compose 不可用，请安装 docker compose 插件或 docker-compose 后重试。"
+  fi
   start_docker
 }
 
@@ -272,7 +538,7 @@ acquire_lock() {
 compose() {
   (
     cd -- "$DEPLOY_DIR"
-    docker compose \
+    docker_compose \
       --env-file .env \
       -f docker-compose.local.yml \
       -f "$COMPOSE_OVERLAY" \
@@ -495,7 +761,7 @@ Sub2API Nova 部署成功
 安装目录：$INSTALL_DIR
 当前版本：$commit
 访问地址：http://服务器IP:$ACCESS_PORT
-查看状态：cd $DEPLOY_DIR && docker compose --env-file .env -f docker-compose.local.yml -f $COMPOSE_OVERLAY ps
+查看状态：cd $DEPLOY_DIR && $COMPOSE_COMMAND_LABEL --env-file .env -f docker-compose.local.yml -f $COMPOSE_OVERLAY ps
 EOF
 }
 
@@ -504,6 +770,7 @@ main() {
 
   parse_args "$@"
   require_root
+  detect_platform
   prompt_install_dir
   validate_settings
   log "安装位置：$INSTALL_DIR"

@@ -11,6 +11,8 @@ START_ENABLED=true
 LOCAL_BUILD=false
 COMPOSE_OVERLAY="docker-compose.ghcr.yml"
 HEALTH_TIMEOUT=180
+COMPOSE_MODE=""
+COMPOSE_COMMAND_LABEL="docker compose"
 
 usage() {
   cat <<'EOF'
@@ -87,10 +89,35 @@ if [[ -e "$OUTPUT_FILE" && "$FORCE" != true ]]; then
   exit 1
 fi
 
+detect_docker_compose() {
+  if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    COMPOSE_MODE="plugin"
+    COMPOSE_COMMAND_LABEL="docker compose"
+    return 0
+  fi
+  if command -v docker-compose >/dev/null 2>&1 && docker-compose version >/dev/null 2>&1; then
+    COMPOSE_MODE="standalone"
+    COMPOSE_COMMAND_LABEL="docker-compose"
+    return 0
+  fi
+  return 1
+}
+
+docker_compose() {
+  case "$COMPOSE_MODE" in
+    plugin) docker compose "$@" ;;
+    standalone) docker-compose "$@" ;;
+    *)
+      echo "错误：未检测到 Docker Compose。" >&2
+      exit 1
+      ;;
+  esac
+}
+
 compose() {
   (
     cd -- "$SCRIPT_DIR"
-    docker compose \
+    docker_compose \
       --env-file "$OUTPUT_FILE" \
       -f docker-compose.local.yml \
       -f "$COMPOSE_OVERLAY" \
@@ -104,8 +131,8 @@ ensure_docker_available() {
     exit 1
   }
 
-  docker compose version >/dev/null 2>&1 || {
-    echo "错误：未安装 Docker Compose v2。" >&2
+  detect_docker_compose || {
+    echo "错误：未安装 Docker Compose（支持 docker compose 或 docker-compose）。" >&2
     exit 1
   }
 
@@ -399,9 +426,9 @@ else
   echo "已按 --no-start 仅生成配置。"
   echo "启动命令："
   if [[ "$LOCAL_BUILD" == true ]]; then
-    echo "cd \"$SCRIPT_DIR\" && docker compose --env-file \"$OUTPUT_FILE\" -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build"
+    echo "cd \"$SCRIPT_DIR\" && $COMPOSE_COMMAND_LABEL --env-file \"$OUTPUT_FILE\" -f docker-compose.local.yml -f docker-compose.nova.yml up -d --build"
   else
-    echo "cd \"$SCRIPT_DIR\" && docker compose --env-file \"$OUTPUT_FILE\" -f docker-compose.local.yml -f docker-compose.ghcr.yml pull sub2api"
-    echo "cd \"$SCRIPT_DIR\" && docker compose --env-file \"$OUTPUT_FILE\" -f docker-compose.local.yml -f docker-compose.ghcr.yml up -d"
+    echo "cd \"$SCRIPT_DIR\" && $COMPOSE_COMMAND_LABEL --env-file \"$OUTPUT_FILE\" -f docker-compose.local.yml -f docker-compose.ghcr.yml pull sub2api"
+    echo "cd \"$SCRIPT_DIR\" && $COMPOSE_COMMAND_LABEL --env-file \"$OUTPUT_FILE\" -f docker-compose.local.yml -f docker-compose.ghcr.yml up -d"
   fi
 fi

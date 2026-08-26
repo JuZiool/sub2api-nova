@@ -19,6 +19,7 @@ OLD_ROLLBACK_TAG=""
 NEW_IMAGE_REF=""
 PREVIOUS_COMMIT=""
 CURRENT_COMMIT=""
+COMPOSE_MODE=""
 
 log() {
   printf '[Sub2API 更新] %s\n' "$*"
@@ -86,10 +87,30 @@ repo_git() {
   git -c safe.directory="$REPO_DIR" -C "$REPO_DIR" "$@"
 }
 
+detect_docker_compose() {
+  if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    COMPOSE_MODE="plugin"
+    return 0
+  fi
+  if command -v docker-compose >/dev/null 2>&1 && docker-compose version >/dev/null 2>&1; then
+    COMPOSE_MODE="standalone"
+    return 0
+  fi
+  return 1
+}
+
+docker_compose() {
+  case "$COMPOSE_MODE" in
+    plugin) docker compose "$@" ;;
+    standalone) docker-compose "$@" ;;
+    *) die "未检测到 Docker Compose。" ;;
+  esac
+}
+
 compose() {
   (
     cd -- "$SCRIPT_DIR"
-    docker compose \
+    docker_compose \
       --env-file .env \
       -f docker-compose.local.yml \
       -f "$COMPOSE_OVERLAY" \
@@ -107,7 +128,7 @@ ensure_requirements() {
   command -v docker >/dev/null 2>&1 || die "未安装 Docker。"
   command -v python3 >/dev/null 2>&1 || die "未安装 Python 3，无法写入部署状态。"
   command -v flock >/dev/null 2>&1 || die "未安装 flock，无法防止并发更新。"
-  docker compose version >/dev/null 2>&1 || die "未安装 Docker Compose v2。"
+  detect_docker_compose || die "未安装 Docker Compose（支持 docker compose 或 docker-compose）。"
   docker info >/dev/null 2>&1 || die "Docker 服务未运行，或当前用户无权访问 Docker。"
   if [[ "$ROLLBACK" != true ]]; then
     git check-ref-format --branch "$BRANCH" >/dev/null 2>&1 || die "无效的 Git 分支名称：$BRANCH"
