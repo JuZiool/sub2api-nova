@@ -205,6 +205,51 @@ func AccountRateMultiplier(v float64) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldAccountRateMultiplier, v))
 }
 
+// PricingGroupID applies equality check predicate on the "pricing_group_id" field. It's identical to PricingGroupIDEQ.
+func PricingGroupID(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldPricingGroupID, v))
+}
+
+// RateMatchModel applies equality check predicate on the "rate_match_model" field. It's identical to RateMatchModelEQ.
+func RateMatchModel(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateMatchModel, v))
+}
+
+// RateRuleSource applies equality check predicate on the "rate_rule_source" field. It's identical to RateRuleSourceEQ.
+func RateRuleSource(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateRuleSource, v))
+}
+
+// RateRuleKey applies equality check predicate on the "rate_rule_key" field. It's identical to RateRuleKeyEQ.
+func RateRuleKey(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateRuleKey, v))
+}
+
+// RateConfigVersion applies equality check predicate on the "rate_config_version" field. It's identical to RateConfigVersionEQ.
+func RateConfigVersion(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateConfigVersion, v))
+}
+
+// RateBaseMultiplier applies equality check predicate on the "rate_base_multiplier" field. It's identical to RateBaseMultiplierEQ.
+func RateBaseMultiplier(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateBaseMultiplier, v))
+}
+
+// RateTokenMultiplier applies equality check predicate on the "rate_token_multiplier" field. It's identical to RateTokenMultiplierEQ.
+func RateTokenMultiplier(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateTokenMultiplier, v))
+}
+
+// RateImageMultiplier applies equality check predicate on the "rate_image_multiplier" field. It's identical to RateImageMultiplierEQ.
+func RateImageMultiplier(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateImageMultiplier, v))
+}
+
+// RateVideoMultiplier applies equality check predicate on the "rate_video_multiplier" field. It's identical to RateVideoMultiplierEQ.
+func RateVideoMultiplier(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateVideoMultiplier, v))
+}
+
 // BillingType applies equality check predicate on the "billing_type" field. It's identical to BillingTypeEQ.
 func BillingType(v int8) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldBillingType, v))
@@ -1633,6 +1678,531 @@ func AccountRateMultiplierIsNil() predicate.UsageLog {
 // AccountRateMultiplierNotNil applies the NotNil predicate on the "account_rate_multiplier" field.
 func AccountRateMultiplierNotNil() predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldNotNull(FieldAccountRateMultiplier))
+}
+
+// PricingGroupIDEQ applies the EQ predicate on the "pricing_group_id" field.
+func PricingGroupIDEQ(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldPricingGroupID, v))
+}
+
+// PricingGroupIDNEQ applies the NEQ predicate on the "pricing_group_id" field.
+func PricingGroupIDNEQ(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldPricingGroupID, v))
+}
+
+// PricingGroupIDIn applies the In predicate on the "pricing_group_id" field.
+func PricingGroupIDIn(vs ...int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldPricingGroupID, vs...))
+}
+
+// PricingGroupIDNotIn applies the NotIn predicate on the "pricing_group_id" field.
+func PricingGroupIDNotIn(vs ...int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldPricingGroupID, vs...))
+}
+
+// PricingGroupIDGT applies the GT predicate on the "pricing_group_id" field.
+func PricingGroupIDGT(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldPricingGroupID, v))
+}
+
+// PricingGroupIDGTE applies the GTE predicate on the "pricing_group_id" field.
+func PricingGroupIDGTE(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldPricingGroupID, v))
+}
+
+// PricingGroupIDLT applies the LT predicate on the "pricing_group_id" field.
+func PricingGroupIDLT(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldPricingGroupID, v))
+}
+
+// PricingGroupIDLTE applies the LTE predicate on the "pricing_group_id" field.
+func PricingGroupIDLTE(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldPricingGroupID, v))
+}
+
+// PricingGroupIDIsNil applies the IsNil predicate on the "pricing_group_id" field.
+func PricingGroupIDIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldPricingGroupID))
+}
+
+// PricingGroupIDNotNil applies the NotNil predicate on the "pricing_group_id" field.
+func PricingGroupIDNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldPricingGroupID))
+}
+
+// RateMatchModelEQ applies the EQ predicate on the "rate_match_model" field.
+func RateMatchModelEQ(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateMatchModel, v))
+}
+
+// RateMatchModelNEQ applies the NEQ predicate on the "rate_match_model" field.
+func RateMatchModelNEQ(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldRateMatchModel, v))
+}
+
+// RateMatchModelIn applies the In predicate on the "rate_match_model" field.
+func RateMatchModelIn(vs ...string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldRateMatchModel, vs...))
+}
+
+// RateMatchModelNotIn applies the NotIn predicate on the "rate_match_model" field.
+func RateMatchModelNotIn(vs ...string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldRateMatchModel, vs...))
+}
+
+// RateMatchModelGT applies the GT predicate on the "rate_match_model" field.
+func RateMatchModelGT(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldRateMatchModel, v))
+}
+
+// RateMatchModelGTE applies the GTE predicate on the "rate_match_model" field.
+func RateMatchModelGTE(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldRateMatchModel, v))
+}
+
+// RateMatchModelLT applies the LT predicate on the "rate_match_model" field.
+func RateMatchModelLT(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldRateMatchModel, v))
+}
+
+// RateMatchModelLTE applies the LTE predicate on the "rate_match_model" field.
+func RateMatchModelLTE(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldRateMatchModel, v))
+}
+
+// RateMatchModelContains applies the Contains predicate on the "rate_match_model" field.
+func RateMatchModelContains(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldContains(FieldRateMatchModel, v))
+}
+
+// RateMatchModelHasPrefix applies the HasPrefix predicate on the "rate_match_model" field.
+func RateMatchModelHasPrefix(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldHasPrefix(FieldRateMatchModel, v))
+}
+
+// RateMatchModelHasSuffix applies the HasSuffix predicate on the "rate_match_model" field.
+func RateMatchModelHasSuffix(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldHasSuffix(FieldRateMatchModel, v))
+}
+
+// RateMatchModelIsNil applies the IsNil predicate on the "rate_match_model" field.
+func RateMatchModelIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldRateMatchModel))
+}
+
+// RateMatchModelNotNil applies the NotNil predicate on the "rate_match_model" field.
+func RateMatchModelNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldRateMatchModel))
+}
+
+// RateMatchModelEqualFold applies the EqualFold predicate on the "rate_match_model" field.
+func RateMatchModelEqualFold(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEqualFold(FieldRateMatchModel, v))
+}
+
+// RateMatchModelContainsFold applies the ContainsFold predicate on the "rate_match_model" field.
+func RateMatchModelContainsFold(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldContainsFold(FieldRateMatchModel, v))
+}
+
+// RateRuleSourceEQ applies the EQ predicate on the "rate_rule_source" field.
+func RateRuleSourceEQ(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateRuleSource, v))
+}
+
+// RateRuleSourceNEQ applies the NEQ predicate on the "rate_rule_source" field.
+func RateRuleSourceNEQ(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldRateRuleSource, v))
+}
+
+// RateRuleSourceIn applies the In predicate on the "rate_rule_source" field.
+func RateRuleSourceIn(vs ...string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldRateRuleSource, vs...))
+}
+
+// RateRuleSourceNotIn applies the NotIn predicate on the "rate_rule_source" field.
+func RateRuleSourceNotIn(vs ...string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldRateRuleSource, vs...))
+}
+
+// RateRuleSourceGT applies the GT predicate on the "rate_rule_source" field.
+func RateRuleSourceGT(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldRateRuleSource, v))
+}
+
+// RateRuleSourceGTE applies the GTE predicate on the "rate_rule_source" field.
+func RateRuleSourceGTE(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldRateRuleSource, v))
+}
+
+// RateRuleSourceLT applies the LT predicate on the "rate_rule_source" field.
+func RateRuleSourceLT(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldRateRuleSource, v))
+}
+
+// RateRuleSourceLTE applies the LTE predicate on the "rate_rule_source" field.
+func RateRuleSourceLTE(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldRateRuleSource, v))
+}
+
+// RateRuleSourceContains applies the Contains predicate on the "rate_rule_source" field.
+func RateRuleSourceContains(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldContains(FieldRateRuleSource, v))
+}
+
+// RateRuleSourceHasPrefix applies the HasPrefix predicate on the "rate_rule_source" field.
+func RateRuleSourceHasPrefix(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldHasPrefix(FieldRateRuleSource, v))
+}
+
+// RateRuleSourceHasSuffix applies the HasSuffix predicate on the "rate_rule_source" field.
+func RateRuleSourceHasSuffix(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldHasSuffix(FieldRateRuleSource, v))
+}
+
+// RateRuleSourceIsNil applies the IsNil predicate on the "rate_rule_source" field.
+func RateRuleSourceIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldRateRuleSource))
+}
+
+// RateRuleSourceNotNil applies the NotNil predicate on the "rate_rule_source" field.
+func RateRuleSourceNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldRateRuleSource))
+}
+
+// RateRuleSourceEqualFold applies the EqualFold predicate on the "rate_rule_source" field.
+func RateRuleSourceEqualFold(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEqualFold(FieldRateRuleSource, v))
+}
+
+// RateRuleSourceContainsFold applies the ContainsFold predicate on the "rate_rule_source" field.
+func RateRuleSourceContainsFold(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldContainsFold(FieldRateRuleSource, v))
+}
+
+// RateRuleKeyEQ applies the EQ predicate on the "rate_rule_key" field.
+func RateRuleKeyEQ(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateRuleKey, v))
+}
+
+// RateRuleKeyNEQ applies the NEQ predicate on the "rate_rule_key" field.
+func RateRuleKeyNEQ(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldRateRuleKey, v))
+}
+
+// RateRuleKeyIn applies the In predicate on the "rate_rule_key" field.
+func RateRuleKeyIn(vs ...string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldRateRuleKey, vs...))
+}
+
+// RateRuleKeyNotIn applies the NotIn predicate on the "rate_rule_key" field.
+func RateRuleKeyNotIn(vs ...string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldRateRuleKey, vs...))
+}
+
+// RateRuleKeyGT applies the GT predicate on the "rate_rule_key" field.
+func RateRuleKeyGT(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldRateRuleKey, v))
+}
+
+// RateRuleKeyGTE applies the GTE predicate on the "rate_rule_key" field.
+func RateRuleKeyGTE(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldRateRuleKey, v))
+}
+
+// RateRuleKeyLT applies the LT predicate on the "rate_rule_key" field.
+func RateRuleKeyLT(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldRateRuleKey, v))
+}
+
+// RateRuleKeyLTE applies the LTE predicate on the "rate_rule_key" field.
+func RateRuleKeyLTE(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldRateRuleKey, v))
+}
+
+// RateRuleKeyContains applies the Contains predicate on the "rate_rule_key" field.
+func RateRuleKeyContains(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldContains(FieldRateRuleKey, v))
+}
+
+// RateRuleKeyHasPrefix applies the HasPrefix predicate on the "rate_rule_key" field.
+func RateRuleKeyHasPrefix(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldHasPrefix(FieldRateRuleKey, v))
+}
+
+// RateRuleKeyHasSuffix applies the HasSuffix predicate on the "rate_rule_key" field.
+func RateRuleKeyHasSuffix(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldHasSuffix(FieldRateRuleKey, v))
+}
+
+// RateRuleKeyIsNil applies the IsNil predicate on the "rate_rule_key" field.
+func RateRuleKeyIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldRateRuleKey))
+}
+
+// RateRuleKeyNotNil applies the NotNil predicate on the "rate_rule_key" field.
+func RateRuleKeyNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldRateRuleKey))
+}
+
+// RateRuleKeyEqualFold applies the EqualFold predicate on the "rate_rule_key" field.
+func RateRuleKeyEqualFold(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEqualFold(FieldRateRuleKey, v))
+}
+
+// RateRuleKeyContainsFold applies the ContainsFold predicate on the "rate_rule_key" field.
+func RateRuleKeyContainsFold(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldContainsFold(FieldRateRuleKey, v))
+}
+
+// RateConfigVersionEQ applies the EQ predicate on the "rate_config_version" field.
+func RateConfigVersionEQ(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateConfigVersion, v))
+}
+
+// RateConfigVersionNEQ applies the NEQ predicate on the "rate_config_version" field.
+func RateConfigVersionNEQ(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldRateConfigVersion, v))
+}
+
+// RateConfigVersionIn applies the In predicate on the "rate_config_version" field.
+func RateConfigVersionIn(vs ...int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldRateConfigVersion, vs...))
+}
+
+// RateConfigVersionNotIn applies the NotIn predicate on the "rate_config_version" field.
+func RateConfigVersionNotIn(vs ...int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldRateConfigVersion, vs...))
+}
+
+// RateConfigVersionGT applies the GT predicate on the "rate_config_version" field.
+func RateConfigVersionGT(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldRateConfigVersion, v))
+}
+
+// RateConfigVersionGTE applies the GTE predicate on the "rate_config_version" field.
+func RateConfigVersionGTE(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldRateConfigVersion, v))
+}
+
+// RateConfigVersionLT applies the LT predicate on the "rate_config_version" field.
+func RateConfigVersionLT(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldRateConfigVersion, v))
+}
+
+// RateConfigVersionLTE applies the LTE predicate on the "rate_config_version" field.
+func RateConfigVersionLTE(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldRateConfigVersion, v))
+}
+
+// RateConfigVersionIsNil applies the IsNil predicate on the "rate_config_version" field.
+func RateConfigVersionIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldRateConfigVersion))
+}
+
+// RateConfigVersionNotNil applies the NotNil predicate on the "rate_config_version" field.
+func RateConfigVersionNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldRateConfigVersion))
+}
+
+// RateBaseMultiplierEQ applies the EQ predicate on the "rate_base_multiplier" field.
+func RateBaseMultiplierEQ(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateBaseMultiplier, v))
+}
+
+// RateBaseMultiplierNEQ applies the NEQ predicate on the "rate_base_multiplier" field.
+func RateBaseMultiplierNEQ(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldRateBaseMultiplier, v))
+}
+
+// RateBaseMultiplierIn applies the In predicate on the "rate_base_multiplier" field.
+func RateBaseMultiplierIn(vs ...float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldRateBaseMultiplier, vs...))
+}
+
+// RateBaseMultiplierNotIn applies the NotIn predicate on the "rate_base_multiplier" field.
+func RateBaseMultiplierNotIn(vs ...float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldRateBaseMultiplier, vs...))
+}
+
+// RateBaseMultiplierGT applies the GT predicate on the "rate_base_multiplier" field.
+func RateBaseMultiplierGT(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldRateBaseMultiplier, v))
+}
+
+// RateBaseMultiplierGTE applies the GTE predicate on the "rate_base_multiplier" field.
+func RateBaseMultiplierGTE(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldRateBaseMultiplier, v))
+}
+
+// RateBaseMultiplierLT applies the LT predicate on the "rate_base_multiplier" field.
+func RateBaseMultiplierLT(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldRateBaseMultiplier, v))
+}
+
+// RateBaseMultiplierLTE applies the LTE predicate on the "rate_base_multiplier" field.
+func RateBaseMultiplierLTE(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldRateBaseMultiplier, v))
+}
+
+// RateBaseMultiplierIsNil applies the IsNil predicate on the "rate_base_multiplier" field.
+func RateBaseMultiplierIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldRateBaseMultiplier))
+}
+
+// RateBaseMultiplierNotNil applies the NotNil predicate on the "rate_base_multiplier" field.
+func RateBaseMultiplierNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldRateBaseMultiplier))
+}
+
+// RateTokenMultiplierEQ applies the EQ predicate on the "rate_token_multiplier" field.
+func RateTokenMultiplierEQ(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateTokenMultiplier, v))
+}
+
+// RateTokenMultiplierNEQ applies the NEQ predicate on the "rate_token_multiplier" field.
+func RateTokenMultiplierNEQ(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldRateTokenMultiplier, v))
+}
+
+// RateTokenMultiplierIn applies the In predicate on the "rate_token_multiplier" field.
+func RateTokenMultiplierIn(vs ...float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldRateTokenMultiplier, vs...))
+}
+
+// RateTokenMultiplierNotIn applies the NotIn predicate on the "rate_token_multiplier" field.
+func RateTokenMultiplierNotIn(vs ...float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldRateTokenMultiplier, vs...))
+}
+
+// RateTokenMultiplierGT applies the GT predicate on the "rate_token_multiplier" field.
+func RateTokenMultiplierGT(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldRateTokenMultiplier, v))
+}
+
+// RateTokenMultiplierGTE applies the GTE predicate on the "rate_token_multiplier" field.
+func RateTokenMultiplierGTE(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldRateTokenMultiplier, v))
+}
+
+// RateTokenMultiplierLT applies the LT predicate on the "rate_token_multiplier" field.
+func RateTokenMultiplierLT(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldRateTokenMultiplier, v))
+}
+
+// RateTokenMultiplierLTE applies the LTE predicate on the "rate_token_multiplier" field.
+func RateTokenMultiplierLTE(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldRateTokenMultiplier, v))
+}
+
+// RateTokenMultiplierIsNil applies the IsNil predicate on the "rate_token_multiplier" field.
+func RateTokenMultiplierIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldRateTokenMultiplier))
+}
+
+// RateTokenMultiplierNotNil applies the NotNil predicate on the "rate_token_multiplier" field.
+func RateTokenMultiplierNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldRateTokenMultiplier))
+}
+
+// RateImageMultiplierEQ applies the EQ predicate on the "rate_image_multiplier" field.
+func RateImageMultiplierEQ(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateImageMultiplier, v))
+}
+
+// RateImageMultiplierNEQ applies the NEQ predicate on the "rate_image_multiplier" field.
+func RateImageMultiplierNEQ(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldRateImageMultiplier, v))
+}
+
+// RateImageMultiplierIn applies the In predicate on the "rate_image_multiplier" field.
+func RateImageMultiplierIn(vs ...float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldRateImageMultiplier, vs...))
+}
+
+// RateImageMultiplierNotIn applies the NotIn predicate on the "rate_image_multiplier" field.
+func RateImageMultiplierNotIn(vs ...float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldRateImageMultiplier, vs...))
+}
+
+// RateImageMultiplierGT applies the GT predicate on the "rate_image_multiplier" field.
+func RateImageMultiplierGT(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldRateImageMultiplier, v))
+}
+
+// RateImageMultiplierGTE applies the GTE predicate on the "rate_image_multiplier" field.
+func RateImageMultiplierGTE(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldRateImageMultiplier, v))
+}
+
+// RateImageMultiplierLT applies the LT predicate on the "rate_image_multiplier" field.
+func RateImageMultiplierLT(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldRateImageMultiplier, v))
+}
+
+// RateImageMultiplierLTE applies the LTE predicate on the "rate_image_multiplier" field.
+func RateImageMultiplierLTE(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldRateImageMultiplier, v))
+}
+
+// RateImageMultiplierIsNil applies the IsNil predicate on the "rate_image_multiplier" field.
+func RateImageMultiplierIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldRateImageMultiplier))
+}
+
+// RateImageMultiplierNotNil applies the NotNil predicate on the "rate_image_multiplier" field.
+func RateImageMultiplierNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldRateImageMultiplier))
+}
+
+// RateVideoMultiplierEQ applies the EQ predicate on the "rate_video_multiplier" field.
+func RateVideoMultiplierEQ(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRateVideoMultiplier, v))
+}
+
+// RateVideoMultiplierNEQ applies the NEQ predicate on the "rate_video_multiplier" field.
+func RateVideoMultiplierNEQ(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldRateVideoMultiplier, v))
+}
+
+// RateVideoMultiplierIn applies the In predicate on the "rate_video_multiplier" field.
+func RateVideoMultiplierIn(vs ...float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldRateVideoMultiplier, vs...))
+}
+
+// RateVideoMultiplierNotIn applies the NotIn predicate on the "rate_video_multiplier" field.
+func RateVideoMultiplierNotIn(vs ...float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldRateVideoMultiplier, vs...))
+}
+
+// RateVideoMultiplierGT applies the GT predicate on the "rate_video_multiplier" field.
+func RateVideoMultiplierGT(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldRateVideoMultiplier, v))
+}
+
+// RateVideoMultiplierGTE applies the GTE predicate on the "rate_video_multiplier" field.
+func RateVideoMultiplierGTE(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldRateVideoMultiplier, v))
+}
+
+// RateVideoMultiplierLT applies the LT predicate on the "rate_video_multiplier" field.
+func RateVideoMultiplierLT(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldRateVideoMultiplier, v))
+}
+
+// RateVideoMultiplierLTE applies the LTE predicate on the "rate_video_multiplier" field.
+func RateVideoMultiplierLTE(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldRateVideoMultiplier, v))
+}
+
+// RateVideoMultiplierIsNil applies the IsNil predicate on the "rate_video_multiplier" field.
+func RateVideoMultiplierIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldRateVideoMultiplier))
+}
+
+// RateVideoMultiplierNotNil applies the NotNil predicate on the "rate_video_multiplier" field.
+func RateVideoMultiplierNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldRateVideoMultiplier))
 }
 
 // BillingTypeEQ applies the EQ predicate on the "billing_type" field.

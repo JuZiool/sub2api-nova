@@ -16,7 +16,10 @@
       <!-- Row 2: description with top spacing -->
       <span
         v-if="description"
-        class="mt-1.5 w-full whitespace-pre-line [overflow-wrap:anywhere] text-left text-xs leading-relaxed text-gray-500 dark:text-gray-400 line-clamp-3"
+        :class="[
+          'mt-1.5 w-full whitespace-pre-line [overflow-wrap:anywhere] text-left text-xs leading-relaxed text-gray-500 dark:text-gray-400',
+          showFullDescription ? '' : 'line-clamp-3'
+        ]"
       >
         {{ description }}
       </span>
@@ -32,7 +35,7 @@
             <span class="font-bold">{{ userRateMultiplier }}x</span>
           </template>
           <template v-else>
-            {{ rateMultiplier }}x {{ t('admin.groups.rateLabel') }}
+            {{ ratePrefix ? `${ratePrefix} ` : '' }}{{ rateMultiplier }}x
           </template>
         </span>
         <span
@@ -74,11 +77,13 @@ interface Props {
   subscriptionType?: SubscriptionType
   rateMultiplier?: number
   userRateMultiplier?: number | null
+  ratePrefix?: string
   peakRateEnabled?: boolean
   peakStart?: string
   peakEnd?: string
   peakRateMultiplier?: number
   description?: string | null
+  showFullDescription?: boolean
   selected?: boolean
   showCheckmark?: boolean
 }
@@ -88,7 +93,9 @@ const props = withDefaults(defineProps<Props>(), {
   selected: false,
   showCheckmark: true,
   userRateMultiplier: null,
-  peakRateEnabled: false
+  ratePrefix: '',
+  peakRateEnabled: false,
+  showFullDescription: false
 })
 
 // Whether user has a custom rate different from default

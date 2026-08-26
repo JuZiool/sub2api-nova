@@ -418,6 +418,38 @@ func (_u *BatchImageJobUpdate) ClearActualCost() *BatchImageJobUpdate {
 	return _u
 }
 
+// SetPricingAt sets the "pricing_at" field.
+func (_u *BatchImageJobUpdate) SetPricingAt(v time.Time) *BatchImageJobUpdate {
+	_u.mutation.SetPricingAt(v)
+	return _u
+}
+
+// SetNillablePricingAt sets the "pricing_at" field if the given value is not nil.
+func (_u *BatchImageJobUpdate) SetNillablePricingAt(v *time.Time) *BatchImageJobUpdate {
+	if v != nil {
+		_u.SetPricingAt(*v)
+	}
+	return _u
+}
+
+// ClearPricingAt clears the value of the "pricing_at" field.
+func (_u *BatchImageJobUpdate) ClearPricingAt() *BatchImageJobUpdate {
+	_u.mutation.ClearPricingAt()
+	return _u
+}
+
+// SetRateResolutionSnapshot sets the "rate_resolution_snapshot" field.
+func (_u *BatchImageJobUpdate) SetRateResolutionSnapshot(v map[string]interface{}) *BatchImageJobUpdate {
+	_u.mutation.SetRateResolutionSnapshot(v)
+	return _u
+}
+
+// ClearRateResolutionSnapshot clears the value of the "rate_resolution_snapshot" field.
+func (_u *BatchImageJobUpdate) ClearRateResolutionSnapshot() *BatchImageJobUpdate {
+	_u.mutation.ClearRateResolutionSnapshot()
+	return _u
+}
+
 // SetCurrency sets the "currency" field.
 func (_u *BatchImageJobUpdate) SetCurrency(v string) *BatchImageJobUpdate {
 	_u.mutation.SetCurrency(v)
@@ -1027,6 +1059,18 @@ func (_u *BatchImageJobUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if _u.mutation.ActualCostCleared() {
 		_spec.ClearField(batchimagejob.FieldActualCost, field.TypeFloat64)
 	}
+	if value, ok := _u.mutation.PricingAt(); ok {
+		_spec.SetField(batchimagejob.FieldPricingAt, field.TypeTime, value)
+	}
+	if _u.mutation.PricingAtCleared() {
+		_spec.ClearField(batchimagejob.FieldPricingAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.RateResolutionSnapshot(); ok {
+		_spec.SetField(batchimagejob.FieldRateResolutionSnapshot, field.TypeJSON, value)
+	}
+	if _u.mutation.RateResolutionSnapshotCleared() {
+		_spec.ClearField(batchimagejob.FieldRateResolutionSnapshot, field.TypeJSON)
+	}
 	if value, ok := _u.mutation.Currency(); ok {
 		_spec.SetField(batchimagejob.FieldCurrency, field.TypeString, value)
 	}
@@ -1542,6 +1586,38 @@ func (_u *BatchImageJobUpdateOne) AddActualCost(v float64) *BatchImageJobUpdateO
 // ClearActualCost clears the value of the "actual_cost" field.
 func (_u *BatchImageJobUpdateOne) ClearActualCost() *BatchImageJobUpdateOne {
 	_u.mutation.ClearActualCost()
+	return _u
+}
+
+// SetPricingAt sets the "pricing_at" field.
+func (_u *BatchImageJobUpdateOne) SetPricingAt(v time.Time) *BatchImageJobUpdateOne {
+	_u.mutation.SetPricingAt(v)
+	return _u
+}
+
+// SetNillablePricingAt sets the "pricing_at" field if the given value is not nil.
+func (_u *BatchImageJobUpdateOne) SetNillablePricingAt(v *time.Time) *BatchImageJobUpdateOne {
+	if v != nil {
+		_u.SetPricingAt(*v)
+	}
+	return _u
+}
+
+// ClearPricingAt clears the value of the "pricing_at" field.
+func (_u *BatchImageJobUpdateOne) ClearPricingAt() *BatchImageJobUpdateOne {
+	_u.mutation.ClearPricingAt()
+	return _u
+}
+
+// SetRateResolutionSnapshot sets the "rate_resolution_snapshot" field.
+func (_u *BatchImageJobUpdateOne) SetRateResolutionSnapshot(v map[string]interface{}) *BatchImageJobUpdateOne {
+	_u.mutation.SetRateResolutionSnapshot(v)
+	return _u
+}
+
+// ClearRateResolutionSnapshot clears the value of the "rate_resolution_snapshot" field.
+func (_u *BatchImageJobUpdateOne) ClearRateResolutionSnapshot() *BatchImageJobUpdateOne {
+	_u.mutation.ClearRateResolutionSnapshot()
 	return _u
 }
 
@@ -2183,6 +2259,18 @@ func (_u *BatchImageJobUpdateOne) sqlSave(ctx context.Context) (_node *BatchImag
 	}
 	if _u.mutation.ActualCostCleared() {
 		_spec.ClearField(batchimagejob.FieldActualCost, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PricingAt(); ok {
+		_spec.SetField(batchimagejob.FieldPricingAt, field.TypeTime, value)
+	}
+	if _u.mutation.PricingAtCleared() {
+		_spec.ClearField(batchimagejob.FieldPricingAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.RateResolutionSnapshot(); ok {
+		_spec.SetField(batchimagejob.FieldRateResolutionSnapshot, field.TypeJSON, value)
+	}
+	if _u.mutation.RateResolutionSnapshotCleared() {
+		_spec.ClearField(batchimagejob.FieldRateResolutionSnapshot, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.Currency(); ok {
 		_spec.SetField(batchimagejob.FieldCurrency, field.TypeString, value)

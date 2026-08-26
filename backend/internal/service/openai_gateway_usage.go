@@ -37,6 +37,8 @@ type OpenAIRecordUsageInput struct {
 	// 按该时刻计算，保证同一请求从准入到扣费不中途变价。零值回退记录时刻
 	//（既有行为），供未装配的路径（图片/异步/cyber 等）沿用。
 	PricingAt time.Time
+	// RateResolution is the immutable model-rate snapshot captured at request start.
+	RateResolution *RateResolution
 	// CyberBlocked 为 true 时把该用量行标记为 cyber（request_type=cyber），计费逻辑不变。
 	CyberBlocked bool
 	ChannelUsageFields
@@ -117,6 +119,26 @@ func (s *OpenAIGatewayService) ResolveUserGroupRateMultiplier(ctx context.Contex
 	return resolver.Resolve(ctx, userID, groupID, groupDefaultMultiplier)
 }
 
+// ResolveRequestRateResolution resolves a model-rate snapshot for OpenAI/Grok billing.
+func (s *OpenAIGatewayService) ResolveRequestRateResolution(ctx context.Context, userID int64, group *Group, requestedModel string, pricingAt time.Time) (*RateResolution, error) {
+	if s == nil {
+		return nil, errors.New("openai gateway service is nil")
+	}
+	var override *float64
+	if userID > 0 && group != nil {
+		resolver := s.userGroupRateResolver
+		if resolver == nil {
+			resolver = newUserGroupRateResolver(nil, nil, resolveUserGroupRateCacheTTL(s.cfg), nil, "service.openai_gateway")
+		}
+		var err error
+		override, err = resolver.ResolveOverride(ctx, userID, group.ID)
+		if err != nil {
+			return nil, fmt.Errorf("resolve user group rate override: %w", err)
+		}
+	}
+	return ResolveRateResolution(group, override, requestedModel, pricingAt)
+}
+
 // openAIUsagePricingAt 返回本次用量记录使用的定价时刻：优先请求级 PricingAt
 // （与利润门 D 同源同刻），未装配时回退记录时刻（既有行为）。
 func openAIUsagePricingAt(input *OpenAIRecordUsageInput) time.Time {
@@ -130,6 +152,9 @@ func openAIUsagePricingAt(input *OpenAIRecordUsageInput) time.Time {
 func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRecordUsageInput) error {
 	if input == nil {
 		return errors.New("openai usage input is nil")
+	}
+	if input.RateResolution == nil {
+		input.RateResolution = RateResolutionFromContext(ctx)
 	}
 	result := input.Result
 	if result == nil {
@@ -165,22 +190,36 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		ImageOutputTokens:   result.Usage.ImageOutputTokens,
 	}
 
-	// Get rate multiplier
-	multiplier := 1.0
-	if s.cfg != nil {
-		multiplier = s.cfg.Default.RateMultiplier
+	requestedModel := result.Model
+	if input.OriginalModel != "" {
+		requestedModel = input.OriginalModel
 	}
-	if apiKey.GroupID != nil && apiKey.Group != nil {
-		multiplier = s.ResolveUserGroupRateMultiplier(ctx, user.ID, *apiKey.GroupID, apiKey.Group.RateMultiplier)
-	}
-	// token 倍率叠加高峰因子（token 计费含图片 token，图片按次倍率不受影响）。
-	// 高峰因子按请求级 PricingAt 现算（与利润门 D 同源同刻，跨峰谷请求不中途
-	// 变价）；未装配 PricingAt 的路径回退记录时刻，保持既有行为。不并入上面的
-	// Resolve，以免污染 user:group 倍率缓存。
-	baseMultiplier := multiplier
 	pricingAt := openAIUsagePricingAt(input)
-	multiplier, imageMultiplier := computePeakAwareMultipliers(apiKey, baseMultiplier, pricingAt)
-	videoMultiplier := resolveVideoRateMultiplier(apiKey, baseMultiplier)
+	multiplier := 1.0
+	baseMultiplier := 1.0
+	imageMultiplier := 1.0
+	videoMultiplier := 1.0
+	if input.RateResolution != nil {
+		baseMultiplier = input.RateResolution.BaseMultiplier
+		multiplier = input.RateResolution.TokenMultiplier
+		imageMultiplier = input.RateResolution.ImageMultiplier
+		videoMultiplier = input.RateResolution.VideoMultiplier
+	} else if apiKey.GroupID != nil && apiKey.Group != nil {
+		resolution, rateErr := s.ResolveRequestRateResolution(ctx, user.ID, apiKey.Group, requestedModel, pricingAt)
+		if rateErr != nil {
+			return rateErr
+		}
+		input.RateResolution = resolution
+		baseMultiplier = resolution.BaseMultiplier
+		multiplier = resolution.TokenMultiplier
+		imageMultiplier = resolution.ImageMultiplier
+		videoMultiplier = resolution.VideoMultiplier
+	} else if s.cfg != nil {
+		multiplier = s.cfg.Default.RateMultiplier
+		baseMultiplier = multiplier
+		imageMultiplier = multiplier
+		videoMultiplier = multiplier
+	}
 
 	var cost *CostBreakdown
 	var err error
@@ -304,11 +343,6 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		}
 	}
 
-	// 确定 RequestedModel（渠道映射前的原始模型）
-	requestedModel := result.Model
-	if input.OriginalModel != "" {
-		requestedModel = input.OriginalModel
-	}
 	sentModel := upstreamSentModel(result.Model, result.UpstreamModel)
 	if result.UpstreamResponseModelConflict {
 		logger.L().Warn("upstream_response_model_conflict",
@@ -418,6 +452,8 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	if subscription != nil {
 		usageLog.SubscriptionID = &subscription.ID
 	}
+
+	ApplyRateResolutionToUsageLog(usageLog, input.RateResolution)
 
 	// 计算账号统计定价费用（使用最终上游模型匹配自定义规则）
 	if apiKey.GroupID != nil {

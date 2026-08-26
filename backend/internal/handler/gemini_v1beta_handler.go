@@ -206,6 +206,10 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 	setOpsEndpointContext(c, "", int16(service.RequestTypeFromLegacy(stream, false)))
 	pricingCtx, pricingAt := service.WithGatewayTokenRequestPricing(c.Request.Context())
 	c.Request = c.Request.WithContext(pricingCtx)
+	if err := freezeRequestRateResolution(c, apiKey, modelName, pricingAt, h.gatewayService, h.openAIGatewayService); err != nil {
+		googleError(c, http.StatusInternalServerError, "Failed to resolve request billing rate")
+		return
+	}
 
 	if decision := h.checkSecurityAudit(c, reqLog, apiKey, authSubject, service.ContentModerationProtocolGemini, modelName, body); decision != nil && !decision.AllowNextStage {
 		googleSecurityAuditError(c, decision)

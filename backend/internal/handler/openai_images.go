@@ -84,6 +84,12 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "Model is not supported by this OpenAI-compatible endpoint for composite groups")
 		return
 	}
+	pricingCtx, pricingAt := h.gatewayService.WithOpenAIRequestPricingContext(c.Request.Context(), apiKey.GroupID)
+	c.Request = c.Request.WithContext(pricingCtx)
+	if err := freezeRequestRateResolution(c, apiKey, requestModel, pricingAt, nil, h.gatewayService); err != nil {
+		h.errorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
+		return
+	}
 
 	reqLog = reqLog.With(
 		zap.String("model", clientRequestModel),
@@ -403,6 +409,7 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 				APIKeyService:      h.apiKeyService,
 				QuotaPlatform:      quotaPlatform,
 				SessionID:          sessionID,
+				PricingAt:          pricingAt,
 				ChannelUsageFields: clientRequestedUsageFields(c, channelMapping, requestModel, upstreamModel),
 			}); err != nil {
 				logger.L().With(

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 )
 
 // PlazaOfficialPricing 模型广场展示用的 LiteLLM 官方参考价（USD per token）。
@@ -19,8 +20,12 @@ type PlazaOfficialPricing struct {
 
 // PlazaModel 模型广场中单个模型条目：渠道定价 + 官方参考价。
 type PlazaModel struct {
-	Name            string
-	Platform        string
+	Name     string
+	Platform string
+	// RateMultiplier is the model-specific base multiplier resolved from the
+	// group rules. It is intentionally separate from the group default because
+	// the latter is not valid for every model when model rules are configured.
+	RateMultiplier  float64
 	Pricing         *ChannelModelPricing
 	OfficialPricing *PlazaOfficialPricing
 }
@@ -46,7 +51,10 @@ type PlazaGroup struct {
 	// = 档位价 × ImageRateMultiplier，不乘分组/用户专属倍率（与计费口径一致）。
 	ImageRateIndependent bool
 	ImageRateMultiplier  float64
-	Models               []PlazaModel
+	// HasModelRateRules makes group-level UI explicitly label RateMultiplier as
+	// a default rather than implying it applies to every model.
+	HasModelRateRules bool
+	Models            []PlazaModel
 }
 
 // ListPlazaGroups 返回模型广场数据：每个活跃分组附带其可用模型与定价。
@@ -95,6 +103,7 @@ func (s *ChannelService) ListPlazaGroups(ctx context.Context) ([]PlazaGroup, err
 			IsExclusive:          g.IsExclusive,
 			ImageRateIndependent: g.ImageRateIndependent,
 			ImageRateMultiplier:  g.ImageRateMultiplier,
+			HasModelRateRules:    len(g.ModelRateMultipliers) > 0,
 		}
 		groupEnt[g.ID] = g
 		order = append(order, g.ID)
@@ -144,10 +153,15 @@ func (s *ChannelService) ListPlazaGroups(ctx context.Context) ([]PlazaGroup, err
 					continue
 				}
 				idx[key] = len(pg.Models)
+				modelRate := groupEnt[gid].RateMultiplier
+				if resolution, resolveErr := ResolveRateResolution(groupEnt[gid], nil, m.Name, time.Now().UTC()); resolveErr == nil {
+					modelRate = resolution.BaseMultiplier
+				}
 				pg.Models = append(pg.Models, PlazaModel{
-					Name:     m.Name,
-					Platform: m.Platform,
-					Pricing:  pricing,
+					Name:           m.Name,
+					Platform:       m.Platform,
+					RateMultiplier: modelRate,
+					Pricing:        pricing,
 				})
 			}
 		}

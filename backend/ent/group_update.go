@@ -118,6 +118,39 @@ func (_u *GroupUpdate) AddRateMultiplier(v float64) *GroupUpdate {
 	return _u
 }
 
+// SetModelRateMultipliers sets the "model_rate_multipliers" field.
+func (_u *GroupUpdate) SetModelRateMultipliers(v []domain.ModelRateMultiplierRule) *GroupUpdate {
+	_u.mutation.SetModelRateMultipliers(v)
+	return _u
+}
+
+// AppendModelRateMultipliers appends value to the "model_rate_multipliers" field.
+func (_u *GroupUpdate) AppendModelRateMultipliers(v []domain.ModelRateMultiplierRule) *GroupUpdate {
+	_u.mutation.AppendModelRateMultipliers(v)
+	return _u
+}
+
+// SetRateConfigVersion sets the "rate_config_version" field.
+func (_u *GroupUpdate) SetRateConfigVersion(v int64) *GroupUpdate {
+	_u.mutation.ResetRateConfigVersion()
+	_u.mutation.SetRateConfigVersion(v)
+	return _u
+}
+
+// SetNillableRateConfigVersion sets the "rate_config_version" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableRateConfigVersion(v *int64) *GroupUpdate {
+	if v != nil {
+		_u.SetRateConfigVersion(*v)
+	}
+	return _u
+}
+
+// AddRateConfigVersion adds value to the "rate_config_version" field.
+func (_u *GroupUpdate) AddRateConfigVersion(v int64) *GroupUpdate {
+	_u.mutation.AddRateConfigVersion(v)
+	return _u
+}
+
 // SetPeakRateEnabled sets the "peak_rate_enabled" field.
 func (_u *GroupUpdate) SetPeakRateEnabled(v bool) *GroupUpdate {
 	_u.mutation.SetPeakRateEnabled(v)
@@ -1526,6 +1559,20 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedRateMultiplier(); ok {
 		_spec.AddField(group.FieldRateMultiplier, field.TypeFloat64, value)
 	}
+	if value, ok := _u.mutation.ModelRateMultipliers(); ok {
+		_spec.SetField(group.FieldModelRateMultipliers, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedModelRateMultipliers(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, group.FieldModelRateMultipliers, value)
+		})
+	}
+	if value, ok := _u.mutation.RateConfigVersion(); ok {
+		_spec.SetField(group.FieldRateConfigVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRateConfigVersion(); ok {
+		_spec.AddField(group.FieldRateConfigVersion, field.TypeInt64, value)
+	}
 	if value, ok := _u.mutation.PeakRateEnabled(); ok {
 		_spec.SetField(group.FieldPeakRateEnabled, field.TypeBool, value)
 	}
@@ -2236,6 +2283,39 @@ func (_u *GroupUpdateOne) SetNillableRateMultiplier(v *float64) *GroupUpdateOne 
 // AddRateMultiplier adds value to the "rate_multiplier" field.
 func (_u *GroupUpdateOne) AddRateMultiplier(v float64) *GroupUpdateOne {
 	_u.mutation.AddRateMultiplier(v)
+	return _u
+}
+
+// SetModelRateMultipliers sets the "model_rate_multipliers" field.
+func (_u *GroupUpdateOne) SetModelRateMultipliers(v []domain.ModelRateMultiplierRule) *GroupUpdateOne {
+	_u.mutation.SetModelRateMultipliers(v)
+	return _u
+}
+
+// AppendModelRateMultipliers appends value to the "model_rate_multipliers" field.
+func (_u *GroupUpdateOne) AppendModelRateMultipliers(v []domain.ModelRateMultiplierRule) *GroupUpdateOne {
+	_u.mutation.AppendModelRateMultipliers(v)
+	return _u
+}
+
+// SetRateConfigVersion sets the "rate_config_version" field.
+func (_u *GroupUpdateOne) SetRateConfigVersion(v int64) *GroupUpdateOne {
+	_u.mutation.ResetRateConfigVersion()
+	_u.mutation.SetRateConfigVersion(v)
+	return _u
+}
+
+// SetNillableRateConfigVersion sets the "rate_config_version" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableRateConfigVersion(v *int64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetRateConfigVersion(*v)
+	}
+	return _u
+}
+
+// AddRateConfigVersion adds value to the "rate_config_version" field.
+func (_u *GroupUpdateOne) AddRateConfigVersion(v int64) *GroupUpdateOne {
+	_u.mutation.AddRateConfigVersion(v)
 	return _u
 }
 
@@ -3676,6 +3756,20 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.AddedRateMultiplier(); ok {
 		_spec.AddField(group.FieldRateMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ModelRateMultipliers(); ok {
+		_spec.SetField(group.FieldModelRateMultipliers, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedModelRateMultipliers(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, group.FieldModelRateMultipliers, value)
+		})
+	}
+	if value, ok := _u.mutation.RateConfigVersion(); ok {
+		_spec.SetField(group.FieldRateConfigVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRateConfigVersion(); ok {
+		_spec.AddField(group.FieldRateConfigVersion, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.PeakRateEnabled(); ok {
 		_spec.SetField(group.FieldPeakRateEnabled, field.TypeBool, value)

@@ -561,6 +561,7 @@ export default {
     empty: 'No available channels',
     noModels: 'No models configured',
     noPricing: 'Pricing not configured',
+    defaultRate: 'Default rate',
     exclusive: 'Exclusive',
     public: 'Public',
     exclusiveTooltip: 'Exclusive groups granted to you by an admin',
@@ -585,6 +586,8 @@ export default {
       imageInputPrice: 'Image Input',
       imageOutputPrice: 'Image Output',
       perRequestPrice: 'Per Request',
+      rate: 'Effective rate',
+      multipleRates: 'Multiple rates',
       intervals: 'Tiered Pricing',
       unitPerMillion: '/ 1M tokens',
       unitPerRequest: '/ request'
@@ -603,7 +606,7 @@ export default {
     filters: {
       platformLabel: 'Platform',
       groupLabel: 'Group',
-      rateLabel: 'Rate',
+      rateLabel: 'Default Rate',
       modelLabel: 'Model',
       searchPlaceholder: 'Search models',
       all: 'All'
@@ -615,7 +618,8 @@ export default {
     detail: {
       noModels: 'No models configured for this group',
       noPricing: 'Pricing not configured',
-      peakNote: 'Peak hours {window}: billing rate ×{multiplier}'
+      peakNote: 'Peak hours {window}: billing rate ×{multiplier}',
+      defaultRate: 'Default rate'
     },
     table: {
       model: 'Model',

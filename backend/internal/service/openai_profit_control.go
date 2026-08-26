@@ -253,14 +253,24 @@ func (s *OpenAIGatewayService) resolveOpenAIProfitControlGate(ctx context.Contex
 	if ctxGroup, ok := ctx.Value(ctxkey.Group).(*Group); ok && IsGroupContextValid(ctxGroup) {
 		billingGroup = ctxGroup
 	}
-	downstream := billingGroup.RateMultiplier
-	if userID, _ := ctx.Value(ctxkey.UserID).(int64); userID > 0 {
-		downstream = s.ResolveUserGroupRateMultiplier(ctx, userID, billingGroup.ID, billingGroup.RateMultiplier)
+	requestedModel, _ := ctx.Value(ctxkey.Model).(string)
+	if requestedModel == "" {
+		requestedModel, _ = ctx.Value(ctxkey.RequestedPublicModel).(string)
 	}
-	downstream *= billingGroup.PeakMultiplierAt(pricingAt)
+	// Internal scheduler calls may have no request payload. The sentinel deliberately
+	// matches no explicit rule and preserves the existing default-rate profit gate.
+	if requestedModel == "" {
+		requestedModel = "__default_rate_preview__"
+	}
+	userID, _ := ctx.Value(ctxkey.UserID).(int64)
+	resolution, rateErr := s.ResolveRequestRateResolution(ctx, userID, billingGroup, requestedModel, pricingAt)
+	if rateErr != nil {
+		slog.Warn("profit_control_rate_resolution_failed", "group_id", billingGroup.ID, "model", requestedModel, "error", rateErr)
+		return &openAIProfitControlGate{groupID: *groupID, platform: group.Platform, threshold: 0, pricingAt: pricingAt}
+	}
 
 	deduction := group.ProfitMinMargin + group.ProfitSafetyBuffer
-	threshold := clampProfitControlThreshold(downstream * (1 - deduction))
+	threshold := clampProfitControlThreshold(resolution.TokenMultiplier * (1 - deduction))
 	return &openAIProfitControlGate{
 		groupID:   *groupID,
 		platform:  group.Platform,

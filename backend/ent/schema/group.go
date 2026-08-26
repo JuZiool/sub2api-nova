@@ -47,6 +47,13 @@ func (Group) Fields() []ent.Field {
 		field.Float("rate_multiplier").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
 			Default(1.0),
+		field.JSON("model_rate_multipliers", []domain.ModelRateMultiplierRule{}).
+			Default([]domain.ModelRateMultiplierRule{}).
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("按客户端请求模型匹配的用户侧计费倍率规则"),
+		field.Int64("rate_config_version").
+			Default(1).
+			Comment("分组计费配置版本，用于请求快照和并发更新"),
 		// 高峰时段倍率（added by migration 158）
 		field.Bool("peak_rate_enabled").
 			Default(false).

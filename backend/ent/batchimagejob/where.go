@@ -154,6 +154,11 @@ func ActualCost(v float64) predicate.BatchImageJob {
 	return predicate.BatchImageJob(sql.FieldEQ(FieldActualCost, v))
 }
 
+// PricingAt applies equality check predicate on the "pricing_at" field. It's identical to PricingAtEQ.
+func PricingAt(v time.Time) predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldEQ(FieldPricingAt, v))
+}
+
 // Currency applies equality check predicate on the "currency" field. It's identical to CurrencyEQ.
 func Currency(v string) predicate.BatchImageJob {
 	return predicate.BatchImageJob(sql.FieldEQ(FieldCurrency, v))
@@ -1392,6 +1397,66 @@ func ActualCostIsNil() predicate.BatchImageJob {
 // ActualCostNotNil applies the NotNil predicate on the "actual_cost" field.
 func ActualCostNotNil() predicate.BatchImageJob {
 	return predicate.BatchImageJob(sql.FieldNotNull(FieldActualCost))
+}
+
+// PricingAtEQ applies the EQ predicate on the "pricing_at" field.
+func PricingAtEQ(v time.Time) predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldEQ(FieldPricingAt, v))
+}
+
+// PricingAtNEQ applies the NEQ predicate on the "pricing_at" field.
+func PricingAtNEQ(v time.Time) predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldNEQ(FieldPricingAt, v))
+}
+
+// PricingAtIn applies the In predicate on the "pricing_at" field.
+func PricingAtIn(vs ...time.Time) predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldIn(FieldPricingAt, vs...))
+}
+
+// PricingAtNotIn applies the NotIn predicate on the "pricing_at" field.
+func PricingAtNotIn(vs ...time.Time) predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldNotIn(FieldPricingAt, vs...))
+}
+
+// PricingAtGT applies the GT predicate on the "pricing_at" field.
+func PricingAtGT(v time.Time) predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldGT(FieldPricingAt, v))
+}
+
+// PricingAtGTE applies the GTE predicate on the "pricing_at" field.
+func PricingAtGTE(v time.Time) predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldGTE(FieldPricingAt, v))
+}
+
+// PricingAtLT applies the LT predicate on the "pricing_at" field.
+func PricingAtLT(v time.Time) predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldLT(FieldPricingAt, v))
+}
+
+// PricingAtLTE applies the LTE predicate on the "pricing_at" field.
+func PricingAtLTE(v time.Time) predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldLTE(FieldPricingAt, v))
+}
+
+// PricingAtIsNil applies the IsNil predicate on the "pricing_at" field.
+func PricingAtIsNil() predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldIsNull(FieldPricingAt))
+}
+
+// PricingAtNotNil applies the NotNil predicate on the "pricing_at" field.
+func PricingAtNotNil() predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldNotNull(FieldPricingAt))
+}
+
+// RateResolutionSnapshotIsNil applies the IsNil predicate on the "rate_resolution_snapshot" field.
+func RateResolutionSnapshotIsNil() predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldIsNull(FieldRateResolutionSnapshot))
+}
+
+// RateResolutionSnapshotNotNil applies the NotNil predicate on the "rate_resolution_snapshot" field.
+func RateResolutionSnapshotNotNil() predicate.BatchImageJob {
+	return predicate.BatchImageJob(sql.FieldNotNull(FieldRateResolutionSnapshot))
 }
 
 // CurrencyEQ applies the EQ predicate on the "currency" field.

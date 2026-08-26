@@ -77,6 +77,17 @@ func (s *adminServiceImpl) GetGroupModelsListCandidates(ctx context.Context, id 
 	for _, model := range candidates {
 		seen[model] = struct{}{}
 	}
+	appendCandidate := func(model string) {
+		model = strings.TrimSpace(model)
+		if model == "" {
+			return
+		}
+		if _, ok := seen[model]; ok {
+			return
+		}
+		seen[model] = struct{}{}
+		candidates = append(candidates, model)
+	}
 	for _, acc := range accounts {
 		if platform == PlatformComposite {
 			if !isConcreteRequestPlatform(acc.Platform) {
@@ -85,19 +96,74 @@ func (s *adminServiceImpl) GetGroupModelsListCandidates(ctx context.Context, id 
 		} else if acc.Platform != platform {
 			continue
 		}
+		// model_mapping keys are client-facing models. They are safe candidates
+		// because no live upstream probing is performed in the billing path.
 		for model := range acc.GetModelMapping() {
-			model = strings.TrimSpace(model)
-			if model == "" {
-				continue
-			}
-			if _, ok := seen[model]; ok {
-				continue
-			}
-			seen[model] = struct{}{}
-			candidates = append(candidates, model)
+			appendCandidate(model)
+		}
+		// Upstream model sync persists the last successful model list in account
+		// JSON. Read it here as a candidate source; never probe upstream from this
+		// admin configuration endpoint or from a user billing request.
+		appendSupportedModelsFromJSON(appendCandidate, acc.Extra, platform)
+		appendSupportedModelsFromJSON(appendCandidate, acc.Credentials, platform)
+	}
+	if platform == PlatformComposite && s.compositeRouteRepo != nil {
+		routes, err := s.compositeRouteRepo.ListByGroup(ctx, id, true)
+		if err != nil {
+			return nil, err
+		}
+		for _, route := range routes {
+			appendCandidate(route.PublicModel)
 		}
 	}
 	return candidates, nil
+}
+
+func appendSupportedModelsFromJSON(appendCandidate func(string), values map[string]any, platform string) {
+	if appendCandidate == nil || values == nil {
+		return
+	}
+	raw, ok := values["supported_models"]
+	if !ok || raw == nil {
+		return
+	}
+	appendValue := func(value any) {
+		switch model := value.(type) {
+		case string:
+			appendCandidate(model)
+		case map[string]any:
+			// Some sync adapters keep the OpenAI model object rather than just
+			// the id. Prefer id, then name, while staying platform-agnostic here.
+			if id, ok := model["id"].(string); ok {
+				appendCandidate(id)
+			} else if name, ok := model["name"].(string); ok {
+				appendCandidate(name)
+			}
+		}
+	}
+	switch list := raw.(type) {
+	case []any:
+		for _, value := range list {
+			appendValue(value)
+		}
+	case []string:
+		for _, value := range list {
+			appendCandidate(value)
+		}
+	case map[string]any:
+		// A platform-keyed cache is also accepted, e.g. {"openai": [...] }.
+		if platformValues, ok := list[platform]; ok {
+			if models, ok := platformValues.([]any); ok {
+				for _, value := range models {
+					appendValue(value)
+				}
+			} else if models, ok := platformValues.([]string); ok {
+				for _, value := range models {
+					appendCandidate(value)
+				}
+			}
+		}
+	}
 }
 
 func (s *adminServiceImpl) ListCompositeRoutes(ctx context.Context, groupID int64) ([]CompositeModelRoute, error) {
@@ -305,6 +371,10 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	if err != nil {
 		return nil, err
 	}
+	modelRateMultipliers, err := NormalizeModelRateMultiplierRules(input.ModelRateMultipliers)
+	if err != nil {
+		return nil, err
+	}
 	maxReasoningEffort, err := normalizeMaxReasoningEffortForPlatform(platform, input.MaxReasoningEffort)
 	if err != nil {
 		return nil, infraerrors.Newf(http.StatusBadRequest, "INVALID_MAX_REASONING_EFFORT", "%v", err)
@@ -465,6 +535,8 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		MonthlyLimitUSD:                 monthlyLimit,
 		LongContextPricingEnabled:       input.LongContextPricingEnabled,
 		ModelPricing:                    modelPricing,
+		ModelRateMultipliers:            modelRateMultipliers,
+		RateConfigVersion:               1,
 		AllowImageGeneration:            allowImageGeneration,
 		AllowBatchImageGeneration:       allowBatchImageGeneration,
 		ImageRateIndependent:            input.ImageRateIndependent,
@@ -640,6 +712,10 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	if err != nil {
 		return nil, err
 	}
+	if input.ExpectedRateConfigVersion != nil && *input.ExpectedRateConfigVersion != group.RateConfigVersion {
+		return nil, infraerrors.Conflict("GROUP_RATE_CONFIG_VERSION_CONFLICT", "group billing configuration was changed by another administrator; reload and retry")
+	}
+	group.ExpectedRateConfigVersion = input.ExpectedRateConfigVersion
 
 	// 渠道缓存里存了 groupID → platform 的映射，改了平台要让它失效（见函数末尾）
 	previousPlatform := group.Platform
@@ -674,6 +750,13 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 			return nil, normalizeErr
 		}
 		group.ModelPricing = modelPricing
+	}
+	if input.ModelRateMultipliers != nil {
+		rules, normalizeErr := NormalizeModelRateMultiplierRules(*input.ModelRateMultipliers)
+		if normalizeErr != nil {
+			return nil, normalizeErr
+		}
+		group.ModelRateMultipliers = rules
 	}
 
 	// 订阅相关字段

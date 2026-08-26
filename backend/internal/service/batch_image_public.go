@@ -95,6 +95,8 @@ type BatchImagePublicService struct {
 }
 
 type BatchImagePricingSnapshot struct {
+	PricingAt               time.Time
+	RateResolution          *RateResolution
 	BaseUnitPrice           float64
 	GroupRateMultiplier     float64
 	AccountRateMultiplier   float64
@@ -277,7 +279,9 @@ func (s *BatchImagePublicService) Submit(ctx context.Context, owner BatchImageOw
 		HoldMultiplier:          pricingSnapshot.HoldMultiplier,
 		BillableUnitPrice:       pricingSnapshot.BillableUnitPrice,
 		HoldUnitPrice:           pricingSnapshot.HoldUnitPrice,
-		PricingSnapshotVersion:  1,
+		PricingSnapshotVersion:  2,
+		PricingAt:               batchImageTimePtr(pricingSnapshot.PricingAt),
+		RateResolution:          pricingSnapshot.RateResolution,
 		Currency:                "USD",
 		HoldID:                  &holdID,
 		IdempotencyKey:          batchImageOptionalStringPtr(idempotencyKey),
@@ -997,6 +1001,9 @@ func (s *BatchImagePublicService) ensureGroupAllowsBatchImage(ctx context.Contex
 }
 
 func (s *BatchImagePublicService) resolvePricingSnapshot(ctx context.Context, owner BatchImageOwner, req BatchImageSubmitRequest, provider string, account *Account) (*BatchImagePricingSnapshot, error) {
+	pricingAt := time.Now().UTC()
+	var rateResolution *RateResolution
+	var rateErr error
 	unit := -1.0
 	groupMultiplier := 1.0
 	discountMultiplier := defaultBatchImageDiscountMultiplier
@@ -1012,27 +1019,22 @@ func (s *BatchImagePublicService) resolvePricingSnapshot(ctx context.Context, ow
 		if !group.AllowBatchImageGeneration {
 			return nil, ErrBatchImageGroupDisabled
 		}
-		groupDefaultMultiplier := group.RateMultiplier
-		if groupDefaultMultiplier < 0 {
-			groupDefaultMultiplier = 0
-		}
-		effectiveGroupMultiplier := groupDefaultMultiplier
+		var userOverride *float64
 		if s.UserGroupRateRepo != nil {
 			userRate, rateErr := s.UserGroupRateRepo.GetByUserAndGroup(ctx, owner.UserID, group.ID)
 			if rateErr != nil {
 				return nil, ErrBatchImageSettlementPricingMissing
 			}
-			if userRate != nil {
-				effectiveGroupMultiplier = *userRate
-			}
+			userOverride = userRate
 		}
-		groupMultiplier = effectiveGroupMultiplier
-		if group.ImageRateIndependent {
-			groupMultiplier = group.ImageRateMultiplier
+		// Batch jobs must freeze the same image multiplier that synchronous image
+		// billing uses: user override > model rule > group fallback, plus the
+		// group's independent-image adjustment.
+		rateResolution, rateErr = ResolveRateResolution(group, userOverride, req.Model, pricingAt)
+		if rateErr != nil {
+			return nil, ErrBatchImageSettlementPricingMissing
 		}
-		if groupMultiplier < 0 {
-			groupMultiplier = 0
-		}
+		groupMultiplier = rateResolution.ImageMultiplier
 		discountMultiplier = group.BatchImageDiscountMultiplier
 		if discountMultiplier < 0 {
 			discountMultiplier = 0
@@ -1071,10 +1073,14 @@ func (s *BatchImagePublicService) resolvePricingSnapshot(ctx context.Context, ow
 	if accountMultiplier < 0 {
 		accountMultiplier = 0
 	}
-	standardUnitPrice := unit * groupMultiplier * accountMultiplier
+	// Account multipliers describe upstream cost/profit only. They must never
+	// be multiplied into the user-side held or settled batch-image price.
+	standardUnitPrice := unit * groupMultiplier
 	billableUnitPrice := standardUnitPrice * discountMultiplier
 	holdUnitPrice := standardUnitPrice * holdMultiplier
 	return &BatchImagePricingSnapshot{
+		PricingAt:               pricingAt,
+		RateResolution:          rateResolution,
 		BaseUnitPrice:           unit,
 		GroupRateMultiplier:     groupMultiplier,
 		AccountRateMultiplier:   accountMultiplier,
@@ -1437,4 +1443,12 @@ func parseBatchImageCursor(cursor string) int {
 		return 0
 	}
 	return offset
+}
+
+func batchImageTimePtr(value time.Time) *time.Time {
+	if value.IsZero() {
+		return nil
+	}
+	value = value.UTC()
+	return &value
 }

@@ -19,7 +19,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
-const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, requested_model, upstream_model, upstream_response_model, upstream_model_mismatch, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, image_output_tokens, image_output_cost, image_input_tokens, image_input_cost, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, image_count, image_size, image_input_size, image_output_size, image_size_source, image_size_breakdown, video_count, video_resolution, video_duration_seconds, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, cache_ttl_overridden, long_context_billing_applied, channel_id, model_mapping_chain, billing_tier, billing_mode, account_stats_cost, session_id, created_at"
+const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, requested_model, upstream_model, upstream_response_model, upstream_model_mismatch, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, image_output_tokens, image_output_cost, image_input_tokens, image_input_cost, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, image_count, image_size, image_input_size, image_output_size, image_size_source, image_size_breakdown, video_count, video_resolution, video_duration_seconds, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, cache_ttl_overridden, long_context_billing_applied, channel_id, model_mapping_chain, billing_tier, billing_mode, account_stats_cost, session_id, pricing_group_id, rate_match_model, rate_rule_source, rate_rule_key, rate_config_version, rate_base_multiplier, rate_token_multiplier, rate_image_multiplier, rate_video_multiplier, created_at"
 
 func (r *usageLogRepository) GetByID(ctx context.Context, id int64) (log *service.UsageLog, err error) {
 	query := "SELECT " + usageLogSelectColumns + " FROM usage_logs WHERE id = $1"
@@ -498,6 +498,15 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		billingMode               sql.NullString
 		accountStatsCost          sql.NullFloat64
 		sessionID                 sql.NullString
+		pricingGroupID            sql.NullInt64
+		rateMatchModel            sql.NullString
+		rateRuleSource            sql.NullString
+		rateRuleKey               sql.NullString
+		rateConfigVersion         sql.NullInt64
+		rateBaseMultiplier        sql.NullFloat64
+		rateTokenMultiplier       sql.NullFloat64
+		rateImageMultiplier       sql.NullFloat64
+		rateVideoMultiplier       sql.NullFloat64
 		createdAt                 time.Time
 	)
 
@@ -561,6 +570,15 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		&billingMode,
 		&accountStatsCost,
 		&sessionID,
+		&pricingGroupID,
+		&rateMatchModel,
+		&rateRuleSource,
+		&rateRuleKey,
+		&rateConfigVersion,
+		&rateBaseMultiplier,
+		&rateTokenMultiplier,
+		&rateImageMultiplier,
+		&rateVideoMultiplier,
 		&createdAt,
 	); err != nil {
 		return nil, err
@@ -690,6 +708,39 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 	}
 	if sessionID.Valid {
 		log.SessionID = &sessionID.String
+	}
+	if pricingGroupID.Valid {
+		value := pricingGroupID.Int64
+		log.PricingGroupID = &value
+	}
+	if rateMatchModel.Valid {
+		log.RateMatchModel = &rateMatchModel.String
+	}
+	if rateRuleSource.Valid {
+		log.RateRuleSource = &rateRuleSource.String
+	}
+	if rateRuleKey.Valid {
+		log.RateRuleKey = &rateRuleKey.String
+	}
+	if rateConfigVersion.Valid {
+		value := rateConfigVersion.Int64
+		log.RateConfigVersion = &value
+	}
+	if rateBaseMultiplier.Valid {
+		value := rateBaseMultiplier.Float64
+		log.RateBaseMultiplier = &value
+	}
+	if rateTokenMultiplier.Valid {
+		value := rateTokenMultiplier.Float64
+		log.RateTokenMultiplier = &value
+	}
+	if rateImageMultiplier.Valid {
+		value := rateImageMultiplier.Float64
+		log.RateImageMultiplier = &value
+	}
+	if rateVideoMultiplier.Valid {
+		value := rateVideoMultiplier.Float64
+		log.RateVideoMultiplier = &value
 	}
 
 	return log, nil

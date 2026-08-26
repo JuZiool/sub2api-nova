@@ -481,7 +481,7 @@ export default {
     selectPlan: '选择套餐',
     planFeatures: '功能特性',
     planCard: {
-      rate: '倍率',
+      rate: '默认倍率',
       peakRate: '高峰倍率',
       dailyLimit: '日限额',
       weeklyLimit: '周限额',

@@ -21,6 +21,8 @@ export interface PlazaOfficialPricing {
 export interface PlazaModel {
   name: string
   platform: string
+  /** 模型命中分组模型规则后的基础倍率；无规则时等于分组默认倍率。 */
+  rate_multiplier?: number
   pricing: UserSupportedModelPricing | null
   official_pricing: PlazaOfficialPricing | null
 }
@@ -43,6 +45,8 @@ export interface ModelPlazaGroup {
   /** 生图独立倍率：true 时图片计费模型的实付倍率取 image_rate_multiplier，不取分组/专属倍率。 */
   image_rate_independent: boolean
   image_rate_multiplier: number
+  /** true 时组头所示为默认倍率，具体模型请以模型行倍率为准。 */
+  has_model_rate_rules: boolean
   models: PlazaModel[]
 }
 

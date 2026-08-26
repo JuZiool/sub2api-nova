@@ -198,6 +198,10 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 	setOpsEndpointContext(c, "", int16(service.RequestTypeFromLegacy(reqStream, false)))
 	pricingCtx, pricingAt := service.WithGatewayTokenRequestPricing(c.Request.Context())
 	c.Request = c.Request.WithContext(pricingCtx)
+	if err := freezeRequestRateResolution(c, apiKey, reqModel, pricingAt, h.gatewayService, h.openAIGatewayService); err != nil {
+		h.errorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
+		return
+	}
 
 	// 验证 model 必填
 	if reqModel == "" {
@@ -976,6 +980,11 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 						// 兜底重试按"直接请求兜底分组"处理：清除强制平台，允许按分组平台调度
 						ctx := context.WithValue(c.Request.Context(), ctxkey.ForcePlatform, "")
 						c.Request = c.Request.WithContext(ctx)
+						if err := freezeFallbackGroupRateResolution(c, fallbackAPIKey, reqModel, pricingAt, h.gatewayService, h.openAIGatewayService); err != nil {
+							reqLog.Error("gateway.resolve_fallback_group_billing_rate_failed", zap.Int64("fallback_group_id", fallbackGroup.ID), zap.Error(err))
+							h.errorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve fallback group billing rate")
+							return
+						}
 						currentAPIKey = fallbackAPIKey
 						currentSubscription = nil
 						fallbackUsed = true

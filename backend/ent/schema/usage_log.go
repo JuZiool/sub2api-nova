@@ -121,6 +121,17 @@ func (UsageLog) Fields() []ent.Field {
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}),
 
+		// Per-request model-rate audit snapshot. NULL values belong to historical rows.
+		field.Int64("pricing_group_id").Optional().Nillable(),
+		field.String("rate_match_model").MaxLen(200).Optional().Nillable(),
+		field.String("rate_rule_source").MaxLen(40).Optional().Nillable(),
+		field.String("rate_rule_key").MaxLen(200).Optional().Nillable(),
+		field.Int64("rate_config_version").Optional().Nillable(),
+		field.Float("rate_base_multiplier").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}),
+		field.Float("rate_token_multiplier").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}),
+		field.Float("rate_image_multiplier").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}),
+		field.Float("rate_video_multiplier").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}),
+
 		// 其他字段
 		field.Int8("billing_type").
 			Default(0),

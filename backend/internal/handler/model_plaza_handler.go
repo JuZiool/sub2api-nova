@@ -46,8 +46,10 @@ type modelPlazaOfficialPricing struct {
 
 // modelPlazaModel 广场模型条目：渠道定价（白名单形态）+ 官方参考价。
 type modelPlazaModel struct {
-	Name            string                     `json:"name"`
-	Platform        string                     `json:"platform"`
+	Name     string `json:"name"`
+	Platform string `json:"platform"`
+	// 模型有上下文时返回该模型实际命中的基础倍率，而不是笼统使用分组默认倍率。
+	RateMultiplier  float64                    `json:"rate_multiplier"`
 	Pricing         *userSupportedModelPricing `json:"pricing"`
 	OfficialPricing *modelPlazaOfficialPricing `json:"official_pricing"`
 }
@@ -70,6 +72,7 @@ type modelPlazaGroup struct {
 	// 不取分组/用户专属倍率。
 	ImageRateIndependent bool              `json:"image_rate_independent"`
 	ImageRateMultiplier  float64           `json:"image_rate_multiplier"`
+	HasModelRateRules    bool              `json:"has_model_rate_rules"`
 	Models               []modelPlazaModel `json:"models"`
 }
 
@@ -163,6 +166,7 @@ func toModelPlazaGroupDTO(g *service.PlazaGroup, userRates map[int64]float64) mo
 		models = append(models, modelPlazaModel{
 			Name:            m.Name,
 			Platform:        m.Platform,
+			RateMultiplier:  m.RateMultiplier,
 			Pricing:         toUserPricing(m.Pricing),
 			OfficialPricing: toModelPlazaOfficialPricing(m.OfficialPricing),
 		})
@@ -181,6 +185,7 @@ func toModelPlazaGroupDTO(g *service.PlazaGroup, userRates map[int64]float64) mo
 		IsExclusive:          g.IsExclusive,
 		ImageRateIndependent: g.ImageRateIndependent,
 		ImageRateMultiplier:  g.ImageRateMultiplier,
+		HasModelRateRules:    g.HasModelRateRules,
 		Models:               models,
 	}
 	if rate, ok := userRates[g.ID]; ok {

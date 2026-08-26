@@ -150,6 +150,9 @@ func usageRecordContext(parent context.Context, base context.Context) context.Co
 	if requestID, _ := parent.Value(ctxkey.RequestID).(string); strings.TrimSpace(requestID) != "" {
 		base = context.WithValue(base, ctxkey.RequestID, strings.TrimSpace(requestID))
 	}
+	if resolution := service.RateResolutionFromContext(parent); resolution != nil {
+		base = service.WithRateResolution(base, resolution)
+	}
 	return base
 }
 
@@ -503,6 +506,10 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 	}
 	pricingCtx, pricingAt := h.gatewayService.WithOpenAIRequestPricingContext(requestCtx, apiKey.GroupID)
 	c.Request = c.Request.WithContext(pricingCtx)
+	if err := freezeRequestRateResolution(c, apiKey, reqModel, pricingAt, nil, h.gatewayService); err != nil {
+		h.errorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
+		return
+	}
 
 	for {
 		// Streaming Forward intentionally detaches the upstream request so usage can
@@ -1080,6 +1087,10 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 	msgPricingCtx := service.WithCodexQuotaOverdraftScheduling(c.Request.Context())
 	msgPricingCtx, pricingAt := h.gatewayService.WithOpenAIRequestPricingContext(msgPricingCtx, apiKey.GroupID)
 	c.Request = c.Request.WithContext(msgPricingCtx)
+	if err := freezeRequestRateResolution(c, apiKey, reqModel, pricingAt, nil, h.gatewayService); err != nil {
+		h.anthropicErrorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
+		return
+	}
 
 	for {
 		if failoverClientGone(c) {
@@ -2109,6 +2120,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 		var requestPayloadHash string
 		var turnStartsMu sync.Mutex
 		turnStarts := make(map[int]time.Time, 4)
+		turnRequestedModels := make(map[int]string, 4)
 		recordTurnStart := func(turn int, startedAt time.Time) {
 			if turn <= 0 || startedAt.IsZero() {
 				return
@@ -2149,6 +2161,9 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 					return service.NewOpenAIWSClientCloseError(coderws.StatusPolicyViolation, "invalid websocket request payload", errors.New("invalid json"))
 				}
 				model := strings.TrimSpace(originalModel)
+				turnStartsMu.Lock()
+				turnRequestedModels[turn] = model
+				turnStartsMu.Unlock()
 				if model == "" {
 					model = strings.TrimSpace(gjson.GetBytes(payload, "model").String())
 				}
@@ -2186,6 +2201,14 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 				// 当前账号，越线即要求客户端重连重选（连接绑定单一上游账号，
 				// 无法中途换号）。本 turn 的准入与计费共用同一 pricingAt。
 				turnCtx, turnAt := h.gatewayService.WithOpenAITurnPricingContext(ctx, apiKey.GroupID)
+				turnStartsMu.Lock()
+				turnModel := turnRequestedModels[turn]
+				turnStartsMu.Unlock()
+				turnResolution, rateErr := resolveRequestRateResolution(turnCtx, apiKey, turnModel, turnAt, nil, h.gatewayService)
+				if rateErr != nil {
+					return service.NewOpenAIWSClientCloseError(coderws.StatusInternalError, "failed to resolve request billing rate", rateErr)
+				}
+				ctx = service.WithRateResolution(ctx, turnResolution)
 				if _, vetoed, reason := h.gatewayService.ProfitControlVetoLatest(turnCtx, account); vetoed {
 					reqLog.Info("openai.websocket_turn_profit_vetoed",
 						zap.Int("turn", turn),

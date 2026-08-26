@@ -41,4 +41,27 @@ describe('GroupOptionItem description layout', () => {
     expect(descriptionElement?.classes()).toContain('line-clamp-3')
     expect(wrapper.find('[title]').attributes('title')).toBe(description)
   })
+
+  it('can show the complete description when requested', () => {
+    const wrapper = mount(GroupOptionItem, {
+      props: {
+        name: 'Example group',
+        platform: 'openai',
+        description: '特定倍率：gpt-5.6-luna: 0.2x；gpt-5.6-*: 0.5x',
+        showFullDescription: true,
+      },
+      global: {
+        stubs: {
+          GroupBadge: true,
+        },
+      },
+    })
+
+    const descriptionElement = wrapper
+      .findAll('span')
+      .find((element) => element.text().startsWith('特定倍率：'))
+
+    expect(descriptionElement).toBeDefined()
+    expect(descriptionElement?.classes()).not.toContain('line-clamp-3')
+  })
 })
