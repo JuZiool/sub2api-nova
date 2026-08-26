@@ -45,10 +45,18 @@ export interface UserSupportedModelPricing {
   intervals: UserPricingInterval[]
 }
 
+export interface UserSupportedModelRate {
+  group_id: number
+  group_name: string
+  multiplier: number
+}
+
 export interface UserSupportedModel {
   name: string
   platform: string
   pricing: UserSupportedModelPricing | null
+  /** 按可访问分组返回该模型的有效基础倍率。 */
+  rate_by_group?: UserSupportedModelRate[]
 }
 
 /**

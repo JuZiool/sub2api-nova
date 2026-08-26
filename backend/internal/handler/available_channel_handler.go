@@ -2,6 +2,8 @@ package handler
 
 import (
 	"sort"
+	"strings"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -52,16 +54,25 @@ func (h *AvailableChannelHandler) featureEnabled(c *gin.Context) bool {
 // 订阅视觉加深），并展示默认倍率与高峰倍率规则；用户专属倍率前端走
 // /groups/rates，和 API 密钥页面保持一致。
 type userAvailableGroup struct {
-	ID                 int64   `json:"id"`
-	Name               string  `json:"name"`
-	Platform           string  `json:"platform"`
-	SubscriptionType   string  `json:"subscription_type"`
-	RateMultiplier     float64 `json:"rate_multiplier"`
-	PeakRateEnabled    bool    `json:"peak_rate_enabled"`
-	PeakStart          string  `json:"peak_start"`
-	PeakEnd            string  `json:"peak_end"`
-	PeakRateMultiplier float64 `json:"peak_rate_multiplier"`
-	IsExclusive        bool    `json:"is_exclusive"`
+	ID                   int64                             `json:"id"`
+	Name                 string                            `json:"name"`
+	Platform             string                            `json:"platform"`
+	SubscriptionType     string                            `json:"subscription_type"`
+	RateMultiplier       float64                           `json:"rate_multiplier"`
+	PeakRateEnabled      bool                              `json:"peak_rate_enabled"`
+	PeakStart            string                            `json:"peak_start"`
+	PeakEnd              string                            `json:"peak_end"`
+	PeakRateMultiplier   float64                           `json:"peak_rate_multiplier"`
+	IsExclusive          bool                              `json:"is_exclusive"`
+	ModelRateMultipliers []service.ModelRateMultiplierRule `json:"-"`
+}
+
+// userSupportedModelRate is the effective base multiplier for one model in one
+// visible group. A model may have different rates across the channel's groups.
+type userSupportedModelRate struct {
+	GroupID    int64   `json:"group_id"`
+	GroupName  string  `json:"group_name"`
+	Multiplier float64 `json:"multiplier"`
 }
 
 // userSupportedModelPricing 用户可见的定价字段白名单。
@@ -91,9 +102,10 @@ type userPricingIntervalDTO struct {
 
 // userSupportedModel 用户可见的支持模型条目。
 type userSupportedModel struct {
-	Name     string                     `json:"name"`
-	Platform string                     `json:"platform"`
-	Pricing  *userSupportedModelPricing `json:"pricing"`
+	Name        string                     `json:"name"`
+	Platform    string                     `json:"platform"`
+	Pricing     *userSupportedModelPricing `json:"pricing"`
+	RateByGroup []userSupportedModelRate   `json:"rate_by_group,omitempty"`
 }
 
 // userChannelPlatformSection 单渠道内某个平台的子视图：用户可见的分组 + 该平台
@@ -140,6 +152,11 @@ func (h *AvailableChannelHandler) List(c *gin.Context) {
 	for i := range userGroups {
 		allowedGroupIDs[userGroups[i].ID] = struct{}{}
 	}
+	userGroupRates, err := h.apiKeyService.GetUserGroupRates(c.Request.Context(), subject.UserID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 
 	channels, err := h.channelService.ListAvailable(c.Request.Context())
 	if err != nil {
@@ -156,7 +173,7 @@ func (h *AvailableChannelHandler) List(c *gin.Context) {
 		if len(visibleGroups) == 0 {
 			continue
 		}
-		sections := buildPlatformSections(ch, visibleGroups)
+		sections := buildPlatformSections(ch, visibleGroups, userGroupRates)
 		if len(sections) == 0 {
 			continue
 		}
@@ -180,7 +197,12 @@ func (h *AvailableChannelHandler) List(c *gin.Context) {
 func buildPlatformSections(
 	ch service.AvailableChannel,
 	visibleGroups []userAvailableGroup,
+	userGroupRatesOptions ...map[int64]float64,
 ) []userChannelPlatformSection {
+	userGroupRates := map[int64]float64(nil)
+	if len(userGroupRatesOptions) > 0 {
+		userGroupRates = userGroupRatesOptions[0]
+	}
 	groupsByPlatform := make(map[string][]userAvailableGroup, 4)
 	compositeGroups := make([]userAvailableGroup, 0, 1)
 	for _, g := range visibleGroups {
@@ -228,7 +250,7 @@ func buildPlatformSections(
 		sections = append(sections, userChannelPlatformSection{
 			Platform:        platform,
 			Groups:          groupsByPlatform[platform],
-			SupportedModels: toUserSupportedModels(ch.SupportedModels, platformSet),
+			SupportedModels: toUserSupportedModels(ch.SupportedModels, platformSet, userModelRateOptions{groups: groupsByPlatform[platform], userGroupRates: userGroupRates}),
 		})
 	}
 	return sections
@@ -245,16 +267,17 @@ func filterUserVisibleGroups(
 			continue
 		}
 		visible = append(visible, userAvailableGroup{
-			ID:                 g.ID,
-			Name:               g.Name,
-			Platform:           g.Platform,
-			SubscriptionType:   g.SubscriptionType,
-			RateMultiplier:     g.RateMultiplier,
-			PeakRateEnabled:    g.PeakRateEnabled,
-			PeakStart:          g.PeakStart,
-			PeakEnd:            g.PeakEnd,
-			PeakRateMultiplier: g.PeakRateMultiplier,
-			IsExclusive:        g.IsExclusive,
+			ID:                   g.ID,
+			Name:                 g.Name,
+			Platform:             g.Platform,
+			SubscriptionType:     g.SubscriptionType,
+			RateMultiplier:       g.RateMultiplier,
+			PeakRateEnabled:      g.PeakRateEnabled,
+			PeakStart:            g.PeakStart,
+			PeakEnd:              g.PeakEnd,
+			PeakRateMultiplier:   g.PeakRateMultiplier,
+			IsExclusive:          g.IsExclusive,
+			ModelRateMultipliers: g.ModelRateMultipliers,
 		})
 	}
 	return visible
@@ -263,10 +286,22 @@ func filterUserVisibleGroups(
 // toUserSupportedModels 将 service 层支持模型转换为用户 DTO（字段白名单）。
 // 仅保留平台在 allowedPlatforms 中的条目，防止跨平台模型信息泄漏。
 // allowedPlatforms 为 nil 时不做平台过滤（保留全部，供测试或明确无过滤场景使用）。
+type userModelRateOptions struct {
+	groups         []userAvailableGroup
+	userGroupRates map[int64]float64
+}
+
 func toUserSupportedModels(
 	src []service.SupportedModel,
 	allowedPlatforms map[string]struct{},
+	options ...userModelRateOptions,
 ) []userSupportedModel {
+	var groups []userAvailableGroup
+	var userGroupRates map[int64]float64
+	if len(options) > 0 {
+		groups = options[0].groups
+		userGroupRates = options[0].userGroupRates
+	}
 	out := make([]userSupportedModel, 0, len(src))
 	for i := range src {
 		m := src[i]
@@ -276,10 +311,38 @@ func toUserSupportedModels(
 			}
 		}
 		out = append(out, userSupportedModel{
-			Name:     m.Name,
-			Platform: m.Platform,
-			Pricing:  toUserPricing(m.Pricing),
+			Name:        m.Name,
+			Platform:    m.Platform,
+			Pricing:     toUserPricing(m.Pricing),
+			RateByGroup: resolveUserModelRates(m.Name, groups, userGroupRates),
 		})
+	}
+	return out
+}
+
+func resolveUserModelRates(model string, groups []userAvailableGroup, userGroupRates map[int64]float64) []userSupportedModelRate {
+	if strings.TrimSpace(model) == "" || len(groups) == 0 {
+		return nil
+	}
+	now := time.Now().UTC()
+	out := make([]userSupportedModelRate, 0, len(groups))
+	seen := make(map[int64]struct{}, len(groups))
+	for _, g := range groups {
+		if _, ok := seen[g.ID]; ok {
+			continue
+		}
+		seen[g.ID] = struct{}{}
+		var override *float64
+		if value, ok := userGroupRates[g.ID]; ok {
+			valueCopy := value
+			override = &valueCopy
+		}
+		group := &service.Group{ID: g.ID, RateMultiplier: g.RateMultiplier, ModelRateMultipliers: g.ModelRateMultipliers}
+		resolution, err := service.ResolveRateResolution(group, override, model, now)
+		if err != nil {
+			continue
+		}
+		out = append(out, userSupportedModelRate{GroupID: g.ID, GroupName: g.Name, Multiplier: resolution.BaseMultiplier})
 	}
 	return out
 }

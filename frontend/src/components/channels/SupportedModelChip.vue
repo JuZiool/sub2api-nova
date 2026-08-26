@@ -26,6 +26,9 @@
         {{ model.platform }}
       </span>
       {{ model.name }}
+      <span v-if="rateSummary" class="text-[10px] font-semibold text-primary-600 dark:text-primary-400">
+        · {{ rateSummary }}
+      </span>
     </span>
 
     <!-- Teleport to body so the popover is not clipped by card/overflow-hidden
@@ -60,6 +63,13 @@
           </div>
 
           <div v-else class="space-y-2 text-gray-700 dark:text-gray-300">
+            <div v-if="model.rate_by_group?.length" class="border-b pb-2" :class="[popoverBorderClass]">
+              <div class="mb-1 text-gray-500 dark:text-gray-400">{{ t(prefixKey('rate')) }}</div>
+              <div v-for="rate in model.rate_by_group" :key="rate.group_id" class="flex justify-between text-[11px]">
+                <span class="truncate pr-2">{{ rate.group_name }}</span>
+                <span class="font-semibold">{{ rate.multiplier }}x</span>
+              </div>
+            </div>
             <div class="flex justify-between">
               <span class="text-gray-500 dark:text-gray-400">{{ t(prefixKey('billingMode')) }}</span>
               <span>{{ billingModeLabel }}</span>
@@ -199,6 +209,13 @@ const props = withDefaults(
 const effectivePlatform = computed<string>(() => props.model.platform || props.platformHint || '')
 
 const { t } = useI18n()
+
+const rateSummary = computed(() => {
+  const rates = [...new Set((props.model.rate_by_group ?? []).map((rate) => rate.multiplier))]
+  if (rates.length === 1) return `${rates[0]}x`
+  if (rates.length > 1) return t(prefixKey('multipleRates'))
+  return ''
+})
 
 /** 按 token 定价展示时的换算单位：每百万 token。 */
 const perMillionScale = 1_000_000
