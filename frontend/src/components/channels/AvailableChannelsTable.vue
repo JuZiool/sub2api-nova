@@ -101,7 +101,6 @@
                     :subscription-type="(g.subscription_type || 'standard') as SubscriptionType"
                     :rate-multiplier="g.rate_multiplier"
                     :user-rate-multiplier="userGroupRates[g.id] ?? null"
-                    :rate-prefix="t('availableChannels.defaultRate')"
                     always-show-rate
                   />
                   <span
@@ -136,7 +135,6 @@
                     :subscription-type="(g.subscription_type || 'standard') as SubscriptionType"
                     :rate-multiplier="g.rate_multiplier"
                     :user-rate-multiplier="userGroupRates[g.id] ?? null"
-                    :rate-prefix="t('availableChannels.defaultRate')"
                     always-show-rate
                   />
                   <span
@@ -242,7 +240,6 @@
                         :subscription-type="(g.subscription_type || 'standard') as SubscriptionType"
                         :rate-multiplier="g.rate_multiplier"
                         :user-rate-multiplier="userGroupRates[g.id] ?? null"
-                        :rate-prefix="t('availableChannels.defaultRate')"
                         always-show-rate
                       />
                       <span
@@ -278,7 +275,6 @@
                         :subscription-type="(g.subscription_type || 'standard') as SubscriptionType"
                         :rate-multiplier="g.rate_multiplier"
                         :user-rate-multiplier="userGroupRates[g.id] ?? null"
-                        :rate-prefix="t('availableChannels.defaultRate')"
                         always-show-rate
                       />
                       <span

@@ -47,7 +47,7 @@ describe('GroupOptionItem description layout', () => {
       props: {
         name: 'Example group',
         platform: 'openai',
-        description: '模型倍率：gpt-5.6-luna: 0.2x；gpt-5.6-*: 0.5x',
+        description: '特定倍率：gpt-5.6-luna: 0.2x；gpt-5.6-*: 0.5x',
         showFullDescription: true,
       },
       global: {
@@ -59,7 +59,7 @@ describe('GroupOptionItem description layout', () => {
 
     const descriptionElement = wrapper
       .findAll('span')
-      .find((element) => element.text().startsWith('模型倍率：'))
+      .find((element) => element.text().startsWith('特定倍率：'))
 
     expect(descriptionElement).toBeDefined()
     expect(descriptionElement?.classes()).not.toContain('line-clamp-3')

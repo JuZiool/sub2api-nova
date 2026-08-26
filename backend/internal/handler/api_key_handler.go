@@ -353,7 +353,7 @@ func appendModelRateDescription(description string, rules []service.ModelRateMul
 	for _, rule := range normalized {
 		parts = append(parts, rule.Pattern+": "+strconv.FormatFloat(rule.Multiplier, 'f', -1, 64)+"x")
 	}
-	ruleDescription := "模型倍率：" + strings.Join(parts, "；")
+	ruleDescription := "特定倍率：" + strings.Join(parts, "；")
 	if strings.TrimSpace(description) == "" {
 		return ruleDescription
 	}
