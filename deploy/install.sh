@@ -178,6 +178,34 @@ docker_compose() {
   esac
 }
 
+start_docker() {
+  if docker info >/dev/null 2>&1; then
+    return 0
+  fi
+
+  log "启动 Docker 服务。"
+  if [[ -x /etc/init.d/dockerd ]]; then
+    /etc/init.d/dockerd enable >/dev/null 2>&1 || true
+    /etc/init.d/dockerd start
+  elif [[ -x /etc/init.d/docker ]]; then
+    /etc/init.d/docker enable >/dev/null 2>&1 || true
+    /etc/init.d/docker start
+  elif command -v systemctl >/dev/null 2>&1; then
+    systemctl enable --now docker
+  elif command -v service >/dev/null 2>&1; then
+    service docker start
+  else
+    die "无法自动启动 Docker 服务，请手动启动后重试。"
+  fi
+
+  local attempt
+  for attempt in {1..15}; do
+    docker info >/dev/null 2>&1 && return 0
+    sleep 2
+  done
+  die "Docker 服务未正常运行。"
+}
+
 ensure_docker() {
   if ! command -v docker >/dev/null 2>&1; then
     [[ "$DOCKER_INSTALL_ENABLED" == true ]] || die "未检测到 Docker，请先在 iStoreOS Docker 管理器中安装。"
