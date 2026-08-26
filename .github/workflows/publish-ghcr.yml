@@ -6,7 +6,14 @@ on:
       - main
     tags:
       - "v*"
-  workflow_dispatch:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "docs/legal/**"
+      - "Dockerfile"
+      - "deploy/docker-entrypoint.sh"
+      - "FORK_VERSION"
+      - ".github/workflows/publish-ghcr.yml"
 
 permissions:
   contents: read
