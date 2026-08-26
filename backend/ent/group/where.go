@@ -85,6 +85,11 @@ func RateMultiplier(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldRateMultiplier, v))
 }
 
+// RateConfigVersion applies equality check predicate on the "rate_config_version" field. It's identical to RateConfigVersionEQ.
+func RateConfigVersion(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldRateConfigVersion, v))
+}
+
 // PeakRateEnabled applies equality check predicate on the "peak_rate_enabled" field. It's identical to PeakRateEnabledEQ.
 func PeakRateEnabled(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldPeakRateEnabled, v))
@@ -638,6 +643,46 @@ func RateMultiplierLT(v float64) predicate.Group {
 // RateMultiplierLTE applies the LTE predicate on the "rate_multiplier" field.
 func RateMultiplierLTE(v float64) predicate.Group {
 	return predicate.Group(sql.FieldLTE(FieldRateMultiplier, v))
+}
+
+// RateConfigVersionEQ applies the EQ predicate on the "rate_config_version" field.
+func RateConfigVersionEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldRateConfigVersion, v))
+}
+
+// RateConfigVersionNEQ applies the NEQ predicate on the "rate_config_version" field.
+func RateConfigVersionNEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldRateConfigVersion, v))
+}
+
+// RateConfigVersionIn applies the In predicate on the "rate_config_version" field.
+func RateConfigVersionIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldRateConfigVersion, vs...))
+}
+
+// RateConfigVersionNotIn applies the NotIn predicate on the "rate_config_version" field.
+func RateConfigVersionNotIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldRateConfigVersion, vs...))
+}
+
+// RateConfigVersionGT applies the GT predicate on the "rate_config_version" field.
+func RateConfigVersionGT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldRateConfigVersion, v))
+}
+
+// RateConfigVersionGTE applies the GTE predicate on the "rate_config_version" field.
+func RateConfigVersionGTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldRateConfigVersion, v))
+}
+
+// RateConfigVersionLT applies the LT predicate on the "rate_config_version" field.
+func RateConfigVersionLT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldRateConfigVersion, v))
+}
+
+// RateConfigVersionLTE applies the LTE predicate on the "rate_config_version" field.
+func RateConfigVersionLTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldRateConfigVersion, v))
 }
 
 // PeakRateEnabledEQ applies the EQ predicate on the "peak_rate_enabled" field.

@@ -83,6 +83,24 @@ type UsageLog struct {
 	LongContextBillingApplied bool `json:"long_context_billing_applied,omitempty"`
 	// AccountRateMultiplier holds the value of the "account_rate_multiplier" field.
 	AccountRateMultiplier *float64 `json:"account_rate_multiplier,omitempty"`
+	// PricingGroupID holds the value of the "pricing_group_id" field.
+	PricingGroupID *int64 `json:"pricing_group_id,omitempty"`
+	// RateMatchModel holds the value of the "rate_match_model" field.
+	RateMatchModel *string `json:"rate_match_model,omitempty"`
+	// RateRuleSource holds the value of the "rate_rule_source" field.
+	RateRuleSource *string `json:"rate_rule_source,omitempty"`
+	// RateRuleKey holds the value of the "rate_rule_key" field.
+	RateRuleKey *string `json:"rate_rule_key,omitempty"`
+	// RateConfigVersion holds the value of the "rate_config_version" field.
+	RateConfigVersion *int64 `json:"rate_config_version,omitempty"`
+	// RateBaseMultiplier holds the value of the "rate_base_multiplier" field.
+	RateBaseMultiplier *float64 `json:"rate_base_multiplier,omitempty"`
+	// RateTokenMultiplier holds the value of the "rate_token_multiplier" field.
+	RateTokenMultiplier *float64 `json:"rate_token_multiplier,omitempty"`
+	// RateImageMultiplier holds the value of the "rate_image_multiplier" field.
+	RateImageMultiplier *float64 `json:"rate_image_multiplier,omitempty"`
+	// RateVideoMultiplier holds the value of the "rate_video_multiplier" field.
+	RateVideoMultiplier *float64 `json:"rate_video_multiplier,omitempty"`
 	// BillingType holds the value of the "billing_type" field.
 	BillingType int8 `json:"billing_type,omitempty"`
 	// Stream holds the value of the "stream" field.
@@ -204,11 +222,11 @@ func (*UsageLog) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case usagelog.FieldUpstreamModelMismatch, usagelog.FieldLongContextBillingApplied, usagelog.FieldStream, usagelog.FieldCacheTTLOverridden:
 			values[i] = new(sql.NullBool)
-		case usagelog.FieldInputCost, usagelog.FieldOutputCost, usagelog.FieldCacheCreationCost, usagelog.FieldCacheReadCost, usagelog.FieldTotalCost, usagelog.FieldActualCost, usagelog.FieldRateMultiplier, usagelog.FieldAccountRateMultiplier:
+		case usagelog.FieldInputCost, usagelog.FieldOutputCost, usagelog.FieldCacheCreationCost, usagelog.FieldCacheReadCost, usagelog.FieldTotalCost, usagelog.FieldActualCost, usagelog.FieldRateMultiplier, usagelog.FieldAccountRateMultiplier, usagelog.FieldRateBaseMultiplier, usagelog.FieldRateTokenMultiplier, usagelog.FieldRateImageMultiplier, usagelog.FieldRateVideoMultiplier:
 			values[i] = new(sql.NullFloat64)
-		case usagelog.FieldID, usagelog.FieldUserID, usagelog.FieldAPIKeyID, usagelog.FieldAccountID, usagelog.FieldChannelID, usagelog.FieldGroupID, usagelog.FieldSubscriptionID, usagelog.FieldInputTokens, usagelog.FieldOutputTokens, usagelog.FieldCacheCreationTokens, usagelog.FieldCacheReadTokens, usagelog.FieldCacheCreation5mTokens, usagelog.FieldCacheCreation1hTokens, usagelog.FieldBillingType, usagelog.FieldDurationMs, usagelog.FieldFirstTokenMs, usagelog.FieldImageCount, usagelog.FieldVideoCount, usagelog.FieldVideoDurationSeconds:
+		case usagelog.FieldID, usagelog.FieldUserID, usagelog.FieldAPIKeyID, usagelog.FieldAccountID, usagelog.FieldChannelID, usagelog.FieldGroupID, usagelog.FieldSubscriptionID, usagelog.FieldInputTokens, usagelog.FieldOutputTokens, usagelog.FieldCacheCreationTokens, usagelog.FieldCacheReadTokens, usagelog.FieldCacheCreation5mTokens, usagelog.FieldCacheCreation1hTokens, usagelog.FieldPricingGroupID, usagelog.FieldRateConfigVersion, usagelog.FieldBillingType, usagelog.FieldDurationMs, usagelog.FieldFirstTokenMs, usagelog.FieldImageCount, usagelog.FieldVideoCount, usagelog.FieldVideoDurationSeconds:
 			values[i] = new(sql.NullInt64)
-		case usagelog.FieldRequestID, usagelog.FieldModel, usagelog.FieldRequestedModel, usagelog.FieldUpstreamModel, usagelog.FieldUpstreamResponseModel, usagelog.FieldModelMappingChain, usagelog.FieldBillingTier, usagelog.FieldBillingMode, usagelog.FieldUserAgent, usagelog.FieldIPAddress, usagelog.FieldImageSize, usagelog.FieldImageInputSize, usagelog.FieldImageOutputSize, usagelog.FieldImageSizeSource, usagelog.FieldVideoResolution:
+		case usagelog.FieldRequestID, usagelog.FieldModel, usagelog.FieldRequestedModel, usagelog.FieldUpstreamModel, usagelog.FieldUpstreamResponseModel, usagelog.FieldModelMappingChain, usagelog.FieldBillingTier, usagelog.FieldBillingMode, usagelog.FieldRateMatchModel, usagelog.FieldRateRuleSource, usagelog.FieldRateRuleKey, usagelog.FieldUserAgent, usagelog.FieldIPAddress, usagelog.FieldImageSize, usagelog.FieldImageInputSize, usagelog.FieldImageOutputSize, usagelog.FieldImageSizeSource, usagelog.FieldVideoResolution:
 			values[i] = new(sql.NullString)
 		case usagelog.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -423,6 +441,69 @@ func (_m *UsageLog) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.AccountRateMultiplier = new(float64)
 				*_m.AccountRateMultiplier = value.Float64
+			}
+		case usagelog.FieldPricingGroupID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field pricing_group_id", values[i])
+			} else if value.Valid {
+				_m.PricingGroupID = new(int64)
+				*_m.PricingGroupID = value.Int64
+			}
+		case usagelog.FieldRateMatchModel:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field rate_match_model", values[i])
+			} else if value.Valid {
+				_m.RateMatchModel = new(string)
+				*_m.RateMatchModel = value.String
+			}
+		case usagelog.FieldRateRuleSource:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field rate_rule_source", values[i])
+			} else if value.Valid {
+				_m.RateRuleSource = new(string)
+				*_m.RateRuleSource = value.String
+			}
+		case usagelog.FieldRateRuleKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field rate_rule_key", values[i])
+			} else if value.Valid {
+				_m.RateRuleKey = new(string)
+				*_m.RateRuleKey = value.String
+			}
+		case usagelog.FieldRateConfigVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field rate_config_version", values[i])
+			} else if value.Valid {
+				_m.RateConfigVersion = new(int64)
+				*_m.RateConfigVersion = value.Int64
+			}
+		case usagelog.FieldRateBaseMultiplier:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field rate_base_multiplier", values[i])
+			} else if value.Valid {
+				_m.RateBaseMultiplier = new(float64)
+				*_m.RateBaseMultiplier = value.Float64
+			}
+		case usagelog.FieldRateTokenMultiplier:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field rate_token_multiplier", values[i])
+			} else if value.Valid {
+				_m.RateTokenMultiplier = new(float64)
+				*_m.RateTokenMultiplier = value.Float64
+			}
+		case usagelog.FieldRateImageMultiplier:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field rate_image_multiplier", values[i])
+			} else if value.Valid {
+				_m.RateImageMultiplier = new(float64)
+				*_m.RateImageMultiplier = value.Float64
+			}
+		case usagelog.FieldRateVideoMultiplier:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field rate_video_multiplier", values[i])
+			} else if value.Valid {
+				_m.RateVideoMultiplier = new(float64)
+				*_m.RateVideoMultiplier = value.Float64
 			}
 		case usagelog.FieldBillingType:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -708,6 +789,51 @@ func (_m *UsageLog) String() string {
 	builder.WriteString(", ")
 	if v := _m.AccountRateMultiplier; v != nil {
 		builder.WriteString("account_rate_multiplier=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.PricingGroupID; v != nil {
+		builder.WriteString("pricing_group_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.RateMatchModel; v != nil {
+		builder.WriteString("rate_match_model=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.RateRuleSource; v != nil {
+		builder.WriteString("rate_rule_source=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.RateRuleKey; v != nil {
+		builder.WriteString("rate_rule_key=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.RateConfigVersion; v != nil {
+		builder.WriteString("rate_config_version=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.RateBaseMultiplier; v != nil {
+		builder.WriteString("rate_base_multiplier=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.RateTokenMultiplier; v != nil {
+		builder.WriteString("rate_token_multiplier=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.RateImageMultiplier; v != nil {
+		builder.WriteString("rate_image_multiplier=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.RateVideoMultiplier; v != nil {
+		builder.WriteString("rate_video_multiplier=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

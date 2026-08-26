@@ -407,6 +407,132 @@ func (_c *UsageLogCreate) SetNillableAccountRateMultiplier(v *float64) *UsageLog
 	return _c
 }
 
+// SetPricingGroupID sets the "pricing_group_id" field.
+func (_c *UsageLogCreate) SetPricingGroupID(v int64) *UsageLogCreate {
+	_c.mutation.SetPricingGroupID(v)
+	return _c
+}
+
+// SetNillablePricingGroupID sets the "pricing_group_id" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillablePricingGroupID(v *int64) *UsageLogCreate {
+	if v != nil {
+		_c.SetPricingGroupID(*v)
+	}
+	return _c
+}
+
+// SetRateMatchModel sets the "rate_match_model" field.
+func (_c *UsageLogCreate) SetRateMatchModel(v string) *UsageLogCreate {
+	_c.mutation.SetRateMatchModel(v)
+	return _c
+}
+
+// SetNillableRateMatchModel sets the "rate_match_model" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableRateMatchModel(v *string) *UsageLogCreate {
+	if v != nil {
+		_c.SetRateMatchModel(*v)
+	}
+	return _c
+}
+
+// SetRateRuleSource sets the "rate_rule_source" field.
+func (_c *UsageLogCreate) SetRateRuleSource(v string) *UsageLogCreate {
+	_c.mutation.SetRateRuleSource(v)
+	return _c
+}
+
+// SetNillableRateRuleSource sets the "rate_rule_source" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableRateRuleSource(v *string) *UsageLogCreate {
+	if v != nil {
+		_c.SetRateRuleSource(*v)
+	}
+	return _c
+}
+
+// SetRateRuleKey sets the "rate_rule_key" field.
+func (_c *UsageLogCreate) SetRateRuleKey(v string) *UsageLogCreate {
+	_c.mutation.SetRateRuleKey(v)
+	return _c
+}
+
+// SetNillableRateRuleKey sets the "rate_rule_key" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableRateRuleKey(v *string) *UsageLogCreate {
+	if v != nil {
+		_c.SetRateRuleKey(*v)
+	}
+	return _c
+}
+
+// SetRateConfigVersion sets the "rate_config_version" field.
+func (_c *UsageLogCreate) SetRateConfigVersion(v int64) *UsageLogCreate {
+	_c.mutation.SetRateConfigVersion(v)
+	return _c
+}
+
+// SetNillableRateConfigVersion sets the "rate_config_version" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableRateConfigVersion(v *int64) *UsageLogCreate {
+	if v != nil {
+		_c.SetRateConfigVersion(*v)
+	}
+	return _c
+}
+
+// SetRateBaseMultiplier sets the "rate_base_multiplier" field.
+func (_c *UsageLogCreate) SetRateBaseMultiplier(v float64) *UsageLogCreate {
+	_c.mutation.SetRateBaseMultiplier(v)
+	return _c
+}
+
+// SetNillableRateBaseMultiplier sets the "rate_base_multiplier" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableRateBaseMultiplier(v *float64) *UsageLogCreate {
+	if v != nil {
+		_c.SetRateBaseMultiplier(*v)
+	}
+	return _c
+}
+
+// SetRateTokenMultiplier sets the "rate_token_multiplier" field.
+func (_c *UsageLogCreate) SetRateTokenMultiplier(v float64) *UsageLogCreate {
+	_c.mutation.SetRateTokenMultiplier(v)
+	return _c
+}
+
+// SetNillableRateTokenMultiplier sets the "rate_token_multiplier" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableRateTokenMultiplier(v *float64) *UsageLogCreate {
+	if v != nil {
+		_c.SetRateTokenMultiplier(*v)
+	}
+	return _c
+}
+
+// SetRateImageMultiplier sets the "rate_image_multiplier" field.
+func (_c *UsageLogCreate) SetRateImageMultiplier(v float64) *UsageLogCreate {
+	_c.mutation.SetRateImageMultiplier(v)
+	return _c
+}
+
+// SetNillableRateImageMultiplier sets the "rate_image_multiplier" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableRateImageMultiplier(v *float64) *UsageLogCreate {
+	if v != nil {
+		_c.SetRateImageMultiplier(*v)
+	}
+	return _c
+}
+
+// SetRateVideoMultiplier sets the "rate_video_multiplier" field.
+func (_c *UsageLogCreate) SetRateVideoMultiplier(v float64) *UsageLogCreate {
+	_c.mutation.SetRateVideoMultiplier(v)
+	return _c
+}
+
+// SetNillableRateVideoMultiplier sets the "rate_video_multiplier" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableRateVideoMultiplier(v *float64) *UsageLogCreate {
+	if v != nil {
+		_c.SetRateVideoMultiplier(*v)
+	}
+	return _c
+}
+
 // SetBillingType sets the "billing_type" field.
 func (_c *UsageLogCreate) SetBillingType(v int8) *UsageLogCreate {
 	_c.mutation.SetBillingType(v)
@@ -878,6 +1004,21 @@ func (_c *UsageLogCreate) check() error {
 	if _, ok := _c.mutation.LongContextBillingApplied(); !ok {
 		return &ValidationError{Name: "long_context_billing_applied", err: errors.New(`ent: missing required field "UsageLog.long_context_billing_applied"`)}
 	}
+	if v, ok := _c.mutation.RateMatchModel(); ok {
+		if err := usagelog.RateMatchModelValidator(v); err != nil {
+			return &ValidationError{Name: "rate_match_model", err: fmt.Errorf(`ent: validator failed for field "UsageLog.rate_match_model": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.RateRuleSource(); ok {
+		if err := usagelog.RateRuleSourceValidator(v); err != nil {
+			return &ValidationError{Name: "rate_rule_source", err: fmt.Errorf(`ent: validator failed for field "UsageLog.rate_rule_source": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.RateRuleKey(); ok {
+		if err := usagelog.RateRuleKeyValidator(v); err != nil {
+			return &ValidationError{Name: "rate_rule_key", err: fmt.Errorf(`ent: validator failed for field "UsageLog.rate_rule_key": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.BillingType(); !ok {
 		return &ValidationError{Name: "billing_type", err: errors.New(`ent: missing required field "UsageLog.billing_type"`)}
 	}
@@ -1066,6 +1207,42 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.AccountRateMultiplier(); ok {
 		_spec.SetField(usagelog.FieldAccountRateMultiplier, field.TypeFloat64, value)
 		_node.AccountRateMultiplier = &value
+	}
+	if value, ok := _c.mutation.PricingGroupID(); ok {
+		_spec.SetField(usagelog.FieldPricingGroupID, field.TypeInt64, value)
+		_node.PricingGroupID = &value
+	}
+	if value, ok := _c.mutation.RateMatchModel(); ok {
+		_spec.SetField(usagelog.FieldRateMatchModel, field.TypeString, value)
+		_node.RateMatchModel = &value
+	}
+	if value, ok := _c.mutation.RateRuleSource(); ok {
+		_spec.SetField(usagelog.FieldRateRuleSource, field.TypeString, value)
+		_node.RateRuleSource = &value
+	}
+	if value, ok := _c.mutation.RateRuleKey(); ok {
+		_spec.SetField(usagelog.FieldRateRuleKey, field.TypeString, value)
+		_node.RateRuleKey = &value
+	}
+	if value, ok := _c.mutation.RateConfigVersion(); ok {
+		_spec.SetField(usagelog.FieldRateConfigVersion, field.TypeInt64, value)
+		_node.RateConfigVersion = &value
+	}
+	if value, ok := _c.mutation.RateBaseMultiplier(); ok {
+		_spec.SetField(usagelog.FieldRateBaseMultiplier, field.TypeFloat64, value)
+		_node.RateBaseMultiplier = &value
+	}
+	if value, ok := _c.mutation.RateTokenMultiplier(); ok {
+		_spec.SetField(usagelog.FieldRateTokenMultiplier, field.TypeFloat64, value)
+		_node.RateTokenMultiplier = &value
+	}
+	if value, ok := _c.mutation.RateImageMultiplier(); ok {
+		_spec.SetField(usagelog.FieldRateImageMultiplier, field.TypeFloat64, value)
+		_node.RateImageMultiplier = &value
+	}
+	if value, ok := _c.mutation.RateVideoMultiplier(); ok {
+		_spec.SetField(usagelog.FieldRateVideoMultiplier, field.TypeFloat64, value)
+		_node.RateVideoMultiplier = &value
 	}
 	if value, ok := _c.mutation.BillingType(); ok {
 		_spec.SetField(usagelog.FieldBillingType, field.TypeInt8, value)
@@ -1785,6 +1962,204 @@ func (u *UsageLogUpsert) AddAccountRateMultiplier(v float64) *UsageLogUpsert {
 // ClearAccountRateMultiplier clears the value of the "account_rate_multiplier" field.
 func (u *UsageLogUpsert) ClearAccountRateMultiplier() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldAccountRateMultiplier)
+	return u
+}
+
+// SetPricingGroupID sets the "pricing_group_id" field.
+func (u *UsageLogUpsert) SetPricingGroupID(v int64) *UsageLogUpsert {
+	u.Set(usagelog.FieldPricingGroupID, v)
+	return u
+}
+
+// UpdatePricingGroupID sets the "pricing_group_id" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdatePricingGroupID() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldPricingGroupID)
+	return u
+}
+
+// AddPricingGroupID adds v to the "pricing_group_id" field.
+func (u *UsageLogUpsert) AddPricingGroupID(v int64) *UsageLogUpsert {
+	u.Add(usagelog.FieldPricingGroupID, v)
+	return u
+}
+
+// ClearPricingGroupID clears the value of the "pricing_group_id" field.
+func (u *UsageLogUpsert) ClearPricingGroupID() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldPricingGroupID)
+	return u
+}
+
+// SetRateMatchModel sets the "rate_match_model" field.
+func (u *UsageLogUpsert) SetRateMatchModel(v string) *UsageLogUpsert {
+	u.Set(usagelog.FieldRateMatchModel, v)
+	return u
+}
+
+// UpdateRateMatchModel sets the "rate_match_model" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateRateMatchModel() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldRateMatchModel)
+	return u
+}
+
+// ClearRateMatchModel clears the value of the "rate_match_model" field.
+func (u *UsageLogUpsert) ClearRateMatchModel() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldRateMatchModel)
+	return u
+}
+
+// SetRateRuleSource sets the "rate_rule_source" field.
+func (u *UsageLogUpsert) SetRateRuleSource(v string) *UsageLogUpsert {
+	u.Set(usagelog.FieldRateRuleSource, v)
+	return u
+}
+
+// UpdateRateRuleSource sets the "rate_rule_source" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateRateRuleSource() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldRateRuleSource)
+	return u
+}
+
+// ClearRateRuleSource clears the value of the "rate_rule_source" field.
+func (u *UsageLogUpsert) ClearRateRuleSource() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldRateRuleSource)
+	return u
+}
+
+// SetRateRuleKey sets the "rate_rule_key" field.
+func (u *UsageLogUpsert) SetRateRuleKey(v string) *UsageLogUpsert {
+	u.Set(usagelog.FieldRateRuleKey, v)
+	return u
+}
+
+// UpdateRateRuleKey sets the "rate_rule_key" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateRateRuleKey() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldRateRuleKey)
+	return u
+}
+
+// ClearRateRuleKey clears the value of the "rate_rule_key" field.
+func (u *UsageLogUpsert) ClearRateRuleKey() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldRateRuleKey)
+	return u
+}
+
+// SetRateConfigVersion sets the "rate_config_version" field.
+func (u *UsageLogUpsert) SetRateConfigVersion(v int64) *UsageLogUpsert {
+	u.Set(usagelog.FieldRateConfigVersion, v)
+	return u
+}
+
+// UpdateRateConfigVersion sets the "rate_config_version" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateRateConfigVersion() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldRateConfigVersion)
+	return u
+}
+
+// AddRateConfigVersion adds v to the "rate_config_version" field.
+func (u *UsageLogUpsert) AddRateConfigVersion(v int64) *UsageLogUpsert {
+	u.Add(usagelog.FieldRateConfigVersion, v)
+	return u
+}
+
+// ClearRateConfigVersion clears the value of the "rate_config_version" field.
+func (u *UsageLogUpsert) ClearRateConfigVersion() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldRateConfigVersion)
+	return u
+}
+
+// SetRateBaseMultiplier sets the "rate_base_multiplier" field.
+func (u *UsageLogUpsert) SetRateBaseMultiplier(v float64) *UsageLogUpsert {
+	u.Set(usagelog.FieldRateBaseMultiplier, v)
+	return u
+}
+
+// UpdateRateBaseMultiplier sets the "rate_base_multiplier" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateRateBaseMultiplier() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldRateBaseMultiplier)
+	return u
+}
+
+// AddRateBaseMultiplier adds v to the "rate_base_multiplier" field.
+func (u *UsageLogUpsert) AddRateBaseMultiplier(v float64) *UsageLogUpsert {
+	u.Add(usagelog.FieldRateBaseMultiplier, v)
+	return u
+}
+
+// ClearRateBaseMultiplier clears the value of the "rate_base_multiplier" field.
+func (u *UsageLogUpsert) ClearRateBaseMultiplier() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldRateBaseMultiplier)
+	return u
+}
+
+// SetRateTokenMultiplier sets the "rate_token_multiplier" field.
+func (u *UsageLogUpsert) SetRateTokenMultiplier(v float64) *UsageLogUpsert {
+	u.Set(usagelog.FieldRateTokenMultiplier, v)
+	return u
+}
+
+// UpdateRateTokenMultiplier sets the "rate_token_multiplier" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateRateTokenMultiplier() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldRateTokenMultiplier)
+	return u
+}
+
+// AddRateTokenMultiplier adds v to the "rate_token_multiplier" field.
+func (u *UsageLogUpsert) AddRateTokenMultiplier(v float64) *UsageLogUpsert {
+	u.Add(usagelog.FieldRateTokenMultiplier, v)
+	return u
+}
+
+// ClearRateTokenMultiplier clears the value of the "rate_token_multiplier" field.
+func (u *UsageLogUpsert) ClearRateTokenMultiplier() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldRateTokenMultiplier)
+	return u
+}
+
+// SetRateImageMultiplier sets the "rate_image_multiplier" field.
+func (u *UsageLogUpsert) SetRateImageMultiplier(v float64) *UsageLogUpsert {
+	u.Set(usagelog.FieldRateImageMultiplier, v)
+	return u
+}
+
+// UpdateRateImageMultiplier sets the "rate_image_multiplier" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateRateImageMultiplier() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldRateImageMultiplier)
+	return u
+}
+
+// AddRateImageMultiplier adds v to the "rate_image_multiplier" field.
+func (u *UsageLogUpsert) AddRateImageMultiplier(v float64) *UsageLogUpsert {
+	u.Add(usagelog.FieldRateImageMultiplier, v)
+	return u
+}
+
+// ClearRateImageMultiplier clears the value of the "rate_image_multiplier" field.
+func (u *UsageLogUpsert) ClearRateImageMultiplier() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldRateImageMultiplier)
+	return u
+}
+
+// SetRateVideoMultiplier sets the "rate_video_multiplier" field.
+func (u *UsageLogUpsert) SetRateVideoMultiplier(v float64) *UsageLogUpsert {
+	u.Set(usagelog.FieldRateVideoMultiplier, v)
+	return u
+}
+
+// UpdateRateVideoMultiplier sets the "rate_video_multiplier" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateRateVideoMultiplier() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldRateVideoMultiplier)
+	return u
+}
+
+// AddRateVideoMultiplier adds v to the "rate_video_multiplier" field.
+func (u *UsageLogUpsert) AddRateVideoMultiplier(v float64) *UsageLogUpsert {
+	u.Add(usagelog.FieldRateVideoMultiplier, v)
+	return u
+}
+
+// ClearRateVideoMultiplier clears the value of the "rate_video_multiplier" field.
+func (u *UsageLogUpsert) ClearRateVideoMultiplier() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldRateVideoMultiplier)
 	return u
 }
 
@@ -2726,6 +3101,237 @@ func (u *UsageLogUpsertOne) UpdateAccountRateMultiplier() *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) ClearAccountRateMultiplier() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearAccountRateMultiplier()
+	})
+}
+
+// SetPricingGroupID sets the "pricing_group_id" field.
+func (u *UsageLogUpsertOne) SetPricingGroupID(v int64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetPricingGroupID(v)
+	})
+}
+
+// AddPricingGroupID adds v to the "pricing_group_id" field.
+func (u *UsageLogUpsertOne) AddPricingGroupID(v int64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddPricingGroupID(v)
+	})
+}
+
+// UpdatePricingGroupID sets the "pricing_group_id" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdatePricingGroupID() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdatePricingGroupID()
+	})
+}
+
+// ClearPricingGroupID clears the value of the "pricing_group_id" field.
+func (u *UsageLogUpsertOne) ClearPricingGroupID() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearPricingGroupID()
+	})
+}
+
+// SetRateMatchModel sets the "rate_match_model" field.
+func (u *UsageLogUpsertOne) SetRateMatchModel(v string) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateMatchModel(v)
+	})
+}
+
+// UpdateRateMatchModel sets the "rate_match_model" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateRateMatchModel() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateMatchModel()
+	})
+}
+
+// ClearRateMatchModel clears the value of the "rate_match_model" field.
+func (u *UsageLogUpsertOne) ClearRateMatchModel() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateMatchModel()
+	})
+}
+
+// SetRateRuleSource sets the "rate_rule_source" field.
+func (u *UsageLogUpsertOne) SetRateRuleSource(v string) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateRuleSource(v)
+	})
+}
+
+// UpdateRateRuleSource sets the "rate_rule_source" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateRateRuleSource() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateRuleSource()
+	})
+}
+
+// ClearRateRuleSource clears the value of the "rate_rule_source" field.
+func (u *UsageLogUpsertOne) ClearRateRuleSource() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateRuleSource()
+	})
+}
+
+// SetRateRuleKey sets the "rate_rule_key" field.
+func (u *UsageLogUpsertOne) SetRateRuleKey(v string) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateRuleKey(v)
+	})
+}
+
+// UpdateRateRuleKey sets the "rate_rule_key" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateRateRuleKey() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateRuleKey()
+	})
+}
+
+// ClearRateRuleKey clears the value of the "rate_rule_key" field.
+func (u *UsageLogUpsertOne) ClearRateRuleKey() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateRuleKey()
+	})
+}
+
+// SetRateConfigVersion sets the "rate_config_version" field.
+func (u *UsageLogUpsertOne) SetRateConfigVersion(v int64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateConfigVersion(v)
+	})
+}
+
+// AddRateConfigVersion adds v to the "rate_config_version" field.
+func (u *UsageLogUpsertOne) AddRateConfigVersion(v int64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddRateConfigVersion(v)
+	})
+}
+
+// UpdateRateConfigVersion sets the "rate_config_version" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateRateConfigVersion() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateConfigVersion()
+	})
+}
+
+// ClearRateConfigVersion clears the value of the "rate_config_version" field.
+func (u *UsageLogUpsertOne) ClearRateConfigVersion() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateConfigVersion()
+	})
+}
+
+// SetRateBaseMultiplier sets the "rate_base_multiplier" field.
+func (u *UsageLogUpsertOne) SetRateBaseMultiplier(v float64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateBaseMultiplier(v)
+	})
+}
+
+// AddRateBaseMultiplier adds v to the "rate_base_multiplier" field.
+func (u *UsageLogUpsertOne) AddRateBaseMultiplier(v float64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddRateBaseMultiplier(v)
+	})
+}
+
+// UpdateRateBaseMultiplier sets the "rate_base_multiplier" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateRateBaseMultiplier() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateBaseMultiplier()
+	})
+}
+
+// ClearRateBaseMultiplier clears the value of the "rate_base_multiplier" field.
+func (u *UsageLogUpsertOne) ClearRateBaseMultiplier() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateBaseMultiplier()
+	})
+}
+
+// SetRateTokenMultiplier sets the "rate_token_multiplier" field.
+func (u *UsageLogUpsertOne) SetRateTokenMultiplier(v float64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateTokenMultiplier(v)
+	})
+}
+
+// AddRateTokenMultiplier adds v to the "rate_token_multiplier" field.
+func (u *UsageLogUpsertOne) AddRateTokenMultiplier(v float64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddRateTokenMultiplier(v)
+	})
+}
+
+// UpdateRateTokenMultiplier sets the "rate_token_multiplier" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateRateTokenMultiplier() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateTokenMultiplier()
+	})
+}
+
+// ClearRateTokenMultiplier clears the value of the "rate_token_multiplier" field.
+func (u *UsageLogUpsertOne) ClearRateTokenMultiplier() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateTokenMultiplier()
+	})
+}
+
+// SetRateImageMultiplier sets the "rate_image_multiplier" field.
+func (u *UsageLogUpsertOne) SetRateImageMultiplier(v float64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateImageMultiplier(v)
+	})
+}
+
+// AddRateImageMultiplier adds v to the "rate_image_multiplier" field.
+func (u *UsageLogUpsertOne) AddRateImageMultiplier(v float64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddRateImageMultiplier(v)
+	})
+}
+
+// UpdateRateImageMultiplier sets the "rate_image_multiplier" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateRateImageMultiplier() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateImageMultiplier()
+	})
+}
+
+// ClearRateImageMultiplier clears the value of the "rate_image_multiplier" field.
+func (u *UsageLogUpsertOne) ClearRateImageMultiplier() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateImageMultiplier()
+	})
+}
+
+// SetRateVideoMultiplier sets the "rate_video_multiplier" field.
+func (u *UsageLogUpsertOne) SetRateVideoMultiplier(v float64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateVideoMultiplier(v)
+	})
+}
+
+// AddRateVideoMultiplier adds v to the "rate_video_multiplier" field.
+func (u *UsageLogUpsertOne) AddRateVideoMultiplier(v float64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddRateVideoMultiplier(v)
+	})
+}
+
+// UpdateRateVideoMultiplier sets the "rate_video_multiplier" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateRateVideoMultiplier() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateVideoMultiplier()
+	})
+}
+
+// ClearRateVideoMultiplier clears the value of the "rate_video_multiplier" field.
+func (u *UsageLogUpsertOne) ClearRateVideoMultiplier() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateVideoMultiplier()
 	})
 }
 
@@ -3882,6 +4488,237 @@ func (u *UsageLogUpsertBulk) UpdateAccountRateMultiplier() *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) ClearAccountRateMultiplier() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearAccountRateMultiplier()
+	})
+}
+
+// SetPricingGroupID sets the "pricing_group_id" field.
+func (u *UsageLogUpsertBulk) SetPricingGroupID(v int64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetPricingGroupID(v)
+	})
+}
+
+// AddPricingGroupID adds v to the "pricing_group_id" field.
+func (u *UsageLogUpsertBulk) AddPricingGroupID(v int64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddPricingGroupID(v)
+	})
+}
+
+// UpdatePricingGroupID sets the "pricing_group_id" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdatePricingGroupID() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdatePricingGroupID()
+	})
+}
+
+// ClearPricingGroupID clears the value of the "pricing_group_id" field.
+func (u *UsageLogUpsertBulk) ClearPricingGroupID() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearPricingGroupID()
+	})
+}
+
+// SetRateMatchModel sets the "rate_match_model" field.
+func (u *UsageLogUpsertBulk) SetRateMatchModel(v string) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateMatchModel(v)
+	})
+}
+
+// UpdateRateMatchModel sets the "rate_match_model" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateRateMatchModel() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateMatchModel()
+	})
+}
+
+// ClearRateMatchModel clears the value of the "rate_match_model" field.
+func (u *UsageLogUpsertBulk) ClearRateMatchModel() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateMatchModel()
+	})
+}
+
+// SetRateRuleSource sets the "rate_rule_source" field.
+func (u *UsageLogUpsertBulk) SetRateRuleSource(v string) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateRuleSource(v)
+	})
+}
+
+// UpdateRateRuleSource sets the "rate_rule_source" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateRateRuleSource() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateRuleSource()
+	})
+}
+
+// ClearRateRuleSource clears the value of the "rate_rule_source" field.
+func (u *UsageLogUpsertBulk) ClearRateRuleSource() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateRuleSource()
+	})
+}
+
+// SetRateRuleKey sets the "rate_rule_key" field.
+func (u *UsageLogUpsertBulk) SetRateRuleKey(v string) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateRuleKey(v)
+	})
+}
+
+// UpdateRateRuleKey sets the "rate_rule_key" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateRateRuleKey() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateRuleKey()
+	})
+}
+
+// ClearRateRuleKey clears the value of the "rate_rule_key" field.
+func (u *UsageLogUpsertBulk) ClearRateRuleKey() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateRuleKey()
+	})
+}
+
+// SetRateConfigVersion sets the "rate_config_version" field.
+func (u *UsageLogUpsertBulk) SetRateConfigVersion(v int64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateConfigVersion(v)
+	})
+}
+
+// AddRateConfigVersion adds v to the "rate_config_version" field.
+func (u *UsageLogUpsertBulk) AddRateConfigVersion(v int64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddRateConfigVersion(v)
+	})
+}
+
+// UpdateRateConfigVersion sets the "rate_config_version" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateRateConfigVersion() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateConfigVersion()
+	})
+}
+
+// ClearRateConfigVersion clears the value of the "rate_config_version" field.
+func (u *UsageLogUpsertBulk) ClearRateConfigVersion() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateConfigVersion()
+	})
+}
+
+// SetRateBaseMultiplier sets the "rate_base_multiplier" field.
+func (u *UsageLogUpsertBulk) SetRateBaseMultiplier(v float64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateBaseMultiplier(v)
+	})
+}
+
+// AddRateBaseMultiplier adds v to the "rate_base_multiplier" field.
+func (u *UsageLogUpsertBulk) AddRateBaseMultiplier(v float64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddRateBaseMultiplier(v)
+	})
+}
+
+// UpdateRateBaseMultiplier sets the "rate_base_multiplier" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateRateBaseMultiplier() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateBaseMultiplier()
+	})
+}
+
+// ClearRateBaseMultiplier clears the value of the "rate_base_multiplier" field.
+func (u *UsageLogUpsertBulk) ClearRateBaseMultiplier() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateBaseMultiplier()
+	})
+}
+
+// SetRateTokenMultiplier sets the "rate_token_multiplier" field.
+func (u *UsageLogUpsertBulk) SetRateTokenMultiplier(v float64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateTokenMultiplier(v)
+	})
+}
+
+// AddRateTokenMultiplier adds v to the "rate_token_multiplier" field.
+func (u *UsageLogUpsertBulk) AddRateTokenMultiplier(v float64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddRateTokenMultiplier(v)
+	})
+}
+
+// UpdateRateTokenMultiplier sets the "rate_token_multiplier" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateRateTokenMultiplier() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateTokenMultiplier()
+	})
+}
+
+// ClearRateTokenMultiplier clears the value of the "rate_token_multiplier" field.
+func (u *UsageLogUpsertBulk) ClearRateTokenMultiplier() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateTokenMultiplier()
+	})
+}
+
+// SetRateImageMultiplier sets the "rate_image_multiplier" field.
+func (u *UsageLogUpsertBulk) SetRateImageMultiplier(v float64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateImageMultiplier(v)
+	})
+}
+
+// AddRateImageMultiplier adds v to the "rate_image_multiplier" field.
+func (u *UsageLogUpsertBulk) AddRateImageMultiplier(v float64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddRateImageMultiplier(v)
+	})
+}
+
+// UpdateRateImageMultiplier sets the "rate_image_multiplier" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateRateImageMultiplier() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateImageMultiplier()
+	})
+}
+
+// ClearRateImageMultiplier clears the value of the "rate_image_multiplier" field.
+func (u *UsageLogUpsertBulk) ClearRateImageMultiplier() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateImageMultiplier()
+	})
+}
+
+// SetRateVideoMultiplier sets the "rate_video_multiplier" field.
+func (u *UsageLogUpsertBulk) SetRateVideoMultiplier(v float64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRateVideoMultiplier(v)
+	})
+}
+
+// AddRateVideoMultiplier adds v to the "rate_video_multiplier" field.
+func (u *UsageLogUpsertBulk) AddRateVideoMultiplier(v float64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddRateVideoMultiplier(v)
+	})
+}
+
+// UpdateRateVideoMultiplier sets the "rate_video_multiplier" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateRateVideoMultiplier() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRateVideoMultiplier()
+	})
+}
+
+// ClearRateVideoMultiplier clears the value of the "rate_video_multiplier" field.
+func (u *UsageLogUpsertBulk) ClearRateVideoMultiplier() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRateVideoMultiplier()
 	})
 }
 

@@ -77,6 +77,17 @@ func (s *adminServiceImpl) GetGroupModelsListCandidates(ctx context.Context, id 
 	for _, model := range candidates {
 		seen[model] = struct{}{}
 	}
+	appendCandidate := func(model string) {
+		model = strings.TrimSpace(model)
+		if model == "" {
+			return
+		}
+		if _, ok := seen[model]; ok {
+			return
+		}
+		seen[model] = struct{}{}
+		candidates = append(candidates, model)
+	}
 	for _, acc := range accounts {
 		if platform == PlatformComposite {
 			if !isConcreteRequestPlatform(acc.Platform) {
@@ -85,16 +96,19 @@ func (s *adminServiceImpl) GetGroupModelsListCandidates(ctx context.Context, id 
 		} else if acc.Platform != platform {
 			continue
 		}
+		// model_mapping keys are client-facing models. They are safe candidates
+		// because no live upstream probing is performed in the billing path.
 		for model := range acc.GetModelMapping() {
-			model = strings.TrimSpace(model)
-			if model == "" {
-				continue
-			}
-			if _, ok := seen[model]; ok {
-				continue
-			}
-			seen[model] = struct{}{}
-			candidates = append(candidates, model)
+			appendCandidate(model)
+		}
+	}
+	if platform == PlatformComposite && s.compositeRouteRepo != nil {
+		routes, err := s.compositeRouteRepo.ListByGroup(ctx, id, true)
+		if err != nil {
+			return nil, err
+		}
+		for _, route := range routes {
+			appendCandidate(route.PublicModel)
 		}
 	}
 	return candidates, nil
@@ -305,6 +319,10 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	if err != nil {
 		return nil, err
 	}
+	modelRateMultipliers, err := NormalizeModelRateMultiplierRules(input.ModelRateMultipliers)
+	if err != nil {
+		return nil, err
+	}
 	maxReasoningEffort, err := normalizeMaxReasoningEffortForPlatform(platform, input.MaxReasoningEffort)
 	if err != nil {
 		return nil, infraerrors.Newf(http.StatusBadRequest, "INVALID_MAX_REASONING_EFFORT", "%v", err)
@@ -465,6 +483,8 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		MonthlyLimitUSD:                 monthlyLimit,
 		LongContextPricingEnabled:       input.LongContextPricingEnabled,
 		ModelPricing:                    modelPricing,
+		ModelRateMultipliers:            modelRateMultipliers,
+		RateConfigVersion:               1,
 		AllowImageGeneration:            allowImageGeneration,
 		AllowBatchImageGeneration:       allowBatchImageGeneration,
 		ImageRateIndependent:            input.ImageRateIndependent,
@@ -640,6 +660,10 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	if err != nil {
 		return nil, err
 	}
+	if input.ExpectedRateConfigVersion != nil && *input.ExpectedRateConfigVersion != group.RateConfigVersion {
+		return nil, infraerrors.Conflict("GROUP_RATE_CONFIG_VERSION_CONFLICT", "group billing configuration was changed by another administrator; reload and retry")
+	}
+	group.ExpectedRateConfigVersion = input.ExpectedRateConfigVersion
 
 	// 渠道缓存里存了 groupID → platform 的映射，改了平台要让它失效（见函数末尾）
 	previousPlatform := group.Platform
@@ -674,6 +698,13 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 			return nil, normalizeErr
 		}
 		group.ModelPricing = modelPricing
+	}
+	if input.ModelRateMultipliers != nil {
+		rules, normalizeErr := NormalizeModelRateMultiplierRules(*input.ModelRateMultipliers)
+		if normalizeErr != nil {
+			return nil, normalizeErr
+		}
+		group.ModelRateMultipliers = rules
 	}
 
 	// 订阅相关字段

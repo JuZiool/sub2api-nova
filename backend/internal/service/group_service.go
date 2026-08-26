@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	ErrGroupNotFound = infraerrors.NotFound("GROUP_NOT_FOUND", "group not found")
-	ErrGroupExists   = infraerrors.Conflict("GROUP_EXISTS", "group name already exists")
+	ErrGroupNotFound                  = infraerrors.NotFound("GROUP_NOT_FOUND", "group not found")
+	ErrGroupExists                    = infraerrors.Conflict("GROUP_EXISTS", "group name already exists")
+	ErrGroupRateConfigVersionConflict = infraerrors.Conflict("GROUP_RATE_CONFIG_VERSION_CONFLICT", "group billing configuration was changed by another administrator; reload and retry")
 )
 
 type GroupRepository interface {
@@ -61,25 +62,27 @@ type GroupSortOrderUpdate struct {
 
 // CreateGroupRequest 创建分组请求
 type CreateGroupRequest struct {
-	Name                 string   `json:"name"`
-	Description          string   `json:"description"`
-	RateMultiplier       float64  `json:"rate_multiplier"`
-	IsExclusive          bool     `json:"is_exclusive"`
-	AllowImageGeneration bool     `json:"allow_image_generation"`
-	ImageRateIndependent bool     `json:"image_rate_independent"`
-	ImageRateMultiplier  *float64 `json:"image_rate_multiplier"`
+	Name                 string                    `json:"name"`
+	Description          string                    `json:"description"`
+	RateMultiplier       float64                   `json:"rate_multiplier"`
+	ModelRateMultipliers []ModelRateMultiplierRule `json:"model_rate_multipliers"`
+	IsExclusive          bool                      `json:"is_exclusive"`
+	AllowImageGeneration bool                      `json:"allow_image_generation"`
+	ImageRateIndependent bool                      `json:"image_rate_independent"`
+	ImageRateMultiplier  *float64                  `json:"image_rate_multiplier"`
 }
 
 // UpdateGroupRequest 更新分组请求
 type UpdateGroupRequest struct {
-	Name                 *string  `json:"name"`
-	Description          *string  `json:"description"`
-	RateMultiplier       *float64 `json:"rate_multiplier"`
-	IsExclusive          *bool    `json:"is_exclusive"`
-	Status               *string  `json:"status"`
-	AllowImageGeneration *bool    `json:"allow_image_generation"`
-	ImageRateIndependent *bool    `json:"image_rate_independent"`
-	ImageRateMultiplier  *float64 `json:"image_rate_multiplier"`
+	Name                 *string                    `json:"name"`
+	Description          *string                    `json:"description"`
+	RateMultiplier       *float64                   `json:"rate_multiplier"`
+	ModelRateMultipliers *[]ModelRateMultiplierRule `json:"model_rate_multipliers"`
+	IsExclusive          *bool                      `json:"is_exclusive"`
+	Status               *string                    `json:"status"`
+	AllowImageGeneration *bool                      `json:"allow_image_generation"`
+	ImageRateIndependent *bool                      `json:"image_rate_independent"`
+	ImageRateMultiplier  *float64                   `json:"image_rate_multiplier"`
 }
 
 // GroupService 分组管理服务
@@ -98,6 +101,13 @@ func NewGroupService(groupRepo GroupRepository, authCacheInvalidator APIKeyAuthC
 
 // Create 创建分组
 func (s *GroupService) Create(ctx context.Context, req CreateGroupRequest) (*Group, error) {
+	if !validModelRateMultiplier(req.RateMultiplier) {
+		return nil, fmt.Errorf("rate_multiplier must be within (0, %g]", maxModelRateMultiplier)
+	}
+	modelRateMultipliers, err := NormalizeModelRateMultiplierRules(req.ModelRateMultipliers)
+	if err != nil {
+		return nil, err
+	}
 	imageRateMultiplier := 1.0
 	if req.ImageRateMultiplier != nil {
 		if *req.ImageRateMultiplier < 0 {
@@ -120,6 +130,8 @@ func (s *GroupService) Create(ctx context.Context, req CreateGroupRequest) (*Gro
 		Description:          req.Description,
 		Platform:             PlatformAnthropic,
 		RateMultiplier:       req.RateMultiplier,
+		ModelRateMultipliers: modelRateMultipliers,
+		RateConfigVersion:    1,
 		IsExclusive:          req.IsExclusive,
 		Status:               StatusActive,
 		SubscriptionType:     SubscriptionTypeStandard,
@@ -187,7 +199,17 @@ func (s *GroupService) Update(ctx context.Context, id int64, req UpdateGroupRequ
 	}
 
 	if req.RateMultiplier != nil {
+		if !validModelRateMultiplier(*req.RateMultiplier) {
+			return nil, fmt.Errorf("rate_multiplier must be within (0, %g]", maxModelRateMultiplier)
+		}
 		group.RateMultiplier = *req.RateMultiplier
+	}
+	if req.ModelRateMultipliers != nil {
+		rules, normalizeErr := NormalizeModelRateMultiplierRules(*req.ModelRateMultipliers)
+		if normalizeErr != nil {
+			return nil, normalizeErr
+		}
+		group.ModelRateMultipliers = rules
 	}
 
 	if req.IsExclusive != nil {

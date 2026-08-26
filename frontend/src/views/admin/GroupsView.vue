@@ -595,6 +595,24 @@
           />
           <p class="input-hint">{{ t("admin.groups.rateMultiplierHint") }}</p>
         </div>
+        <div class="space-y-2 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <label class="input-label">模型专属倍率</label>
+              <p class="input-hint">自动获取可用模型，倍率由管理员设置；未配置模型使用默认倍率。</p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" @click="addModelRateRule(createForm.model_rate_multipliers)">添加规则</button>
+          </div>
+          <select class="input w-full" :disabled="createModelRateCandidatesLoading" @change="addCandidateModelRateRule(createForm.model_rate_multipliers, $event)">
+            <option value="">{{ createModelRateCandidatesLoading ? '正在获取模型…' : '从自动获取的模型中添加' }}</option>
+            <option v-for="model in createModelRateCandidates" :key="model" :value="model">{{ model }}</option>
+          </select>
+          <div v-for="(rule, index) in createForm.model_rate_multipliers" :key="`${rule.pattern}-${index}`" class="flex gap-2">
+            <input v-model.trim="rule.pattern" class="input flex-1" placeholder="模型名称或前缀，例如 gpt-5.6-*" />
+            <input v-model.number="rule.multiplier" class="input w-28" type="number" min="0.0001" max="1000" step="0.001" />
+            <button type="button" class="btn btn-danger btn-sm" @click="createForm.model_rate_multipliers.splice(index, 1)">删除</button>
+          </div>
+        </div>
         <div>
           <label class="input-label">{{ t("admin.groups.form.rpmLimit") }}</label>
           <input
@@ -2204,6 +2222,24 @@
             class="input"
             data-tour="group-form-multiplier"
           />
+        </div>
+        <div class="space-y-2 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <label class="input-label">模型专属倍率</label>
+              <p class="input-hint">自动获取可用模型，倍率由管理员设置；未配置模型使用默认倍率。</p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" @click="addModelRateRule(editForm.model_rate_multipliers)">添加规则</button>
+          </div>
+          <select class="input w-full" :disabled="editModelRateCandidatesLoading" @change="addCandidateModelRateRule(editForm.model_rate_multipliers, $event)">
+            <option value="">{{ editModelRateCandidatesLoading ? '正在获取模型…' : '从自动获取的模型中添加' }}</option>
+            <option v-for="model in editModelRateCandidates" :key="model" :value="model">{{ model }}</option>
+          </select>
+          <div v-for="(rule, index) in editForm.model_rate_multipliers" :key="`${rule.pattern}-${index}`" class="flex gap-2">
+            <input v-model.trim="rule.pattern" class="input flex-1" placeholder="模型名称或前缀，例如 gpt-5.6-*" />
+            <input v-model.number="rule.multiplier" class="input w-28" type="number" min="0.0001" max="1000" step="0.001" />
+            <button type="button" class="btn btn-danger btn-sm" @click="editForm.model_rate_multipliers.splice(index, 1)">删除</button>
+          </div>
         </div>
         <div>
           <label class="input-label">{{ t("admin.groups.form.rpmLimit") }}</label>
@@ -4193,6 +4229,7 @@ import type {
   CompositeRouteMatchType,
   GroupPlatform,
   SubscriptionType,
+  ModelRateMultiplierRule,
 } from "@/types";
 import type { Column } from "@/components/common/types";
 import AppLayout from "@/components/layout/AppLayout.vue";
@@ -4798,6 +4835,10 @@ const createModelsListState = reactive(createInitialModelsListState());
 const editModelsListState = reactive(createInitialModelsListState());
 const createModelsListLoading = ref(false);
 const editModelsListLoading = ref(false);
+const createModelRateCandidates = ref<string[]>([]);
+const editModelRateCandidates = ref<string[]>([]);
+const createModelRateCandidatesLoading = ref(false);
+const editModelRateCandidatesLoading = ref(false);
 type ReasoningEffortPolicyFieldsExpose = {
   validate: () => boolean;
   resetValidation: () => void;
@@ -4824,6 +4865,7 @@ const createForm = reactive({
   monthly_limit_usd: null as number | null,
   long_context_pricing_enabled: true,
   model_pricing: [] as PricingFormEntry[],
+  model_rate_multipliers: [] as ModelRateMultiplierRule[],
   // 图片生成计费配置
   allow_image_generation: false,
   allow_batch_image_generation: false,
@@ -5118,6 +5160,40 @@ const loadModelsListCandidates = async (
   }
 };
 
+const loadModelRateCandidates = async (
+  mode: "create" | "edit",
+  groupID: number,
+  platform: GroupPlatform,
+) => {
+  const target = mode === "create" ? createModelRateCandidates : editModelRateCandidates;
+  const loading = mode === "create" ? createModelRateCandidatesLoading : editModelRateCandidatesLoading;
+  loading.value = true;
+  try {
+    target.value = await adminAPI.groups.getModelsListCandidates(groupID, platform);
+  } catch (error) {
+    console.error("Error loading model rate candidates:", error);
+    target.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+const addModelRateRule = (rules: ModelRateMultiplierRule[], pattern = "") => {
+  const normalized = pattern.trim();
+  if (normalized && rules.some((rule) => rule.pattern.trim() === normalized)) return;
+  rules.push({ pattern: normalized, multiplier: 1 });
+};
+
+const addCandidateModelRateRule = (
+  rules: ModelRateMultiplierRule[],
+  event: Event,
+) => {
+  const select = event.target as HTMLSelectElement;
+  const pattern = select.value;
+  if (pattern) addModelRateRule(rules, pattern);
+  select.value = "";
+};
+
 const moveCreateModelsListItem = (fromIndex: number, toIndex: number) => {
   moveModelsListItem(createModelsListState, fromIndex, toIndex);
 };
@@ -5185,6 +5261,7 @@ const editForm = reactive({
   monthly_limit_usd: null as number | null,
   long_context_pricing_enabled: true,
   model_pricing: [] as PricingFormEntry[],
+  model_rate_multipliers: [] as ModelRateMultiplierRule[],
   // 图片生成计费配置
   allow_image_generation: false,
   allow_batch_image_generation: false,
@@ -5625,6 +5702,7 @@ const handleSort = (key: string, order: 'asc' | 'desc') => {
 const openCreateModal = () => {
   showCreateModal.value = true;
   loadModelsListCandidates("create", 0, createForm.platform);
+  loadModelRateCandidates("create", 0, createForm.platform);
 };
 
 const closeCreateModal = () => {
@@ -5659,6 +5737,7 @@ const closeCreateModal = () => {
   createForm.video_model_prices = createVideoModelPricesForm();
   createForm.long_context_pricing_enabled = true;
   createForm.model_pricing = [];
+  createForm.model_rate_multipliers = [];
   createForm.web_search_price_per_call = null;
   createForm.search_price_per_1k = null;
   createForm.audio_realtime_price_per_min = null;
@@ -5887,6 +5966,7 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.long_context_pricing_enabled =
     group.long_context_pricing_enabled ?? true;
   editForm.model_pricing = groupPricingFromAPI(group.model_pricing);
+  editForm.model_rate_multipliers = (group.model_rate_multipliers || []).map((rule) => ({ ...rule }));
   editForm.allow_image_generation = group.allow_image_generation ?? false;
   editForm.allow_batch_image_generation =
     group.allow_batch_image_generation ?? false;
@@ -5963,6 +6043,7 @@ const handleEdit = async (group: AdminGroup) => {
     group.model_routing,
   );
   loadModelsListCandidates("edit", group.id, group.platform);
+  loadModelRateCandidates("edit", group.id, group.platform);
   showEditModal.value = true;
 };
 
@@ -5993,6 +6074,7 @@ const closeEditModal = () => {
   editForm.video_model_prices = createVideoModelPricesForm();
   editForm.long_context_pricing_enabled = true;
   editForm.model_pricing = [];
+  editForm.model_rate_multipliers = [];
   editForm.web_search_price_per_call = null;
   editForm.search_price_per_1k = null;
   editForm.audio_realtime_price_per_min = null;
@@ -6025,6 +6107,7 @@ const handleUpdateGroup = async () => {
     // 转换 fallback_group_id: null -> 0 (后端使用 0 表示清除)
     const payload = {
       ...editForm,
+      expected_rate_config_version: editingGroup.value.rate_config_version,
       model_pricing: groupPricingToAPI(
         editForm.model_pricing,
         editForm.platform,
