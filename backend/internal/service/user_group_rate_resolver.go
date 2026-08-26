@@ -46,12 +46,15 @@ func newUserGroupRateResolver(repo UserGroupRateRepository, cache *gocache.Cache
 // failure is intentionally returned to the caller: new model-rate billing must
 // never silently fall back to a different group rate on a failed lookup.
 func (r *userGroupRateResolver) ResolveOverride(ctx context.Context, userID, groupID int64) (*float64, error) {
-	if r == nil || userID <= 0 || groupID <= 0 || r.repo == nil {
+	if r == nil || userID <= 0 || groupID <= 0 {
 		return nil, nil
 	}
 	key := fmt.Sprintf("%d:%d", userID, groupID)
 	if value, ok := r.cachedOverride(key); ok {
 		return overrideCacheValueToPointer(value), nil
+	}
+	if r.repo == nil {
+		return nil, nil
 	}
 	userGroupRateCacheMissTotal.Add(1)
 	value, err, shared := r.sf.Do(key, func() (any, error) {
@@ -95,11 +98,17 @@ func (r *userGroupRateResolver) cachedOverride(key string) (userGroupRateOverrid
 		return userGroupRateOverrideCacheValue{}, false
 	}
 	value, castOK := cached.(userGroupRateOverrideCacheValue)
-	if !castOK {
-		return userGroupRateOverrideCacheValue{}, false
+	if castOK {
+		userGroupRateCacheHitTotal.Add(1)
+		return value, true
 	}
-	userGroupRateCacheHitTotal.Add(1)
-	return value, true
+	// Keep reading the pre-audit cache format during rolling upgrades. The
+	// writer uses the structured value above so a nil override can be cached.
+	if legacyRate, legacyOK := cached.(float64); legacyOK {
+		userGroupRateCacheHitTotal.Add(1)
+		return userGroupRateOverrideCacheValue{Exists: true, Multiplier: legacyRate}, true
+	}
+	return userGroupRateOverrideCacheValue{}, false
 }
 
 func overrideCacheValueToPointer(value userGroupRateOverrideCacheValue) *float64 {

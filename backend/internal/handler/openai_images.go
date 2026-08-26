@@ -86,10 +86,6 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 	}
 	pricingCtx, pricingAt := h.gatewayService.WithOpenAIRequestPricingContext(c.Request.Context(), apiKey.GroupID)
 	c.Request = c.Request.WithContext(pricingCtx)
-	if err := freezeRequestRateResolution(c, apiKey, requestModel, pricingAt, nil, h.gatewayService); err != nil {
-		h.errorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
-		return
-	}
 
 	reqLog = reqLog.With(
 		zap.String("model", clientRequestModel),
@@ -103,6 +99,10 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 
 	if !service.GroupAllowsImageGeneration(apiKey.Group) {
 		h.errorResponse(c, http.StatusForbidden, "permission_error", service.ImageGenerationPermissionMessage())
+		return
+	}
+	if err := freezeRequestRateResolution(c, apiKey, requestModel, pricingAt, nil, h.gatewayService); err != nil {
+		h.errorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
 		return
 	}
 	if decision := h.checkSecurityAudit(c, reqLog, apiKey, subject, service.ContentModerationProtocolOpenAIImages, requestModel, parsed.ModerationBody()); decision != nil && !decision.AllowNextStage {

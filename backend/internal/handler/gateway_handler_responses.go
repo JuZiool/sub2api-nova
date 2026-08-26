@@ -99,10 +99,6 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 		requestCtx = service.WithOpenAIImageGenerationIntent(requestCtx)
 	}
 	c.Request = c.Request.WithContext(requestCtx)
-	if err := freezeRequestRateResolution(c, apiKey, reqModel, pricingAt, h.gatewayService, h.openAIGatewayService); err != nil {
-		h.responsesErrorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
-		return
-	}
 
 	// 解析渠道级模型映射
 	channelMapping, _ := h.gatewayService.ResolveChannelMappingAndRestrict(requestCtx, apiKey.GroupID, reqModel)
@@ -116,6 +112,10 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 	if apiKey.Group != nil && apiKey.Group.ClaudeCodeOnly {
 		h.responsesErrorResponse(c, http.StatusForbidden, "permission_error",
 			"This group is restricted to Claude Code clients (/v1/messages only)")
+		return
+	}
+	if err := freezeRequestRateResolution(c, apiKey, reqModel, pricingAt, h.gatewayService, h.openAIGatewayService); err != nil {
+		h.responsesErrorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
 		return
 	}
 

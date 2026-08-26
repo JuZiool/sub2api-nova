@@ -198,10 +198,6 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 	setOpsEndpointContext(c, "", int16(service.RequestTypeFromLegacy(reqStream, false)))
 	pricingCtx, pricingAt := service.WithGatewayTokenRequestPricing(c.Request.Context())
 	c.Request = c.Request.WithContext(pricingCtx)
-	if err := freezeRequestRateResolution(c, apiKey, reqModel, pricingAt, h.gatewayService, h.openAIGatewayService); err != nil {
-		h.errorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
-		return
-	}
 
 	// 验证 model 必填
 	if reqModel == "" {
@@ -210,6 +206,10 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 	}
 	if !compositeTargetPlatformResolved(c, apiKey, reqModel) {
 		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "Model is not supported by composite groups")
+		return
+	}
+	if err := freezeRequestRateResolution(c, apiKey, reqModel, pricingAt, h.gatewayService, h.openAIGatewayService); err != nil {
+		h.errorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
 		return
 	}
 

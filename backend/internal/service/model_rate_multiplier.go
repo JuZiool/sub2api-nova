@@ -133,11 +133,11 @@ func ResolveRateResolution(group *Group, userGroupOverride *float64, requestedMo
 
 	imageMultiplier := base
 	if group.ImageRateIndependent {
-		imageMultiplier *= group.ImageRateMultiplier
+		imageMultiplier = group.ImageRateMultiplier
 	}
 	videoMultiplier := base
 	if group.VideoRateIndependent {
-		videoMultiplier *= group.VideoRateMultiplier
+		videoMultiplier = group.VideoRateMultiplier
 	}
 	if !validModelRateMultiplier(imageMultiplier) || !validModelRateMultiplier(videoMultiplier) {
 		return nil, errors.New("group media rate multiplier is invalid")
