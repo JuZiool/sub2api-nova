@@ -566,6 +566,7 @@ export default {
     empty: '暂无可用渠道',
     noModels: '未配置模型',
     noPricing: '未配置定价',
+    defaultRate: '默认倍率',
     exclusive: '专属',
     public: '公开',
     exclusiveTooltip: '管理员授权给你的专属分组',
@@ -590,6 +591,8 @@ export default {
       imageInputPrice: '图片输入',
       imageOutputPrice: '图片输出',
       perRequestPrice: '每次请求',
+      rate: '有效倍率',
+      multipleRates: '多倍率',
       intervals: '阶梯定价',
       unitPerMillion: '/ 1M token',
       unitPerRequest: '/ 次'
@@ -608,7 +611,7 @@ export default {
     filters: {
       platformLabel: '平台',
       groupLabel: '分组',
-      rateLabel: '倍率',
+      rateLabel: '默认倍率',
       modelLabel: '模型',
       searchPlaceholder: '搜索模型名称',
       all: '全部'
@@ -620,7 +623,8 @@ export default {
     detail: {
       noModels: '该分组暂未配置模型',
       noPricing: '未配置定价',
-      peakNote: '高峰时段 {window} 计费倍率 ×{multiplier}'
+      peakNote: '高峰时段 {window} 计费倍率 ×{multiplier}',
+      defaultRate: '默认倍率'
     },
     table: {
       model: '模型',

@@ -56,6 +56,13 @@ func cloneGroupValuePointer[T any](value *T) *T {
 	return &cloned
 }
 
+func cloneGroupModelRateMultipliers(value []ModelRateMultiplierRule) []ModelRateMultiplierRule {
+	if len(value) == 0 {
+		return []ModelRateMultiplierRule{}
+	}
+	return append([]ModelRateMultiplierRule(nil), value...)
+}
+
 func cloneGroupModelRouting(value map[string][]int64) map[string][]int64 {
 	if value == nil {
 		return nil
@@ -99,6 +106,8 @@ func cloneGroupForDuplicate(source *Group, operationID string) *Group {
 		Description:                     source.Description,
 		Platform:                        source.Platform,
 		RateMultiplier:                  source.RateMultiplier,
+		ModelRateMultipliers:            cloneGroupModelRateMultipliers(source.ModelRateMultipliers),
+		RateConfigVersion:               1,
 		PeakRateEnabled:                 source.PeakRateEnabled,
 		PeakStart:                       source.PeakStart,
 		PeakEnd:                         source.PeakEnd,

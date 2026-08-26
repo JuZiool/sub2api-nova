@@ -213,6 +213,7 @@ type CreateGroupInput struct {
 	Description               string
 	Platform                  string
 	RateMultiplier            float64
+	ModelRateMultipliers      []ModelRateMultiplierRule
 	IsExclusive               bool
 	SubscriptionType          string   // standard/subscription
 	DailyLimitUSD             *float64 // 日限额 (USD)
@@ -283,10 +284,13 @@ type CreateGroupInput struct {
 }
 
 type UpdateGroupInput struct {
-	Name                      string
-	Description               *string
-	Platform                  string
-	RateMultiplier            *float64 // 使用指针以支持设置为0
+	Name           string
+	Description    *string
+	Platform       string
+	RateMultiplier *float64 // 使用指针以支持设置为0
+	// nil 表示不修改，空数组表示清空规则。
+	ModelRateMultipliers      *[]ModelRateMultiplierRule
+	ExpectedRateConfigVersion *int64
 	IsExclusive               *bool
 	Status                    string
 	SubscriptionType          string   // standard/subscription

@@ -66,6 +66,8 @@ func createGroupRecord(ctx context.Context, client *dbent.Client, groupIn *servi
 		SetDescription(groupIn.Description).
 		SetPlatform(groupIn.Platform).
 		SetRateMultiplier(groupIn.RateMultiplier).
+		SetModelRateMultipliers(groupIn.ModelRateMultipliers).
+		SetRateConfigVersion(normalizeGroupRateConfigVersion(groupIn.RateConfigVersion)).
 		SetSortOrder(groupIn.SortOrder).
 		SetIsExclusive(groupIn.IsExclusive).
 		SetStatus(groupIn.Status).
@@ -250,6 +252,8 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetDescription(groupIn.Description).
 		SetPlatform(groupIn.Platform).
 		SetRateMultiplier(groupIn.RateMultiplier).
+		SetModelRateMultipliers(groupIn.ModelRateMultipliers).
+		SetRateConfigVersion(nextGroupRateConfigVersion(groupIn.RateConfigVersion)).
 		SetIsExclusive(groupIn.IsExclusive).
 		SetStatus(groupIn.Status).
 		SetSubscriptionType(groupIn.SubscriptionType).
@@ -294,6 +298,10 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetProfitControlEnabled(groupIn.ProfitControlEnabled).
 		SetProfitMinMargin(groupIn.ProfitMinMargin).
 		SetProfitSafetyBuffer(groupIn.ProfitSafetyBuffer)
+
+	if groupIn.ExpectedRateConfigVersion != nil {
+		builder = builder.Where(group.RateConfigVersionEQ(*groupIn.ExpectedRateConfigVersion))
+	}
 
 	// 显式处理可空字段：nil 需要 clear，非 nil 需要 set。
 	if groupIn.DailyLimitUSD != nil {
@@ -392,8 +400,12 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 
 	updated, err := builder.Save(ctx)
 	if err != nil {
+		if groupIn.ExpectedRateConfigVersion != nil && dbent.IsNotFound(err) {
+			return service.ErrGroupRateConfigVersionConflict
+		}
 		return translatePersistenceError(err, service.ErrGroupNotFound, service.ErrGroupExists)
 	}
+	groupIn.RateConfigVersion = updated.RateConfigVersion
 	groupIn.UpdatedAt = updated.UpdatedAt
 	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventGroupChanged, nil, &groupIn.ID, nil); err != nil {
 		logger.LegacyPrintf("repository.group", "[SchedulerOutbox] enqueue group update failed: group=%d err=%v", groupIn.ID, err)
@@ -1107,4 +1119,15 @@ func (r *groupRepository) UpdateSortOrders(ctx context.Context, updates []servic
 		}
 	}
 	return nil
+}
+
+func normalizeGroupRateConfigVersion(version int64) int64 {
+	if version <= 0 {
+		return 1
+	}
+	return version
+}
+
+func nextGroupRateConfigVersion(version int64) int64 {
+	return normalizeGroupRateConfigVersion(version) + 1
 }

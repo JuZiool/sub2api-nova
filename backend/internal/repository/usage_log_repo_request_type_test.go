@@ -99,6 +99,15 @@ func TestUsageLogRepositoryCreateSyncRequestTypeAndLegacyFields(t *testing.T) {
 			sqlmock.AnyArg(), // billing_mode
 			sqlmock.AnyArg(), // account_stats_cost
 			sqlmock.AnyArg(), // session_id
+			sqlmock.AnyArg(), // pricing_group_id
+			sqlmock.AnyArg(), // rate_match_model
+			sqlmock.AnyArg(), // rate_rule_source
+			sqlmock.AnyArg(), // rate_rule_key
+			sqlmock.AnyArg(), // rate_config_version
+			sqlmock.AnyArg(), // rate_base_multiplier
+			sqlmock.AnyArg(), // rate_token_multiplier
+			sqlmock.AnyArg(), // rate_image_multiplier
+			sqlmock.AnyArg(), // rate_video_multiplier
 			createdAt,
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(int64(99), createdAt))
@@ -191,6 +200,15 @@ func TestUsageLogRepositoryCreate_PersistsServiceTier(t *testing.T) {
 			sqlmock.AnyArg(), // billing_mode
 			sqlmock.AnyArg(), // account_stats_cost
 			sqlmock.AnyArg(), // session_id
+			sqlmock.AnyArg(), // pricing_group_id
+			sqlmock.AnyArg(), // rate_match_model
+			sqlmock.AnyArg(), // rate_rule_source
+			sqlmock.AnyArg(), // rate_rule_key
+			sqlmock.AnyArg(), // rate_config_version
+			sqlmock.AnyArg(), // rate_base_multiplier
+			sqlmock.AnyArg(), // rate_token_multiplier
+			sqlmock.AnyArg(), // rate_image_multiplier
+			sqlmock.AnyArg(), // rate_video_multiplier
 			createdAt,
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(int64(100), createdAt))
@@ -788,15 +806,27 @@ type usageLogScannerStub struct {
 }
 
 func (s usageLogScannerStub) Scan(dest ...any) error {
-	if len(dest) != len(s.values) {
-		return fmt.Errorf("scan arg count mismatch: got %d want %d", len(dest), len(s.values))
+	values := s.values
+	// Older fixtures predate the nine immutable pricing-audit columns. Keep
+	// them valid while exercising the current production scanner.
+	if len(dest) == len(values)+9 {
+		values = make([]any, 0, len(dest))
+		values = append(values, s.values[:len(s.values)-1]...)
+		values = append(values,
+			sql.NullInt64{}, sql.NullString{}, sql.NullString{}, sql.NullString{},
+			sql.NullInt64{}, sql.NullFloat64{}, sql.NullFloat64{}, sql.NullFloat64{}, sql.NullFloat64{},
+			s.values[len(s.values)-1],
+		)
+	}
+	if len(dest) != len(values) {
+		return fmt.Errorf("scan arg count mismatch: got %d want %d", len(dest), len(values))
 	}
 	for i := range dest {
 		dv := reflect.ValueOf(dest[i])
 		if dv.Kind() != reflect.Pointer {
 			return fmt.Errorf("dest[%d] is not pointer", i)
 		}
-		dv.Elem().Set(reflect.ValueOf(s.values[i]))
+		dv.Elem().Set(reflect.ValueOf(values[i]))
 	}
 	return nil
 }

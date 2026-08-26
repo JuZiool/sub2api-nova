@@ -290,7 +290,24 @@ func (s *BatchImageSettlementService) invalidateAuthCache(ctx context.Context, u
 }
 
 func (s *BatchImageSettlementService) settlementUnitPrice(ctx context.Context, job *BatchImageJob) (float64, error) {
-	if job != nil && job.PricingSnapshotVersion >= 1 {
+	if job != nil && job.PricingSnapshotVersion >= 2 {
+		// Version 2 is the immutable model-rate snapshot contract. Never fall
+		// back to current group rules or current provider pricing when any part
+		// of that snapshot is missing or invalid.
+		if job.PricingAt == nil || job.RateResolution == nil ||
+			job.RateResolution.PricingGroupID <= 0 ||
+			strings.TrimSpace(job.RateResolution.RequestedModel) == "" ||
+			strings.TrimSpace(job.RateResolution.MatchModel) == "" ||
+			job.RateResolution.RateConfigVersion <= 0 ||
+			job.RateResolution.ImageMultiplier <= 0 ||
+			job.RateResolution.TokenMultiplier <= 0 ||
+			job.BillableUnitPrice < 0 || job.HoldUnitPrice < 0 ||
+			job.BaseUnitPrice < 0 || strings.TrimSpace(job.Currency) == "" {
+			return 0, ErrBatchImageSettlementPricingMissing
+		}
+		return job.BillableUnitPrice, nil
+	}
+	if job != nil && job.PricingSnapshotVersion == 1 {
 		if job.BillableUnitPrice < 0 {
 			return 0, ErrBatchImageSettlementPricingMissing
 		}

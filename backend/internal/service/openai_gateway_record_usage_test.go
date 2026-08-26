@@ -634,13 +634,11 @@ func TestOpenAIGatewayServiceRecordUsage_FallsBackToGroupDefaultRateOnResolverEr
 		Account: &Account{ID: 3002},
 	})
 
-	require.NoError(t, err)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "resolve user group rate override")
 	require.Equal(t, 1, rateRepo.calls)
-	require.NotNil(t, usageRepo.lastLog)
-	require.Equal(t, groupRate, usageRepo.lastLog.RateMultiplier)
-
-	expected := expectedOpenAICost(t, svc, "gpt-5.1", usage, groupRate)
-	require.InDelta(t, expected.ActualCost, userRepo.lastAmount, 1e-12)
+	require.Nil(t, usageRepo.lastLog)
+	require.Equal(t, 0, userRepo.deductCalls)
 }
 
 func TestOpenAIGatewayServiceRecordUsage_FallsBackToGroupDefaultRateWhenResolverMissing(t *testing.T) {

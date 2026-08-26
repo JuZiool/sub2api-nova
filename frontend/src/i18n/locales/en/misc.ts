@@ -457,7 +457,7 @@ export default {
     selectPlan: 'Select Plan',
     planFeatures: 'Features',
     planCard: {
-      rate: 'Rate',
+      rate: 'Default rate',
       peakRate: 'Peak Rate',
       dailyLimit: 'Daily',
       weeklyLimit: 'Weekly',

@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 	"time"
@@ -34,6 +36,26 @@ func (s *GatewayService) ResolveUserGroupRateMultiplier(ctx context.Context, use
 	return s.getUserGroupRateMultiplier(ctx, userID, groupID, groupDefaultMultiplier)
 }
 
+// ResolveRequestRateResolution resolves and freezes user billing multipliers before model mapping.
+func (s *GatewayService) ResolveRequestRateResolution(ctx context.Context, userID int64, group *Group, requestedModel string, pricingAt time.Time) (*RateResolution, error) {
+	if s == nil {
+		return nil, errors.New("gateway service is nil")
+	}
+	var override *float64
+	if userID > 0 && group != nil {
+		resolver := s.userGroupRateResolver
+		if resolver == nil {
+			resolver = newUserGroupRateResolver(s.userGroupRateRepo, s.userGroupRateCache, resolveUserGroupRateCacheTTL(s.cfg), &s.userGroupRateSF, "service.gateway")
+		}
+		var err error
+		override, err = resolver.ResolveOverride(ctx, userID, group.ID)
+		if err != nil {
+			return nil, fmt.Errorf("resolve user group rate override: %w", err)
+		}
+	}
+	return ResolveRateResolution(group, override, requestedModel, pricingAt)
+}
+
 // RecordUsageInput 记录使用量的输入参数。
 // 异步 worker 只接收计费所需快照，不能持有 ParsedRequest/RequestBodyRef 这类大请求体引用。
 type RecordUsageInput struct {
@@ -43,6 +65,7 @@ type RecordUsageInput struct {
 	Account            *Account
 	Subscription       *UserSubscription  // 可选：订阅信息
 	PricingAt          time.Time          // token 售价固定时刻；零值保持既有的记录时刻语义
+	RateResolution     *RateResolution    // 请求创建时冻结的模型倍率快照；异步路径必须传入
 	InboundEndpoint    string             // 入站端点（客户端请求路径）
 	UpstreamEndpoint   string             // 上游端点（标准化后的上游路径）
 	UserAgent          string             // 请求的 User-Agent
@@ -605,6 +628,12 @@ type recordUsageOpts struct {
 
 // RecordUsage 记录使用量并扣费（或更新订阅用量）
 func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInput) error {
+	if input == nil {
+		return errors.New("usage input is nil")
+	}
+	if input.RateResolution == nil {
+		input.RateResolution = RateResolutionFromContext(ctx)
+	}
 	return s.recordUsageCore(ctx, &recordUsageCoreInput{
 		Result:             input.Result,
 		APIKey:             input.APIKey,
@@ -612,6 +641,7 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 		Account:            input.Account,
 		Subscription:       input.Subscription,
 		PricingAt:          input.PricingAt,
+		RateResolution:     input.RateResolution,
 		InboundEndpoint:    input.InboundEndpoint,
 		UpstreamEndpoint:   input.UpstreamEndpoint,
 		UserAgent:          input.UserAgent,
@@ -633,6 +663,7 @@ type RecordUsageLongContextInput struct {
 	Account               *Account
 	Subscription          *UserSubscription  // 可选：订阅信息
 	PricingAt             time.Time          // token 售价固定时刻；零值保持既有的记录时刻语义
+	RateResolution        *RateResolution    // 异步/长上下文任务的请求倍率快照
 	InboundEndpoint       string             // 入站端点（客户端请求路径）
 	UpstreamEndpoint      string             // 上游端点（标准化后的上游路径）
 	UserAgent             string             // 请求的 User-Agent
@@ -650,6 +681,12 @@ type RecordUsageLongContextInput struct {
 
 // RecordUsageWithLongContext 记录使用量并扣费，支持长上下文双倍计费（用于 Gemini）
 func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *RecordUsageLongContextInput) error {
+	if input == nil {
+		return errors.New("long-context usage input is nil")
+	}
+	if input.RateResolution == nil {
+		input.RateResolution = RateResolutionFromContext(ctx)
+	}
 	return s.recordUsageCore(ctx, &recordUsageCoreInput{
 		Result:             input.Result,
 		APIKey:             input.APIKey,
@@ -657,6 +694,7 @@ func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *
 		Account:            input.Account,
 		Subscription:       input.Subscription,
 		PricingAt:          input.PricingAt,
+		RateResolution:     input.RateResolution,
 		InboundEndpoint:    input.InboundEndpoint,
 		UpstreamEndpoint:   input.UpstreamEndpoint,
 		UserAgent:          input.UserAgent,
@@ -681,6 +719,7 @@ type recordUsageCoreInput struct {
 	Account            *Account
 	Subscription       *UserSubscription
 	PricingAt          time.Time
+	RateResolution     *RateResolution
 	InboundEndpoint    string
 	UpstreamEndpoint   string
 	UserAgent          string
@@ -795,22 +834,32 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 		cacheTTLOverridden = (result.Usage.CacheCreation5mTokens + result.Usage.CacheCreation1hTokens) > 0
 	}
 
-	// 获取费率倍数（优先级：用户专属 > 分组默认 > 系统默认）
-	multiplier := 1.0
-	if s.cfg != nil {
-		multiplier = s.cfg.Default.RateMultiplier
+	// 在任何路由/定价模型替换前按客户端原始模型冻结倍率。
+	requestedModel := result.Model
+	if input.OriginalModel != "" {
+		requestedModel = input.OriginalModel
 	}
-	if apiKey.GroupID != nil && apiKey.Group != nil {
-		groupDefault := apiKey.Group.RateMultiplier
-		multiplier = s.ResolveUserGroupRateMultiplier(ctx, user.ID, *apiKey.GroupID, groupDefault)
-	}
-	// token 倍率叠加高峰因子（token 计费含图片 token，图片按次倍率不受影响）。高峰因子按请求时刻现算，
-	// 不并入上面的 getUserGroupRateMultiplier，以免污染 user:group 倍率缓存。
 	pricingAt := input.PricingAt
 	if pricingAt.IsZero() {
 		pricingAt = timezone.Now()
 	}
-	multiplier, imageMultiplier := computePeakAwareMultipliers(apiKey, multiplier, pricingAt)
+	multiplier := 1.0
+	imageMultiplier := 1.0
+	if input.RateResolution != nil {
+		multiplier = input.RateResolution.TokenMultiplier
+		imageMultiplier = input.RateResolution.ImageMultiplier
+	} else if apiKey.GroupID != nil && apiKey.Group != nil {
+		resolution, rateErr := s.ResolveRequestRateResolution(ctx, user.ID, apiKey.Group, requestedModel, pricingAt)
+		if rateErr != nil {
+			return rateErr
+		}
+		input.RateResolution = resolution
+		multiplier = resolution.TokenMultiplier
+		imageMultiplier = resolution.ImageMultiplier
+	} else if s.cfg != nil {
+		multiplier = s.cfg.Default.RateMultiplier
+		imageMultiplier = multiplier
+	}
 
 	// 确定计费模型
 	concreteBillingModel := forwardResultBillingModel(result.Model, result.UpstreamModel)
@@ -831,12 +880,6 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 	// 通用兜底（与 OpenAI 路径的 usageBillingModelCandidates 语义对齐）：
 	// 选定模型查不到任何价格时回退到实际转发的具体模型。已定价流量不受影响。
 	billingModel = s.billableModelWithFallback(ctx, apiKey, billingModel, result.UpstreamModel, result.Model)
-
-	// 确定 RequestedModel（渠道映射前的原始模型）
-	requestedModel := result.Model
-	if input.OriginalModel != "" {
-		requestedModel = input.OriginalModel
-	}
 
 	// 计算费用
 	cost := s.calculateRecordUsageCost(ctx, result, apiKey, billingModel, multiplier, imageMultiplier, pricingAt, opts)
@@ -1267,6 +1310,7 @@ func (s *GatewayService) buildRecordUsageLog(
 		usageLog.LongContextBillingApplied = cost.LongContextBillingApplied
 	}
 
+	ApplyRateResolutionToUsageLog(usageLog, input.RateResolution)
 	return usageLog
 }
 

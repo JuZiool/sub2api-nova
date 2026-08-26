@@ -168,6 +168,17 @@ type UsageLog struct {
 	// AccountStatsCost 账号统计定价预计算费用（nil = 使用默认公式 total_cost × account_rate_multiplier）
 	AccountStatsCost *float64
 
+	// Model-rate audit snapshot. Nil indicates a historical row created before model-specific rates.
+	PricingGroupID      *int64
+	RateMatchModel      *string
+	RateRuleSource      *string
+	RateRuleKey         *string
+	RateConfigVersion   *int64
+	RateBaseMultiplier  *float64
+	RateTokenMultiplier *float64
+	RateImageMultiplier *float64
+	RateVideoMultiplier *float64
+
 	BillingType  int8
 	RequestType  RequestType
 	Stream       bool

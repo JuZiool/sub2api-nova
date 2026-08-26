@@ -73,9 +73,15 @@ type ProfitPreviewGroupReport struct {
 	ThresholdDefault float64 `json:"threshold_default"`
 	ThresholdMinD    float64 `json:"threshold_min_d"`
 	// RemainingByModel 仅表示利润门准入账号数，不模拟健康、冷却、限流或槽位。
-	RemainingByModel     map[string]int                `json:"profit_admitted_by_model"`
-	RemainingByModelMinD map[string]int                `json:"profit_admitted_by_model_min_d"`
-	Verdicts             []ProfitPreviewAccountVerdict `json:"verdicts"`
+	RemainingByModel     map[string]int `json:"profit_admitted_by_model"`
+	RemainingByModelMinD map[string]int `json:"profit_admitted_by_model_min_d"`
+	// Per-model values use the exact model rule match, rather than presenting
+	// the group fallback multiplier as if it applied to every model.
+	EffectiveRateByModel    map[string]float64            `json:"effective_rate_by_model"`
+	MinEffectiveRateByModel map[string]float64            `json:"min_effective_rate_by_model"`
+	ThresholdByModel        map[string]float64            `json:"threshold_by_model"`
+	ThresholdMinByModel     map[string]float64            `json:"threshold_min_by_model"`
+	Verdicts                []ProfitPreviewAccountVerdict `json:"verdicts"`
 }
 
 // PreviewProfitAdmission 对五大平台分组推演利润门准入结果。未启用的分组仅在
@@ -89,13 +95,17 @@ func PreviewProfitAdmission(inputs []ProfitPreviewGroupInput, evalAt time.Time) 
 		group := in.Group
 		effectiveGate := (group.ProfitControlEnabled || in.AssumeEnabled) && profitControlPlatformSupported(group.Platform)
 		report := ProfitPreviewGroupReport{
-			GroupID:              group.ID,
-			GroupName:            group.Name,
-			Platform:             group.Platform,
-			EffectiveGate:        effectiveGate,
-			AssumedEnabled:       in.AssumeEnabled && !group.ProfitControlEnabled && effectiveGate,
-			RemainingByModel:     make(map[string]int, len(in.Models)),
-			RemainingByModelMinD: make(map[string]int, len(in.Models)),
+			GroupID:                 group.ID,
+			GroupName:               group.Name,
+			Platform:                group.Platform,
+			EffectiveGate:           effectiveGate,
+			AssumedEnabled:          in.AssumeEnabled && !group.ProfitControlEnabled && effectiveGate,
+			RemainingByModel:        make(map[string]int, len(in.Models)),
+			RemainingByModelMinD:    make(map[string]int, len(in.Models)),
+			EffectiveRateByModel:    make(map[string]float64, len(in.Models)),
+			MinEffectiveRateByModel: make(map[string]float64, len(in.Models)),
+			ThresholdByModel:        make(map[string]float64, len(in.Models)),
+			ThresholdMinByModel:     make(map[string]float64, len(in.Models)),
 		}
 		for _, model := range in.Models {
 			report.RemainingByModel[model] = 0
@@ -121,24 +131,32 @@ func PreviewProfitAdmission(inputs []ProfitPreviewGroupInput, evalAt time.Time) 
 		report.MinEffectiveD = minD
 		report.ThresholdDefault = thresholdDefault
 		report.ThresholdMinD = thresholdMinD
+		for _, model := range in.Models {
+			modelD, modelMinD, modelThreshold, modelMinThreshold := profitPreviewModelRateValues(group, in.UserOverrides, model, evalAt, defaultD, minD, thresholdDefault, thresholdMinD)
+			report.EffectiveRateByModel[model] = modelD
+			report.MinEffectiveRateByModel[model] = modelMinD
+			report.ThresholdByModel[model] = modelThreshold
+			report.ThresholdMinByModel[model] = modelMinThreshold
+		}
 
 		for _, account := range in.Accounts {
 			if account == nil {
 				continue
 			}
 			verdict := previewAccountProfitAdmission(account, effectiveGate, thresholdDefault, thresholdMinD, evalAt)
-			admittedDefault := verdict.Class == ProfitPreviewClassAdmitted
-			admittedMinD := admittedDefault && !verdict.RejectedUnderMinD
 			for _, model := range in.Models {
 				if !account.IsModelSupported(model) {
 					continue
 				}
 				verdict.SupportedModels = append(verdict.SupportedModels, model)
-				if admittedDefault {
+				modelThreshold := report.ThresholdByModel[model]
+				modelMinThreshold := report.ThresholdMinByModel[model]
+				modelVerdict := previewAccountProfitAdmission(account, effectiveGate, modelThreshold, modelMinThreshold, evalAt)
+				if modelVerdict.Class == ProfitPreviewClassAdmitted {
 					report.RemainingByModel[model]++
-				}
-				if admittedMinD {
-					report.RemainingByModelMinD[model]++
+					if !modelVerdict.RejectedUnderMinD {
+						report.RemainingByModelMinD[model]++
+					}
 				}
 			}
 			sort.Strings(verdict.SupportedModels)
@@ -148,6 +166,26 @@ func PreviewProfitAdmission(inputs []ProfitPreviewGroupInput, evalAt time.Time) 
 		reports = append(reports, report)
 	}
 	return reports
+}
+
+func profitPreviewModelRateValues(group *Group, overrides map[int64]float64, model string, evalAt time.Time, fallbackD, fallbackMinD, fallbackThreshold, fallbackMinThreshold float64) (float64, float64, float64, float64) {
+	resolution, err := ResolveRateResolution(group, nil, model, evalAt)
+	if err != nil {
+		return fallbackD, fallbackMinD, fallbackThreshold, fallbackMinThreshold
+	}
+	modelD := resolution.TokenMultiplier
+	minD := modelD
+	peak := group.PeakMultiplierAt(evalAt)
+	for _, override := range overrides {
+		if math.IsNaN(override) || math.IsInf(override, 0) || override < 0 {
+			continue
+		}
+		if candidate := override * peak; candidate < minD {
+			minD = candidate
+		}
+	}
+	deduction := group.ProfitMinMargin + group.ProfitSafetyBuffer
+	return modelD, minD, clampProfitControlThreshold(modelD * (1 - deduction)), clampProfitControlThreshold(minD * (1 - deduction))
 }
 
 func previewAccountProfitAdmission(

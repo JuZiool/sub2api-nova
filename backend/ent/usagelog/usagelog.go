@@ -74,6 +74,24 @@ const (
 	FieldLongContextBillingApplied = "long_context_billing_applied"
 	// FieldAccountRateMultiplier holds the string denoting the account_rate_multiplier field in the database.
 	FieldAccountRateMultiplier = "account_rate_multiplier"
+	// FieldPricingGroupID holds the string denoting the pricing_group_id field in the database.
+	FieldPricingGroupID = "pricing_group_id"
+	// FieldRateMatchModel holds the string denoting the rate_match_model field in the database.
+	FieldRateMatchModel = "rate_match_model"
+	// FieldRateRuleSource holds the string denoting the rate_rule_source field in the database.
+	FieldRateRuleSource = "rate_rule_source"
+	// FieldRateRuleKey holds the string denoting the rate_rule_key field in the database.
+	FieldRateRuleKey = "rate_rule_key"
+	// FieldRateConfigVersion holds the string denoting the rate_config_version field in the database.
+	FieldRateConfigVersion = "rate_config_version"
+	// FieldRateBaseMultiplier holds the string denoting the rate_base_multiplier field in the database.
+	FieldRateBaseMultiplier = "rate_base_multiplier"
+	// FieldRateTokenMultiplier holds the string denoting the rate_token_multiplier field in the database.
+	FieldRateTokenMultiplier = "rate_token_multiplier"
+	// FieldRateImageMultiplier holds the string denoting the rate_image_multiplier field in the database.
+	FieldRateImageMultiplier = "rate_image_multiplier"
+	// FieldRateVideoMultiplier holds the string denoting the rate_video_multiplier field in the database.
+	FieldRateVideoMultiplier = "rate_video_multiplier"
 	// FieldBillingType holds the string denoting the billing_type field in the database.
 	FieldBillingType = "billing_type"
 	// FieldStream holds the string denoting the stream field in the database.
@@ -190,6 +208,15 @@ var Columns = []string{
 	FieldRateMultiplier,
 	FieldLongContextBillingApplied,
 	FieldAccountRateMultiplier,
+	FieldPricingGroupID,
+	FieldRateMatchModel,
+	FieldRateRuleSource,
+	FieldRateRuleKey,
+	FieldRateConfigVersion,
+	FieldRateBaseMultiplier,
+	FieldRateTokenMultiplier,
+	FieldRateImageMultiplier,
+	FieldRateVideoMultiplier,
 	FieldBillingType,
 	FieldStream,
 	FieldDurationMs,
@@ -264,6 +291,12 @@ var (
 	DefaultRateMultiplier float64
 	// DefaultLongContextBillingApplied holds the default value on creation for the "long_context_billing_applied" field.
 	DefaultLongContextBillingApplied bool
+	// RateMatchModelValidator is a validator for the "rate_match_model" field. It is called by the builders before save.
+	RateMatchModelValidator func(string) error
+	// RateRuleSourceValidator is a validator for the "rate_rule_source" field. It is called by the builders before save.
+	RateRuleSourceValidator func(string) error
+	// RateRuleKeyValidator is a validator for the "rate_rule_key" field. It is called by the builders before save.
+	RateRuleKeyValidator func(string) error
 	// DefaultBillingType holds the default value on creation for the "billing_type" field.
 	DefaultBillingType int8
 	// DefaultStream holds the default value on creation for the "stream" field.
@@ -448,6 +481,51 @@ func ByLongContextBillingApplied(opts ...sql.OrderTermOption) OrderOption {
 // ByAccountRateMultiplier orders the results by the account_rate_multiplier field.
 func ByAccountRateMultiplier(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAccountRateMultiplier, opts...).ToFunc()
+}
+
+// ByPricingGroupID orders the results by the pricing_group_id field.
+func ByPricingGroupID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPricingGroupID, opts...).ToFunc()
+}
+
+// ByRateMatchModel orders the results by the rate_match_model field.
+func ByRateMatchModel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRateMatchModel, opts...).ToFunc()
+}
+
+// ByRateRuleSource orders the results by the rate_rule_source field.
+func ByRateRuleSource(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRateRuleSource, opts...).ToFunc()
+}
+
+// ByRateRuleKey orders the results by the rate_rule_key field.
+func ByRateRuleKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRateRuleKey, opts...).ToFunc()
+}
+
+// ByRateConfigVersion orders the results by the rate_config_version field.
+func ByRateConfigVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRateConfigVersion, opts...).ToFunc()
+}
+
+// ByRateBaseMultiplier orders the results by the rate_base_multiplier field.
+func ByRateBaseMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRateBaseMultiplier, opts...).ToFunc()
+}
+
+// ByRateTokenMultiplier orders the results by the rate_token_multiplier field.
+func ByRateTokenMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRateTokenMultiplier, opts...).ToFunc()
+}
+
+// ByRateImageMultiplier orders the results by the rate_image_multiplier field.
+func ByRateImageMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRateImageMultiplier, opts...).ToFunc()
+}
+
+// ByRateVideoMultiplier orders the results by the rate_video_multiplier field.
+func ByRateVideoMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRateVideoMultiplier, opts...).ToFunc()
 }
 
 // ByBillingType orders the results by the billing_type field.

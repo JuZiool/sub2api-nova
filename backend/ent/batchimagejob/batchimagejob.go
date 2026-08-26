@@ -53,6 +53,10 @@ const (
 	FieldHoldAmount = "hold_amount"
 	// FieldActualCost holds the string denoting the actual_cost field in the database.
 	FieldActualCost = "actual_cost"
+	// FieldPricingAt holds the string denoting the pricing_at field in the database.
+	FieldPricingAt = "pricing_at"
+	// FieldRateResolutionSnapshot holds the string denoting the rate_resolution_snapshot field in the database.
+	FieldRateResolutionSnapshot = "rate_resolution_snapshot"
 	// FieldCurrency holds the string denoting the currency field in the database.
 	FieldCurrency = "currency"
 	// FieldHoldID holds the string denoting the hold_id field in the database.
@@ -120,6 +124,8 @@ var Columns = []string{
 	FieldEstimatedCost,
 	FieldHoldAmount,
 	FieldActualCost,
+	FieldPricingAt,
+	FieldRateResolutionSnapshot,
 	FieldCurrency,
 	FieldHoldID,
 	FieldIdempotencyKey,
@@ -317,6 +323,11 @@ func ByHoldAmount(opts ...sql.OrderTermOption) OrderOption {
 // ByActualCost orders the results by the actual_cost field.
 func ByActualCost(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldActualCost, opts...).ToFunc()
+}
+
+// ByPricingAt orders the results by the pricing_at field.
+func ByPricingAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPricingAt, opts...).ToFunc()
 }
 
 // ByCurrency orders the results by the currency field.

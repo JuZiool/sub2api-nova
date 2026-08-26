@@ -334,9 +334,30 @@ func (h *APIKeyHandler) GetAvailableGroups(c *gin.Context) {
 
 	out := make([]dto.Group, 0, len(groups))
 	for i := range groups {
-		out = append(out, *dto.GroupFromService(&groups[i]))
+		group := dto.GroupFromService(&groups[i])
+		group.Description = appendModelRateDescription(group.Description, groups[i].ModelRateMultipliers)
+		out = append(out, *group)
 	}
 	response.Success(c, out)
+}
+
+// appendModelRateDescription adds pricing rules to the user-facing group
+// description without changing the administrator-maintained description.
+func appendModelRateDescription(description string, rules []service.ModelRateMultiplierRule) string {
+	normalized, err := service.NormalizeModelRateMultiplierRules(rules)
+	if err != nil || len(normalized) == 0 {
+		return description
+	}
+
+	parts := make([]string, 0, len(normalized))
+	for _, rule := range normalized {
+		parts = append(parts, rule.Pattern+": "+strconv.FormatFloat(rule.Multiplier, 'f', -1, 64)+"x")
+	}
+	ruleDescription := "特定倍率：" + strings.Join(parts, "；")
+	if strings.TrimSpace(description) == "" {
+		return ruleDescription
+	}
+	return strings.TrimRight(description, " \t\r\n") + "\n" + ruleDescription
 }
 
 // GetUserGroupRates 获取当前用户的专属分组倍率配置

@@ -105,6 +105,10 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 			"This group is restricted to Claude Code clients (/v1/messages only)")
 		return
 	}
+	if err := freezeRequestRateResolution(c, apiKey, reqModel, pricingAt, h.gatewayService, h.openAIGatewayService); err != nil {
+		h.chatCompletionsErrorResponse(c, http.StatusInternalServerError, "api_error", "Failed to resolve request billing rate")
+		return
+	}
 
 	if decision := h.checkSecurityAudit(c, reqLog, apiKey, subject, service.ContentModerationProtocolOpenAIChat, reqModel, body); decision != nil && !decision.AllowNextStage {
 		h.openAISecurityAuditError(c, decision)

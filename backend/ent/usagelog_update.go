@@ -623,6 +623,228 @@ func (_u *UsageLogUpdate) ClearAccountRateMultiplier() *UsageLogUpdate {
 	return _u
 }
 
+// SetPricingGroupID sets the "pricing_group_id" field.
+func (_u *UsageLogUpdate) SetPricingGroupID(v int64) *UsageLogUpdate {
+	_u.mutation.ResetPricingGroupID()
+	_u.mutation.SetPricingGroupID(v)
+	return _u
+}
+
+// SetNillablePricingGroupID sets the "pricing_group_id" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillablePricingGroupID(v *int64) *UsageLogUpdate {
+	if v != nil {
+		_u.SetPricingGroupID(*v)
+	}
+	return _u
+}
+
+// AddPricingGroupID adds value to the "pricing_group_id" field.
+func (_u *UsageLogUpdate) AddPricingGroupID(v int64) *UsageLogUpdate {
+	_u.mutation.AddPricingGroupID(v)
+	return _u
+}
+
+// ClearPricingGroupID clears the value of the "pricing_group_id" field.
+func (_u *UsageLogUpdate) ClearPricingGroupID() *UsageLogUpdate {
+	_u.mutation.ClearPricingGroupID()
+	return _u
+}
+
+// SetRateMatchModel sets the "rate_match_model" field.
+func (_u *UsageLogUpdate) SetRateMatchModel(v string) *UsageLogUpdate {
+	_u.mutation.SetRateMatchModel(v)
+	return _u
+}
+
+// SetNillableRateMatchModel sets the "rate_match_model" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableRateMatchModel(v *string) *UsageLogUpdate {
+	if v != nil {
+		_u.SetRateMatchModel(*v)
+	}
+	return _u
+}
+
+// ClearRateMatchModel clears the value of the "rate_match_model" field.
+func (_u *UsageLogUpdate) ClearRateMatchModel() *UsageLogUpdate {
+	_u.mutation.ClearRateMatchModel()
+	return _u
+}
+
+// SetRateRuleSource sets the "rate_rule_source" field.
+func (_u *UsageLogUpdate) SetRateRuleSource(v string) *UsageLogUpdate {
+	_u.mutation.SetRateRuleSource(v)
+	return _u
+}
+
+// SetNillableRateRuleSource sets the "rate_rule_source" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableRateRuleSource(v *string) *UsageLogUpdate {
+	if v != nil {
+		_u.SetRateRuleSource(*v)
+	}
+	return _u
+}
+
+// ClearRateRuleSource clears the value of the "rate_rule_source" field.
+func (_u *UsageLogUpdate) ClearRateRuleSource() *UsageLogUpdate {
+	_u.mutation.ClearRateRuleSource()
+	return _u
+}
+
+// SetRateRuleKey sets the "rate_rule_key" field.
+func (_u *UsageLogUpdate) SetRateRuleKey(v string) *UsageLogUpdate {
+	_u.mutation.SetRateRuleKey(v)
+	return _u
+}
+
+// SetNillableRateRuleKey sets the "rate_rule_key" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableRateRuleKey(v *string) *UsageLogUpdate {
+	if v != nil {
+		_u.SetRateRuleKey(*v)
+	}
+	return _u
+}
+
+// ClearRateRuleKey clears the value of the "rate_rule_key" field.
+func (_u *UsageLogUpdate) ClearRateRuleKey() *UsageLogUpdate {
+	_u.mutation.ClearRateRuleKey()
+	return _u
+}
+
+// SetRateConfigVersion sets the "rate_config_version" field.
+func (_u *UsageLogUpdate) SetRateConfigVersion(v int64) *UsageLogUpdate {
+	_u.mutation.ResetRateConfigVersion()
+	_u.mutation.SetRateConfigVersion(v)
+	return _u
+}
+
+// SetNillableRateConfigVersion sets the "rate_config_version" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableRateConfigVersion(v *int64) *UsageLogUpdate {
+	if v != nil {
+		_u.SetRateConfigVersion(*v)
+	}
+	return _u
+}
+
+// AddRateConfigVersion adds value to the "rate_config_version" field.
+func (_u *UsageLogUpdate) AddRateConfigVersion(v int64) *UsageLogUpdate {
+	_u.mutation.AddRateConfigVersion(v)
+	return _u
+}
+
+// ClearRateConfigVersion clears the value of the "rate_config_version" field.
+func (_u *UsageLogUpdate) ClearRateConfigVersion() *UsageLogUpdate {
+	_u.mutation.ClearRateConfigVersion()
+	return _u
+}
+
+// SetRateBaseMultiplier sets the "rate_base_multiplier" field.
+func (_u *UsageLogUpdate) SetRateBaseMultiplier(v float64) *UsageLogUpdate {
+	_u.mutation.ResetRateBaseMultiplier()
+	_u.mutation.SetRateBaseMultiplier(v)
+	return _u
+}
+
+// SetNillableRateBaseMultiplier sets the "rate_base_multiplier" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableRateBaseMultiplier(v *float64) *UsageLogUpdate {
+	if v != nil {
+		_u.SetRateBaseMultiplier(*v)
+	}
+	return _u
+}
+
+// AddRateBaseMultiplier adds value to the "rate_base_multiplier" field.
+func (_u *UsageLogUpdate) AddRateBaseMultiplier(v float64) *UsageLogUpdate {
+	_u.mutation.AddRateBaseMultiplier(v)
+	return _u
+}
+
+// ClearRateBaseMultiplier clears the value of the "rate_base_multiplier" field.
+func (_u *UsageLogUpdate) ClearRateBaseMultiplier() *UsageLogUpdate {
+	_u.mutation.ClearRateBaseMultiplier()
+	return _u
+}
+
+// SetRateTokenMultiplier sets the "rate_token_multiplier" field.
+func (_u *UsageLogUpdate) SetRateTokenMultiplier(v float64) *UsageLogUpdate {
+	_u.mutation.ResetRateTokenMultiplier()
+	_u.mutation.SetRateTokenMultiplier(v)
+	return _u
+}
+
+// SetNillableRateTokenMultiplier sets the "rate_token_multiplier" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableRateTokenMultiplier(v *float64) *UsageLogUpdate {
+	if v != nil {
+		_u.SetRateTokenMultiplier(*v)
+	}
+	return _u
+}
+
+// AddRateTokenMultiplier adds value to the "rate_token_multiplier" field.
+func (_u *UsageLogUpdate) AddRateTokenMultiplier(v float64) *UsageLogUpdate {
+	_u.mutation.AddRateTokenMultiplier(v)
+	return _u
+}
+
+// ClearRateTokenMultiplier clears the value of the "rate_token_multiplier" field.
+func (_u *UsageLogUpdate) ClearRateTokenMultiplier() *UsageLogUpdate {
+	_u.mutation.ClearRateTokenMultiplier()
+	return _u
+}
+
+// SetRateImageMultiplier sets the "rate_image_multiplier" field.
+func (_u *UsageLogUpdate) SetRateImageMultiplier(v float64) *UsageLogUpdate {
+	_u.mutation.ResetRateImageMultiplier()
+	_u.mutation.SetRateImageMultiplier(v)
+	return _u
+}
+
+// SetNillableRateImageMultiplier sets the "rate_image_multiplier" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableRateImageMultiplier(v *float64) *UsageLogUpdate {
+	if v != nil {
+		_u.SetRateImageMultiplier(*v)
+	}
+	return _u
+}
+
+// AddRateImageMultiplier adds value to the "rate_image_multiplier" field.
+func (_u *UsageLogUpdate) AddRateImageMultiplier(v float64) *UsageLogUpdate {
+	_u.mutation.AddRateImageMultiplier(v)
+	return _u
+}
+
+// ClearRateImageMultiplier clears the value of the "rate_image_multiplier" field.
+func (_u *UsageLogUpdate) ClearRateImageMultiplier() *UsageLogUpdate {
+	_u.mutation.ClearRateImageMultiplier()
+	return _u
+}
+
+// SetRateVideoMultiplier sets the "rate_video_multiplier" field.
+func (_u *UsageLogUpdate) SetRateVideoMultiplier(v float64) *UsageLogUpdate {
+	_u.mutation.ResetRateVideoMultiplier()
+	_u.mutation.SetRateVideoMultiplier(v)
+	return _u
+}
+
+// SetNillableRateVideoMultiplier sets the "rate_video_multiplier" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableRateVideoMultiplier(v *float64) *UsageLogUpdate {
+	if v != nil {
+		_u.SetRateVideoMultiplier(*v)
+	}
+	return _u
+}
+
+// AddRateVideoMultiplier adds value to the "rate_video_multiplier" field.
+func (_u *UsageLogUpdate) AddRateVideoMultiplier(v float64) *UsageLogUpdate {
+	_u.mutation.AddRateVideoMultiplier(v)
+	return _u
+}
+
+// ClearRateVideoMultiplier clears the value of the "rate_video_multiplier" field.
+func (_u *UsageLogUpdate) ClearRateVideoMultiplier() *UsageLogUpdate {
+	_u.mutation.ClearRateVideoMultiplier()
+	return _u
+}
+
 // SetBillingType sets the "billing_type" field.
 func (_u *UsageLogUpdate) SetBillingType(v int8) *UsageLogUpdate {
 	_u.mutation.ResetBillingType()
@@ -1076,6 +1298,21 @@ func (_u *UsageLogUpdate) check() error {
 			return &ValidationError{Name: "billing_mode", err: fmt.Errorf(`ent: validator failed for field "UsageLog.billing_mode": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RateMatchModel(); ok {
+		if err := usagelog.RateMatchModelValidator(v); err != nil {
+			return &ValidationError{Name: "rate_match_model", err: fmt.Errorf(`ent: validator failed for field "UsageLog.rate_match_model": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RateRuleSource(); ok {
+		if err := usagelog.RateRuleSourceValidator(v); err != nil {
+			return &ValidationError{Name: "rate_rule_source", err: fmt.Errorf(`ent: validator failed for field "UsageLog.rate_rule_source": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RateRuleKey(); ok {
+		if err := usagelog.RateRuleKeyValidator(v); err != nil {
+			return &ValidationError{Name: "rate_rule_key", err: fmt.Errorf(`ent: validator failed for field "UsageLog.rate_rule_key": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.UserAgent(); ok {
 		if err := usagelog.UserAgentValidator(v); err != nil {
 			return &ValidationError{Name: "user_agent", err: fmt.Errorf(`ent: validator failed for field "UsageLog.user_agent": %w`, err)}
@@ -1281,6 +1518,78 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.AccountRateMultiplierCleared() {
 		_spec.ClearField(usagelog.FieldAccountRateMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PricingGroupID(); ok {
+		_spec.SetField(usagelog.FieldPricingGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPricingGroupID(); ok {
+		_spec.AddField(usagelog.FieldPricingGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.PricingGroupIDCleared() {
+		_spec.ClearField(usagelog.FieldPricingGroupID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.RateMatchModel(); ok {
+		_spec.SetField(usagelog.FieldRateMatchModel, field.TypeString, value)
+	}
+	if _u.mutation.RateMatchModelCleared() {
+		_spec.ClearField(usagelog.FieldRateMatchModel, field.TypeString)
+	}
+	if value, ok := _u.mutation.RateRuleSource(); ok {
+		_spec.SetField(usagelog.FieldRateRuleSource, field.TypeString, value)
+	}
+	if _u.mutation.RateRuleSourceCleared() {
+		_spec.ClearField(usagelog.FieldRateRuleSource, field.TypeString)
+	}
+	if value, ok := _u.mutation.RateRuleKey(); ok {
+		_spec.SetField(usagelog.FieldRateRuleKey, field.TypeString, value)
+	}
+	if _u.mutation.RateRuleKeyCleared() {
+		_spec.ClearField(usagelog.FieldRateRuleKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.RateConfigVersion(); ok {
+		_spec.SetField(usagelog.FieldRateConfigVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRateConfigVersion(); ok {
+		_spec.AddField(usagelog.FieldRateConfigVersion, field.TypeInt64, value)
+	}
+	if _u.mutation.RateConfigVersionCleared() {
+		_spec.ClearField(usagelog.FieldRateConfigVersion, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.RateBaseMultiplier(); ok {
+		_spec.SetField(usagelog.FieldRateBaseMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRateBaseMultiplier(); ok {
+		_spec.AddField(usagelog.FieldRateBaseMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.RateBaseMultiplierCleared() {
+		_spec.ClearField(usagelog.FieldRateBaseMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.RateTokenMultiplier(); ok {
+		_spec.SetField(usagelog.FieldRateTokenMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRateTokenMultiplier(); ok {
+		_spec.AddField(usagelog.FieldRateTokenMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.RateTokenMultiplierCleared() {
+		_spec.ClearField(usagelog.FieldRateTokenMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.RateImageMultiplier(); ok {
+		_spec.SetField(usagelog.FieldRateImageMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRateImageMultiplier(); ok {
+		_spec.AddField(usagelog.FieldRateImageMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.RateImageMultiplierCleared() {
+		_spec.ClearField(usagelog.FieldRateImageMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.RateVideoMultiplier(); ok {
+		_spec.SetField(usagelog.FieldRateVideoMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRateVideoMultiplier(); ok {
+		_spec.AddField(usagelog.FieldRateVideoMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.RateVideoMultiplierCleared() {
+		_spec.ClearField(usagelog.FieldRateVideoMultiplier, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.BillingType(); ok {
 		_spec.SetField(usagelog.FieldBillingType, field.TypeInt8, value)
@@ -2137,6 +2446,228 @@ func (_u *UsageLogUpdateOne) ClearAccountRateMultiplier() *UsageLogUpdateOne {
 	return _u
 }
 
+// SetPricingGroupID sets the "pricing_group_id" field.
+func (_u *UsageLogUpdateOne) SetPricingGroupID(v int64) *UsageLogUpdateOne {
+	_u.mutation.ResetPricingGroupID()
+	_u.mutation.SetPricingGroupID(v)
+	return _u
+}
+
+// SetNillablePricingGroupID sets the "pricing_group_id" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillablePricingGroupID(v *int64) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetPricingGroupID(*v)
+	}
+	return _u
+}
+
+// AddPricingGroupID adds value to the "pricing_group_id" field.
+func (_u *UsageLogUpdateOne) AddPricingGroupID(v int64) *UsageLogUpdateOne {
+	_u.mutation.AddPricingGroupID(v)
+	return _u
+}
+
+// ClearPricingGroupID clears the value of the "pricing_group_id" field.
+func (_u *UsageLogUpdateOne) ClearPricingGroupID() *UsageLogUpdateOne {
+	_u.mutation.ClearPricingGroupID()
+	return _u
+}
+
+// SetRateMatchModel sets the "rate_match_model" field.
+func (_u *UsageLogUpdateOne) SetRateMatchModel(v string) *UsageLogUpdateOne {
+	_u.mutation.SetRateMatchModel(v)
+	return _u
+}
+
+// SetNillableRateMatchModel sets the "rate_match_model" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableRateMatchModel(v *string) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetRateMatchModel(*v)
+	}
+	return _u
+}
+
+// ClearRateMatchModel clears the value of the "rate_match_model" field.
+func (_u *UsageLogUpdateOne) ClearRateMatchModel() *UsageLogUpdateOne {
+	_u.mutation.ClearRateMatchModel()
+	return _u
+}
+
+// SetRateRuleSource sets the "rate_rule_source" field.
+func (_u *UsageLogUpdateOne) SetRateRuleSource(v string) *UsageLogUpdateOne {
+	_u.mutation.SetRateRuleSource(v)
+	return _u
+}
+
+// SetNillableRateRuleSource sets the "rate_rule_source" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableRateRuleSource(v *string) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetRateRuleSource(*v)
+	}
+	return _u
+}
+
+// ClearRateRuleSource clears the value of the "rate_rule_source" field.
+func (_u *UsageLogUpdateOne) ClearRateRuleSource() *UsageLogUpdateOne {
+	_u.mutation.ClearRateRuleSource()
+	return _u
+}
+
+// SetRateRuleKey sets the "rate_rule_key" field.
+func (_u *UsageLogUpdateOne) SetRateRuleKey(v string) *UsageLogUpdateOne {
+	_u.mutation.SetRateRuleKey(v)
+	return _u
+}
+
+// SetNillableRateRuleKey sets the "rate_rule_key" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableRateRuleKey(v *string) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetRateRuleKey(*v)
+	}
+	return _u
+}
+
+// ClearRateRuleKey clears the value of the "rate_rule_key" field.
+func (_u *UsageLogUpdateOne) ClearRateRuleKey() *UsageLogUpdateOne {
+	_u.mutation.ClearRateRuleKey()
+	return _u
+}
+
+// SetRateConfigVersion sets the "rate_config_version" field.
+func (_u *UsageLogUpdateOne) SetRateConfigVersion(v int64) *UsageLogUpdateOne {
+	_u.mutation.ResetRateConfigVersion()
+	_u.mutation.SetRateConfigVersion(v)
+	return _u
+}
+
+// SetNillableRateConfigVersion sets the "rate_config_version" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableRateConfigVersion(v *int64) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetRateConfigVersion(*v)
+	}
+	return _u
+}
+
+// AddRateConfigVersion adds value to the "rate_config_version" field.
+func (_u *UsageLogUpdateOne) AddRateConfigVersion(v int64) *UsageLogUpdateOne {
+	_u.mutation.AddRateConfigVersion(v)
+	return _u
+}
+
+// ClearRateConfigVersion clears the value of the "rate_config_version" field.
+func (_u *UsageLogUpdateOne) ClearRateConfigVersion() *UsageLogUpdateOne {
+	_u.mutation.ClearRateConfigVersion()
+	return _u
+}
+
+// SetRateBaseMultiplier sets the "rate_base_multiplier" field.
+func (_u *UsageLogUpdateOne) SetRateBaseMultiplier(v float64) *UsageLogUpdateOne {
+	_u.mutation.ResetRateBaseMultiplier()
+	_u.mutation.SetRateBaseMultiplier(v)
+	return _u
+}
+
+// SetNillableRateBaseMultiplier sets the "rate_base_multiplier" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableRateBaseMultiplier(v *float64) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetRateBaseMultiplier(*v)
+	}
+	return _u
+}
+
+// AddRateBaseMultiplier adds value to the "rate_base_multiplier" field.
+func (_u *UsageLogUpdateOne) AddRateBaseMultiplier(v float64) *UsageLogUpdateOne {
+	_u.mutation.AddRateBaseMultiplier(v)
+	return _u
+}
+
+// ClearRateBaseMultiplier clears the value of the "rate_base_multiplier" field.
+func (_u *UsageLogUpdateOne) ClearRateBaseMultiplier() *UsageLogUpdateOne {
+	_u.mutation.ClearRateBaseMultiplier()
+	return _u
+}
+
+// SetRateTokenMultiplier sets the "rate_token_multiplier" field.
+func (_u *UsageLogUpdateOne) SetRateTokenMultiplier(v float64) *UsageLogUpdateOne {
+	_u.mutation.ResetRateTokenMultiplier()
+	_u.mutation.SetRateTokenMultiplier(v)
+	return _u
+}
+
+// SetNillableRateTokenMultiplier sets the "rate_token_multiplier" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableRateTokenMultiplier(v *float64) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetRateTokenMultiplier(*v)
+	}
+	return _u
+}
+
+// AddRateTokenMultiplier adds value to the "rate_token_multiplier" field.
+func (_u *UsageLogUpdateOne) AddRateTokenMultiplier(v float64) *UsageLogUpdateOne {
+	_u.mutation.AddRateTokenMultiplier(v)
+	return _u
+}
+
+// ClearRateTokenMultiplier clears the value of the "rate_token_multiplier" field.
+func (_u *UsageLogUpdateOne) ClearRateTokenMultiplier() *UsageLogUpdateOne {
+	_u.mutation.ClearRateTokenMultiplier()
+	return _u
+}
+
+// SetRateImageMultiplier sets the "rate_image_multiplier" field.
+func (_u *UsageLogUpdateOne) SetRateImageMultiplier(v float64) *UsageLogUpdateOne {
+	_u.mutation.ResetRateImageMultiplier()
+	_u.mutation.SetRateImageMultiplier(v)
+	return _u
+}
+
+// SetNillableRateImageMultiplier sets the "rate_image_multiplier" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableRateImageMultiplier(v *float64) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetRateImageMultiplier(*v)
+	}
+	return _u
+}
+
+// AddRateImageMultiplier adds value to the "rate_image_multiplier" field.
+func (_u *UsageLogUpdateOne) AddRateImageMultiplier(v float64) *UsageLogUpdateOne {
+	_u.mutation.AddRateImageMultiplier(v)
+	return _u
+}
+
+// ClearRateImageMultiplier clears the value of the "rate_image_multiplier" field.
+func (_u *UsageLogUpdateOne) ClearRateImageMultiplier() *UsageLogUpdateOne {
+	_u.mutation.ClearRateImageMultiplier()
+	return _u
+}
+
+// SetRateVideoMultiplier sets the "rate_video_multiplier" field.
+func (_u *UsageLogUpdateOne) SetRateVideoMultiplier(v float64) *UsageLogUpdateOne {
+	_u.mutation.ResetRateVideoMultiplier()
+	_u.mutation.SetRateVideoMultiplier(v)
+	return _u
+}
+
+// SetNillableRateVideoMultiplier sets the "rate_video_multiplier" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableRateVideoMultiplier(v *float64) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetRateVideoMultiplier(*v)
+	}
+	return _u
+}
+
+// AddRateVideoMultiplier adds value to the "rate_video_multiplier" field.
+func (_u *UsageLogUpdateOne) AddRateVideoMultiplier(v float64) *UsageLogUpdateOne {
+	_u.mutation.AddRateVideoMultiplier(v)
+	return _u
+}
+
+// ClearRateVideoMultiplier clears the value of the "rate_video_multiplier" field.
+func (_u *UsageLogUpdateOne) ClearRateVideoMultiplier() *UsageLogUpdateOne {
+	_u.mutation.ClearRateVideoMultiplier()
+	return _u
+}
+
 // SetBillingType sets the "billing_type" field.
 func (_u *UsageLogUpdateOne) SetBillingType(v int8) *UsageLogUpdateOne {
 	_u.mutation.ResetBillingType()
@@ -2603,6 +3134,21 @@ func (_u *UsageLogUpdateOne) check() error {
 			return &ValidationError{Name: "billing_mode", err: fmt.Errorf(`ent: validator failed for field "UsageLog.billing_mode": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RateMatchModel(); ok {
+		if err := usagelog.RateMatchModelValidator(v); err != nil {
+			return &ValidationError{Name: "rate_match_model", err: fmt.Errorf(`ent: validator failed for field "UsageLog.rate_match_model": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RateRuleSource(); ok {
+		if err := usagelog.RateRuleSourceValidator(v); err != nil {
+			return &ValidationError{Name: "rate_rule_source", err: fmt.Errorf(`ent: validator failed for field "UsageLog.rate_rule_source": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RateRuleKey(); ok {
+		if err := usagelog.RateRuleKeyValidator(v); err != nil {
+			return &ValidationError{Name: "rate_rule_key", err: fmt.Errorf(`ent: validator failed for field "UsageLog.rate_rule_key": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.UserAgent(); ok {
 		if err := usagelog.UserAgentValidator(v); err != nil {
 			return &ValidationError{Name: "user_agent", err: fmt.Errorf(`ent: validator failed for field "UsageLog.user_agent": %w`, err)}
@@ -2825,6 +3371,78 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if _u.mutation.AccountRateMultiplierCleared() {
 		_spec.ClearField(usagelog.FieldAccountRateMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PricingGroupID(); ok {
+		_spec.SetField(usagelog.FieldPricingGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPricingGroupID(); ok {
+		_spec.AddField(usagelog.FieldPricingGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.PricingGroupIDCleared() {
+		_spec.ClearField(usagelog.FieldPricingGroupID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.RateMatchModel(); ok {
+		_spec.SetField(usagelog.FieldRateMatchModel, field.TypeString, value)
+	}
+	if _u.mutation.RateMatchModelCleared() {
+		_spec.ClearField(usagelog.FieldRateMatchModel, field.TypeString)
+	}
+	if value, ok := _u.mutation.RateRuleSource(); ok {
+		_spec.SetField(usagelog.FieldRateRuleSource, field.TypeString, value)
+	}
+	if _u.mutation.RateRuleSourceCleared() {
+		_spec.ClearField(usagelog.FieldRateRuleSource, field.TypeString)
+	}
+	if value, ok := _u.mutation.RateRuleKey(); ok {
+		_spec.SetField(usagelog.FieldRateRuleKey, field.TypeString, value)
+	}
+	if _u.mutation.RateRuleKeyCleared() {
+		_spec.ClearField(usagelog.FieldRateRuleKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.RateConfigVersion(); ok {
+		_spec.SetField(usagelog.FieldRateConfigVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRateConfigVersion(); ok {
+		_spec.AddField(usagelog.FieldRateConfigVersion, field.TypeInt64, value)
+	}
+	if _u.mutation.RateConfigVersionCleared() {
+		_spec.ClearField(usagelog.FieldRateConfigVersion, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.RateBaseMultiplier(); ok {
+		_spec.SetField(usagelog.FieldRateBaseMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRateBaseMultiplier(); ok {
+		_spec.AddField(usagelog.FieldRateBaseMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.RateBaseMultiplierCleared() {
+		_spec.ClearField(usagelog.FieldRateBaseMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.RateTokenMultiplier(); ok {
+		_spec.SetField(usagelog.FieldRateTokenMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRateTokenMultiplier(); ok {
+		_spec.AddField(usagelog.FieldRateTokenMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.RateTokenMultiplierCleared() {
+		_spec.ClearField(usagelog.FieldRateTokenMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.RateImageMultiplier(); ok {
+		_spec.SetField(usagelog.FieldRateImageMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRateImageMultiplier(); ok {
+		_spec.AddField(usagelog.FieldRateImageMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.RateImageMultiplierCleared() {
+		_spec.ClearField(usagelog.FieldRateImageMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.RateVideoMultiplier(); ok {
+		_spec.SetField(usagelog.FieldRateVideoMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRateVideoMultiplier(); ok {
+		_spec.AddField(usagelog.FieldRateVideoMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.RateVideoMultiplierCleared() {
+		_spec.ClearField(usagelog.FieldRateVideoMultiplier, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.BillingType(); ok {
 		_spec.SetField(usagelog.FieldBillingType, field.TypeInt8, value)

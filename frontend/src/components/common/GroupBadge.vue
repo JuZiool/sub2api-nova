@@ -50,8 +50,10 @@ interface Props {
    * 订阅分组默认在右侧 label 展示"订阅"或剩余天数；
    * 开启后订阅分组也改为显示倍率（保留订阅主题色 label，配合可用渠道这类
    * 只关心费率、不关心有效期的场景）。
-   */
+  */
   alwaysShowRate?: boolean
+  /** 可选倍率前缀，例如“默认倍率”。 */
+  ratePrefix?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -110,7 +112,8 @@ const showLabel = computed(() => {
 
 // Label text
 const labelText = computed(() => {
-  const rateLabel = props.rateMultiplier !== undefined ? `${props.rateMultiplier}x` : ''
+  const numericRate = props.rateMultiplier !== undefined ? `${props.rateMultiplier}x` : ''
+  const rateLabel = props.ratePrefix && numericRate ? `${props.ratePrefix} ${numericRate}` : numericRate
   if (isSubscription.value && !props.alwaysShowRate) {
     // 如果有剩余天数，显示天数
     if (props.daysRemaining !== null && props.daysRemaining !== undefined) {

@@ -11307,65 +11307,67 @@ func (m *BatchImageItemMutation) ResetEdge(name string) error {
 // BatchImageJobMutation represents an operation that mutates the BatchImageJob nodes in the graph.
 type BatchImageJobMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *int64
-	batch_id            *string
-	user_id             *int64
-	adduser_id          *int64
-	api_key_id          *int64
-	addapi_key_id       *int64
-	account_id          *int64
-	addaccount_id       *int64
-	provider            *string
-	model               *string
-	task_name           *string
-	status              *string
-	provider_job_name   *string
-	provider_input_ref  *string
-	provider_output_ref *string
-	gcs_input_uri       *string
-	gcs_output_uri      *string
-	item_count          *int
-	additem_count       *int
-	success_count       *int
-	addsuccess_count    *int
-	fail_count          *int
-	addfail_count       *int
-	cancelled_count     *int
-	addcancelled_count  *int
-	estimated_cost      *float64
-	addestimated_cost   *float64
-	hold_amount         *float64
-	addhold_amount      *float64
-	actual_cost         *float64
-	addactual_cost      *float64
-	currency            *string
-	hold_id             *string
-	idempotency_key     *string
-	request_hash        *string
-	manifest_hash       *string
-	retry_count         *int
-	addretry_count      *int
-	version             *int
-	addversion          *int
-	output_expires_at   *time.Time
-	input_deleted_at    *time.Time
-	output_deleted_at   *time.Time
-	downloaded_at       *time.Time
-	user_deleted_at     *time.Time
-	last_error_code     *string
-	last_error_message  *string
-	created_at          *time.Time
-	updated_at          *time.Time
-	submitted_at        *time.Time
-	started_at          *time.Time
-	finished_at         *time.Time
-	settled_at          *time.Time
-	clearedFields       map[string]struct{}
-	done                bool
-	oldValue            func(context.Context) (*BatchImageJob, error)
-	predicates          []predicate.BatchImageJob
+	op                       Op
+	typ                      string
+	id                       *int64
+	batch_id                 *string
+	user_id                  *int64
+	adduser_id               *int64
+	api_key_id               *int64
+	addapi_key_id            *int64
+	account_id               *int64
+	addaccount_id            *int64
+	provider                 *string
+	model                    *string
+	task_name                *string
+	status                   *string
+	provider_job_name        *string
+	provider_input_ref       *string
+	provider_output_ref      *string
+	gcs_input_uri            *string
+	gcs_output_uri           *string
+	item_count               *int
+	additem_count            *int
+	success_count            *int
+	addsuccess_count         *int
+	fail_count               *int
+	addfail_count            *int
+	cancelled_count          *int
+	addcancelled_count       *int
+	estimated_cost           *float64
+	addestimated_cost        *float64
+	hold_amount              *float64
+	addhold_amount           *float64
+	actual_cost              *float64
+	addactual_cost           *float64
+	pricing_at               *time.Time
+	rate_resolution_snapshot *map[string]interface{}
+	currency                 *string
+	hold_id                  *string
+	idempotency_key          *string
+	request_hash             *string
+	manifest_hash            *string
+	retry_count              *int
+	addretry_count           *int
+	version                  *int
+	addversion               *int
+	output_expires_at        *time.Time
+	input_deleted_at         *time.Time
+	output_deleted_at        *time.Time
+	downloaded_at            *time.Time
+	user_deleted_at          *time.Time
+	last_error_code          *string
+	last_error_message       *string
+	created_at               *time.Time
+	updated_at               *time.Time
+	submitted_at             *time.Time
+	started_at               *time.Time
+	finished_at              *time.Time
+	settled_at               *time.Time
+	clearedFields            map[string]struct{}
+	done                     bool
+	oldValue                 func(context.Context) (*BatchImageJob, error)
+	predicates               []predicate.BatchImageJob
 }
 
 var _ ent.Mutation = (*BatchImageJobMutation)(nil)
@@ -12507,6 +12509,104 @@ func (m *BatchImageJobMutation) ResetActualCost() {
 	delete(m.clearedFields, batchimagejob.FieldActualCost)
 }
 
+// SetPricingAt sets the "pricing_at" field.
+func (m *BatchImageJobMutation) SetPricingAt(t time.Time) {
+	m.pricing_at = &t
+}
+
+// PricingAt returns the value of the "pricing_at" field in the mutation.
+func (m *BatchImageJobMutation) PricingAt() (r time.Time, exists bool) {
+	v := m.pricing_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPricingAt returns the old "pricing_at" field's value of the BatchImageJob entity.
+// If the BatchImageJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BatchImageJobMutation) OldPricingAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPricingAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPricingAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPricingAt: %w", err)
+	}
+	return oldValue.PricingAt, nil
+}
+
+// ClearPricingAt clears the value of the "pricing_at" field.
+func (m *BatchImageJobMutation) ClearPricingAt() {
+	m.pricing_at = nil
+	m.clearedFields[batchimagejob.FieldPricingAt] = struct{}{}
+}
+
+// PricingAtCleared returns if the "pricing_at" field was cleared in this mutation.
+func (m *BatchImageJobMutation) PricingAtCleared() bool {
+	_, ok := m.clearedFields[batchimagejob.FieldPricingAt]
+	return ok
+}
+
+// ResetPricingAt resets all changes to the "pricing_at" field.
+func (m *BatchImageJobMutation) ResetPricingAt() {
+	m.pricing_at = nil
+	delete(m.clearedFields, batchimagejob.FieldPricingAt)
+}
+
+// SetRateResolutionSnapshot sets the "rate_resolution_snapshot" field.
+func (m *BatchImageJobMutation) SetRateResolutionSnapshot(value map[string]interface{}) {
+	m.rate_resolution_snapshot = &value
+}
+
+// RateResolutionSnapshot returns the value of the "rate_resolution_snapshot" field in the mutation.
+func (m *BatchImageJobMutation) RateResolutionSnapshot() (r map[string]interface{}, exists bool) {
+	v := m.rate_resolution_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRateResolutionSnapshot returns the old "rate_resolution_snapshot" field's value of the BatchImageJob entity.
+// If the BatchImageJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BatchImageJobMutation) OldRateResolutionSnapshot(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRateResolutionSnapshot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRateResolutionSnapshot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRateResolutionSnapshot: %w", err)
+	}
+	return oldValue.RateResolutionSnapshot, nil
+}
+
+// ClearRateResolutionSnapshot clears the value of the "rate_resolution_snapshot" field.
+func (m *BatchImageJobMutation) ClearRateResolutionSnapshot() {
+	m.rate_resolution_snapshot = nil
+	m.clearedFields[batchimagejob.FieldRateResolutionSnapshot] = struct{}{}
+}
+
+// RateResolutionSnapshotCleared returns if the "rate_resolution_snapshot" field was cleared in this mutation.
+func (m *BatchImageJobMutation) RateResolutionSnapshotCleared() bool {
+	_, ok := m.clearedFields[batchimagejob.FieldRateResolutionSnapshot]
+	return ok
+}
+
+// ResetRateResolutionSnapshot resets all changes to the "rate_resolution_snapshot" field.
+func (m *BatchImageJobMutation) ResetRateResolutionSnapshot() {
+	m.rate_resolution_snapshot = nil
+	delete(m.clearedFields, batchimagejob.FieldRateResolutionSnapshot)
+}
+
 // SetCurrency sets the "currency" field.
 func (m *BatchImageJobMutation) SetCurrency(s string) {
 	m.currency = &s
@@ -13496,7 +13596,7 @@ func (m *BatchImageJobMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BatchImageJobMutation) Fields() []string {
-	fields := make([]string, 0, 40)
+	fields := make([]string, 0, 42)
 	if m.batch_id != nil {
 		fields = append(fields, batchimagejob.FieldBatchID)
 	}
@@ -13556,6 +13656,12 @@ func (m *BatchImageJobMutation) Fields() []string {
 	}
 	if m.actual_cost != nil {
 		fields = append(fields, batchimagejob.FieldActualCost)
+	}
+	if m.pricing_at != nil {
+		fields = append(fields, batchimagejob.FieldPricingAt)
+	}
+	if m.rate_resolution_snapshot != nil {
+		fields = append(fields, batchimagejob.FieldRateResolutionSnapshot)
 	}
 	if m.currency != nil {
 		fields = append(fields, batchimagejob.FieldCurrency)
@@ -13665,6 +13771,10 @@ func (m *BatchImageJobMutation) Field(name string) (ent.Value, bool) {
 		return m.HoldAmount()
 	case batchimagejob.FieldActualCost:
 		return m.ActualCost()
+	case batchimagejob.FieldPricingAt:
+		return m.PricingAt()
+	case batchimagejob.FieldRateResolutionSnapshot:
+		return m.RateResolutionSnapshot()
 	case batchimagejob.FieldCurrency:
 		return m.Currency()
 	case batchimagejob.FieldHoldID:
@@ -13754,6 +13864,10 @@ func (m *BatchImageJobMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldHoldAmount(ctx)
 	case batchimagejob.FieldActualCost:
 		return m.OldActualCost(ctx)
+	case batchimagejob.FieldPricingAt:
+		return m.OldPricingAt(ctx)
+	case batchimagejob.FieldRateResolutionSnapshot:
+		return m.OldRateResolutionSnapshot(ctx)
 	case batchimagejob.FieldCurrency:
 		return m.OldCurrency(ctx)
 	case batchimagejob.FieldHoldID:
@@ -13942,6 +14056,20 @@ func (m *BatchImageJobMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetActualCost(v)
+		return nil
+	case batchimagejob.FieldPricingAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPricingAt(v)
+		return nil
+	case batchimagejob.FieldRateResolutionSnapshot:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRateResolutionSnapshot(v)
 		return nil
 	case batchimagejob.FieldCurrency:
 		v, ok := value.(string)
@@ -14287,6 +14415,12 @@ func (m *BatchImageJobMutation) ClearedFields() []string {
 	if m.FieldCleared(batchimagejob.FieldActualCost) {
 		fields = append(fields, batchimagejob.FieldActualCost)
 	}
+	if m.FieldCleared(batchimagejob.FieldPricingAt) {
+		fields = append(fields, batchimagejob.FieldPricingAt)
+	}
+	if m.FieldCleared(batchimagejob.FieldRateResolutionSnapshot) {
+		fields = append(fields, batchimagejob.FieldRateResolutionSnapshot)
+	}
 	if m.FieldCleared(batchimagejob.FieldHoldID) {
 		fields = append(fields, batchimagejob.FieldHoldID)
 	}
@@ -14372,6 +14506,12 @@ func (m *BatchImageJobMutation) ClearField(name string) error {
 		return nil
 	case batchimagejob.FieldActualCost:
 		m.ClearActualCost()
+		return nil
+	case batchimagejob.FieldPricingAt:
+		m.ClearPricingAt()
+		return nil
+	case batchimagejob.FieldRateResolutionSnapshot:
+		m.ClearRateResolutionSnapshot()
 		return nil
 	case batchimagejob.FieldHoldID:
 		m.ClearHoldID()
@@ -14485,6 +14625,12 @@ func (m *BatchImageJobMutation) ResetField(name string) error {
 		return nil
 	case batchimagejob.FieldActualCost:
 		m.ResetActualCost()
+		return nil
+	case batchimagejob.FieldPricingAt:
+		m.ResetPricingAt()
+		return nil
+	case batchimagejob.FieldRateResolutionSnapshot:
+		m.ResetRateResolutionSnapshot()
 		return nil
 	case batchimagejob.FieldCurrency:
 		m.ResetCurrency()
@@ -22088,6 +22234,10 @@ type GroupMutation struct {
 	description                             *string
 	rate_multiplier                         *float64
 	addrate_multiplier                      *float64
+	model_rate_multipliers                  *[]domain.ModelRateMultiplierRule
+	appendmodel_rate_multipliers            []domain.ModelRateMultiplierRule
+	rate_config_version                     *int64
+	addrate_config_version                  *int64
 	peak_rate_enabled                       *bool
 	peak_start                              *string
 	peak_end                                *string
@@ -22555,6 +22705,113 @@ func (m *GroupMutation) AddedRateMultiplier() (r float64, exists bool) {
 func (m *GroupMutation) ResetRateMultiplier() {
 	m.rate_multiplier = nil
 	m.addrate_multiplier = nil
+}
+
+// SetModelRateMultipliers sets the "model_rate_multipliers" field.
+func (m *GroupMutation) SetModelRateMultipliers(drmr []domain.ModelRateMultiplierRule) {
+	m.model_rate_multipliers = &drmr
+	m.appendmodel_rate_multipliers = nil
+}
+
+// ModelRateMultipliers returns the value of the "model_rate_multipliers" field in the mutation.
+func (m *GroupMutation) ModelRateMultipliers() (r []domain.ModelRateMultiplierRule, exists bool) {
+	v := m.model_rate_multipliers
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModelRateMultipliers returns the old "model_rate_multipliers" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldModelRateMultipliers(ctx context.Context) (v []domain.ModelRateMultiplierRule, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModelRateMultipliers is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModelRateMultipliers requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModelRateMultipliers: %w", err)
+	}
+	return oldValue.ModelRateMultipliers, nil
+}
+
+// AppendModelRateMultipliers adds drmr to the "model_rate_multipliers" field.
+func (m *GroupMutation) AppendModelRateMultipliers(drmr []domain.ModelRateMultiplierRule) {
+	m.appendmodel_rate_multipliers = append(m.appendmodel_rate_multipliers, drmr...)
+}
+
+// AppendedModelRateMultipliers returns the list of values that were appended to the "model_rate_multipliers" field in this mutation.
+func (m *GroupMutation) AppendedModelRateMultipliers() ([]domain.ModelRateMultiplierRule, bool) {
+	if len(m.appendmodel_rate_multipliers) == 0 {
+		return nil, false
+	}
+	return m.appendmodel_rate_multipliers, true
+}
+
+// ResetModelRateMultipliers resets all changes to the "model_rate_multipliers" field.
+func (m *GroupMutation) ResetModelRateMultipliers() {
+	m.model_rate_multipliers = nil
+	m.appendmodel_rate_multipliers = nil
+}
+
+// SetRateConfigVersion sets the "rate_config_version" field.
+func (m *GroupMutation) SetRateConfigVersion(i int64) {
+	m.rate_config_version = &i
+	m.addrate_config_version = nil
+}
+
+// RateConfigVersion returns the value of the "rate_config_version" field in the mutation.
+func (m *GroupMutation) RateConfigVersion() (r int64, exists bool) {
+	v := m.rate_config_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRateConfigVersion returns the old "rate_config_version" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldRateConfigVersion(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRateConfigVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRateConfigVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRateConfigVersion: %w", err)
+	}
+	return oldValue.RateConfigVersion, nil
+}
+
+// AddRateConfigVersion adds i to the "rate_config_version" field.
+func (m *GroupMutation) AddRateConfigVersion(i int64) {
+	if m.addrate_config_version != nil {
+		*m.addrate_config_version += i
+	} else {
+		m.addrate_config_version = &i
+	}
+}
+
+// AddedRateConfigVersion returns the value that was added to the "rate_config_version" field in this mutation.
+func (m *GroupMutation) AddedRateConfigVersion() (r int64, exists bool) {
+	v := m.addrate_config_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRateConfigVersion resets all changes to the "rate_config_version" field.
+func (m *GroupMutation) ResetRateConfigVersion() {
+	m.rate_config_version = nil
+	m.addrate_config_version = nil
 }
 
 // SetPeakRateEnabled sets the "peak_rate_enabled" field.
@@ -25773,7 +26030,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 62)
+	fields := make([]string, 0, 64)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -25791,6 +26048,12 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.rate_multiplier != nil {
 		fields = append(fields, group.FieldRateMultiplier)
+	}
+	if m.model_rate_multipliers != nil {
+		fields = append(fields, group.FieldModelRateMultipliers)
+	}
+	if m.rate_config_version != nil {
+		fields = append(fields, group.FieldRateConfigVersion)
 	}
 	if m.peak_rate_enabled != nil {
 		fields = append(fields, group.FieldPeakRateEnabled)
@@ -25980,6 +26243,10 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.Description()
 	case group.FieldRateMultiplier:
 		return m.RateMultiplier()
+	case group.FieldModelRateMultipliers:
+		return m.ModelRateMultipliers()
+	case group.FieldRateConfigVersion:
+		return m.RateConfigVersion()
 	case group.FieldPeakRateEnabled:
 		return m.PeakRateEnabled()
 	case group.FieldPeakStart:
@@ -26113,6 +26380,10 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldDescription(ctx)
 	case group.FieldRateMultiplier:
 		return m.OldRateMultiplier(ctx)
+	case group.FieldModelRateMultipliers:
+		return m.OldModelRateMultipliers(ctx)
+	case group.FieldRateConfigVersion:
+		return m.OldRateConfigVersion(ctx)
 	case group.FieldPeakRateEnabled:
 		return m.OldPeakRateEnabled(ctx)
 	case group.FieldPeakStart:
@@ -26275,6 +26546,20 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRateMultiplier(v)
+		return nil
+	case group.FieldModelRateMultipliers:
+		v, ok := value.([]domain.ModelRateMultiplierRule)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModelRateMultipliers(v)
+		return nil
+	case group.FieldRateConfigVersion:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRateConfigVersion(v)
 		return nil
 	case group.FieldPeakRateEnabled:
 		v, ok := value.(bool)
@@ -26679,6 +26964,9 @@ func (m *GroupMutation) AddedFields() []string {
 	if m.addrate_multiplier != nil {
 		fields = append(fields, group.FieldRateMultiplier)
 	}
+	if m.addrate_config_version != nil {
+		fields = append(fields, group.FieldRateConfigVersion)
+	}
 	if m.addpeak_rate_multiplier != nil {
 		fields = append(fields, group.FieldPeakRateMultiplier)
 	}
@@ -26767,6 +27055,8 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case group.FieldRateMultiplier:
 		return m.AddedRateMultiplier()
+	case group.FieldRateConfigVersion:
+		return m.AddedRateConfigVersion()
 	case group.FieldPeakRateMultiplier:
 		return m.AddedPeakRateMultiplier()
 	case group.FieldDailyLimitUsd:
@@ -26834,6 +27124,13 @@ func (m *GroupMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRateMultiplier(v)
+		return nil
+	case group.FieldRateConfigVersion:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRateConfigVersion(v)
 		return nil
 	case group.FieldPeakRateMultiplier:
 		v, ok := value.(float64)
@@ -27196,6 +27493,12 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldRateMultiplier:
 		m.ResetRateMultiplier()
+		return nil
+	case group.FieldModelRateMultipliers:
+		m.ResetModelRateMultipliers()
+		return nil
+	case group.FieldRateConfigVersion:
+		m.ResetRateConfigVersion()
 		return nil
 	case group.FieldPeakRateEnabled:
 		m.ResetPeakRateEnabled()
@@ -44271,6 +44574,21 @@ type UsageLogMutation struct {
 	long_context_billing_applied *bool
 	account_rate_multiplier      *float64
 	addaccount_rate_multiplier   *float64
+	pricing_group_id             *int64
+	addpricing_group_id          *int64
+	rate_match_model             *string
+	rate_rule_source             *string
+	rate_rule_key                *string
+	rate_config_version          *int64
+	addrate_config_version       *int64
+	rate_base_multiplier         *float64
+	addrate_base_multiplier      *float64
+	rate_token_multiplier        *float64
+	addrate_token_multiplier     *float64
+	rate_image_multiplier        *float64
+	addrate_image_multiplier     *float64
+	rate_video_multiplier        *float64
+	addrate_video_multiplier     *float64
 	billing_type                 *int8
 	addbilling_type              *int8
 	stream                       *bool
@@ -45933,6 +46251,573 @@ func (m *UsageLogMutation) ResetAccountRateMultiplier() {
 	delete(m.clearedFields, usagelog.FieldAccountRateMultiplier)
 }
 
+// SetPricingGroupID sets the "pricing_group_id" field.
+func (m *UsageLogMutation) SetPricingGroupID(i int64) {
+	m.pricing_group_id = &i
+	m.addpricing_group_id = nil
+}
+
+// PricingGroupID returns the value of the "pricing_group_id" field in the mutation.
+func (m *UsageLogMutation) PricingGroupID() (r int64, exists bool) {
+	v := m.pricing_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPricingGroupID returns the old "pricing_group_id" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldPricingGroupID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPricingGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPricingGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPricingGroupID: %w", err)
+	}
+	return oldValue.PricingGroupID, nil
+}
+
+// AddPricingGroupID adds i to the "pricing_group_id" field.
+func (m *UsageLogMutation) AddPricingGroupID(i int64) {
+	if m.addpricing_group_id != nil {
+		*m.addpricing_group_id += i
+	} else {
+		m.addpricing_group_id = &i
+	}
+}
+
+// AddedPricingGroupID returns the value that was added to the "pricing_group_id" field in this mutation.
+func (m *UsageLogMutation) AddedPricingGroupID() (r int64, exists bool) {
+	v := m.addpricing_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPricingGroupID clears the value of the "pricing_group_id" field.
+func (m *UsageLogMutation) ClearPricingGroupID() {
+	m.pricing_group_id = nil
+	m.addpricing_group_id = nil
+	m.clearedFields[usagelog.FieldPricingGroupID] = struct{}{}
+}
+
+// PricingGroupIDCleared returns if the "pricing_group_id" field was cleared in this mutation.
+func (m *UsageLogMutation) PricingGroupIDCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldPricingGroupID]
+	return ok
+}
+
+// ResetPricingGroupID resets all changes to the "pricing_group_id" field.
+func (m *UsageLogMutation) ResetPricingGroupID() {
+	m.pricing_group_id = nil
+	m.addpricing_group_id = nil
+	delete(m.clearedFields, usagelog.FieldPricingGroupID)
+}
+
+// SetRateMatchModel sets the "rate_match_model" field.
+func (m *UsageLogMutation) SetRateMatchModel(s string) {
+	m.rate_match_model = &s
+}
+
+// RateMatchModel returns the value of the "rate_match_model" field in the mutation.
+func (m *UsageLogMutation) RateMatchModel() (r string, exists bool) {
+	v := m.rate_match_model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRateMatchModel returns the old "rate_match_model" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldRateMatchModel(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRateMatchModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRateMatchModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRateMatchModel: %w", err)
+	}
+	return oldValue.RateMatchModel, nil
+}
+
+// ClearRateMatchModel clears the value of the "rate_match_model" field.
+func (m *UsageLogMutation) ClearRateMatchModel() {
+	m.rate_match_model = nil
+	m.clearedFields[usagelog.FieldRateMatchModel] = struct{}{}
+}
+
+// RateMatchModelCleared returns if the "rate_match_model" field was cleared in this mutation.
+func (m *UsageLogMutation) RateMatchModelCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldRateMatchModel]
+	return ok
+}
+
+// ResetRateMatchModel resets all changes to the "rate_match_model" field.
+func (m *UsageLogMutation) ResetRateMatchModel() {
+	m.rate_match_model = nil
+	delete(m.clearedFields, usagelog.FieldRateMatchModel)
+}
+
+// SetRateRuleSource sets the "rate_rule_source" field.
+func (m *UsageLogMutation) SetRateRuleSource(s string) {
+	m.rate_rule_source = &s
+}
+
+// RateRuleSource returns the value of the "rate_rule_source" field in the mutation.
+func (m *UsageLogMutation) RateRuleSource() (r string, exists bool) {
+	v := m.rate_rule_source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRateRuleSource returns the old "rate_rule_source" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldRateRuleSource(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRateRuleSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRateRuleSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRateRuleSource: %w", err)
+	}
+	return oldValue.RateRuleSource, nil
+}
+
+// ClearRateRuleSource clears the value of the "rate_rule_source" field.
+func (m *UsageLogMutation) ClearRateRuleSource() {
+	m.rate_rule_source = nil
+	m.clearedFields[usagelog.FieldRateRuleSource] = struct{}{}
+}
+
+// RateRuleSourceCleared returns if the "rate_rule_source" field was cleared in this mutation.
+func (m *UsageLogMutation) RateRuleSourceCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldRateRuleSource]
+	return ok
+}
+
+// ResetRateRuleSource resets all changes to the "rate_rule_source" field.
+func (m *UsageLogMutation) ResetRateRuleSource() {
+	m.rate_rule_source = nil
+	delete(m.clearedFields, usagelog.FieldRateRuleSource)
+}
+
+// SetRateRuleKey sets the "rate_rule_key" field.
+func (m *UsageLogMutation) SetRateRuleKey(s string) {
+	m.rate_rule_key = &s
+}
+
+// RateRuleKey returns the value of the "rate_rule_key" field in the mutation.
+func (m *UsageLogMutation) RateRuleKey() (r string, exists bool) {
+	v := m.rate_rule_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRateRuleKey returns the old "rate_rule_key" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldRateRuleKey(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRateRuleKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRateRuleKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRateRuleKey: %w", err)
+	}
+	return oldValue.RateRuleKey, nil
+}
+
+// ClearRateRuleKey clears the value of the "rate_rule_key" field.
+func (m *UsageLogMutation) ClearRateRuleKey() {
+	m.rate_rule_key = nil
+	m.clearedFields[usagelog.FieldRateRuleKey] = struct{}{}
+}
+
+// RateRuleKeyCleared returns if the "rate_rule_key" field was cleared in this mutation.
+func (m *UsageLogMutation) RateRuleKeyCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldRateRuleKey]
+	return ok
+}
+
+// ResetRateRuleKey resets all changes to the "rate_rule_key" field.
+func (m *UsageLogMutation) ResetRateRuleKey() {
+	m.rate_rule_key = nil
+	delete(m.clearedFields, usagelog.FieldRateRuleKey)
+}
+
+// SetRateConfigVersion sets the "rate_config_version" field.
+func (m *UsageLogMutation) SetRateConfigVersion(i int64) {
+	m.rate_config_version = &i
+	m.addrate_config_version = nil
+}
+
+// RateConfigVersion returns the value of the "rate_config_version" field in the mutation.
+func (m *UsageLogMutation) RateConfigVersion() (r int64, exists bool) {
+	v := m.rate_config_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRateConfigVersion returns the old "rate_config_version" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldRateConfigVersion(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRateConfigVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRateConfigVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRateConfigVersion: %w", err)
+	}
+	return oldValue.RateConfigVersion, nil
+}
+
+// AddRateConfigVersion adds i to the "rate_config_version" field.
+func (m *UsageLogMutation) AddRateConfigVersion(i int64) {
+	if m.addrate_config_version != nil {
+		*m.addrate_config_version += i
+	} else {
+		m.addrate_config_version = &i
+	}
+}
+
+// AddedRateConfigVersion returns the value that was added to the "rate_config_version" field in this mutation.
+func (m *UsageLogMutation) AddedRateConfigVersion() (r int64, exists bool) {
+	v := m.addrate_config_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRateConfigVersion clears the value of the "rate_config_version" field.
+func (m *UsageLogMutation) ClearRateConfigVersion() {
+	m.rate_config_version = nil
+	m.addrate_config_version = nil
+	m.clearedFields[usagelog.FieldRateConfigVersion] = struct{}{}
+}
+
+// RateConfigVersionCleared returns if the "rate_config_version" field was cleared in this mutation.
+func (m *UsageLogMutation) RateConfigVersionCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldRateConfigVersion]
+	return ok
+}
+
+// ResetRateConfigVersion resets all changes to the "rate_config_version" field.
+func (m *UsageLogMutation) ResetRateConfigVersion() {
+	m.rate_config_version = nil
+	m.addrate_config_version = nil
+	delete(m.clearedFields, usagelog.FieldRateConfigVersion)
+}
+
+// SetRateBaseMultiplier sets the "rate_base_multiplier" field.
+func (m *UsageLogMutation) SetRateBaseMultiplier(f float64) {
+	m.rate_base_multiplier = &f
+	m.addrate_base_multiplier = nil
+}
+
+// RateBaseMultiplier returns the value of the "rate_base_multiplier" field in the mutation.
+func (m *UsageLogMutation) RateBaseMultiplier() (r float64, exists bool) {
+	v := m.rate_base_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRateBaseMultiplier returns the old "rate_base_multiplier" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldRateBaseMultiplier(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRateBaseMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRateBaseMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRateBaseMultiplier: %w", err)
+	}
+	return oldValue.RateBaseMultiplier, nil
+}
+
+// AddRateBaseMultiplier adds f to the "rate_base_multiplier" field.
+func (m *UsageLogMutation) AddRateBaseMultiplier(f float64) {
+	if m.addrate_base_multiplier != nil {
+		*m.addrate_base_multiplier += f
+	} else {
+		m.addrate_base_multiplier = &f
+	}
+}
+
+// AddedRateBaseMultiplier returns the value that was added to the "rate_base_multiplier" field in this mutation.
+func (m *UsageLogMutation) AddedRateBaseMultiplier() (r float64, exists bool) {
+	v := m.addrate_base_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRateBaseMultiplier clears the value of the "rate_base_multiplier" field.
+func (m *UsageLogMutation) ClearRateBaseMultiplier() {
+	m.rate_base_multiplier = nil
+	m.addrate_base_multiplier = nil
+	m.clearedFields[usagelog.FieldRateBaseMultiplier] = struct{}{}
+}
+
+// RateBaseMultiplierCleared returns if the "rate_base_multiplier" field was cleared in this mutation.
+func (m *UsageLogMutation) RateBaseMultiplierCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldRateBaseMultiplier]
+	return ok
+}
+
+// ResetRateBaseMultiplier resets all changes to the "rate_base_multiplier" field.
+func (m *UsageLogMutation) ResetRateBaseMultiplier() {
+	m.rate_base_multiplier = nil
+	m.addrate_base_multiplier = nil
+	delete(m.clearedFields, usagelog.FieldRateBaseMultiplier)
+}
+
+// SetRateTokenMultiplier sets the "rate_token_multiplier" field.
+func (m *UsageLogMutation) SetRateTokenMultiplier(f float64) {
+	m.rate_token_multiplier = &f
+	m.addrate_token_multiplier = nil
+}
+
+// RateTokenMultiplier returns the value of the "rate_token_multiplier" field in the mutation.
+func (m *UsageLogMutation) RateTokenMultiplier() (r float64, exists bool) {
+	v := m.rate_token_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRateTokenMultiplier returns the old "rate_token_multiplier" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldRateTokenMultiplier(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRateTokenMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRateTokenMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRateTokenMultiplier: %w", err)
+	}
+	return oldValue.RateTokenMultiplier, nil
+}
+
+// AddRateTokenMultiplier adds f to the "rate_token_multiplier" field.
+func (m *UsageLogMutation) AddRateTokenMultiplier(f float64) {
+	if m.addrate_token_multiplier != nil {
+		*m.addrate_token_multiplier += f
+	} else {
+		m.addrate_token_multiplier = &f
+	}
+}
+
+// AddedRateTokenMultiplier returns the value that was added to the "rate_token_multiplier" field in this mutation.
+func (m *UsageLogMutation) AddedRateTokenMultiplier() (r float64, exists bool) {
+	v := m.addrate_token_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRateTokenMultiplier clears the value of the "rate_token_multiplier" field.
+func (m *UsageLogMutation) ClearRateTokenMultiplier() {
+	m.rate_token_multiplier = nil
+	m.addrate_token_multiplier = nil
+	m.clearedFields[usagelog.FieldRateTokenMultiplier] = struct{}{}
+}
+
+// RateTokenMultiplierCleared returns if the "rate_token_multiplier" field was cleared in this mutation.
+func (m *UsageLogMutation) RateTokenMultiplierCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldRateTokenMultiplier]
+	return ok
+}
+
+// ResetRateTokenMultiplier resets all changes to the "rate_token_multiplier" field.
+func (m *UsageLogMutation) ResetRateTokenMultiplier() {
+	m.rate_token_multiplier = nil
+	m.addrate_token_multiplier = nil
+	delete(m.clearedFields, usagelog.FieldRateTokenMultiplier)
+}
+
+// SetRateImageMultiplier sets the "rate_image_multiplier" field.
+func (m *UsageLogMutation) SetRateImageMultiplier(f float64) {
+	m.rate_image_multiplier = &f
+	m.addrate_image_multiplier = nil
+}
+
+// RateImageMultiplier returns the value of the "rate_image_multiplier" field in the mutation.
+func (m *UsageLogMutation) RateImageMultiplier() (r float64, exists bool) {
+	v := m.rate_image_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRateImageMultiplier returns the old "rate_image_multiplier" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldRateImageMultiplier(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRateImageMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRateImageMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRateImageMultiplier: %w", err)
+	}
+	return oldValue.RateImageMultiplier, nil
+}
+
+// AddRateImageMultiplier adds f to the "rate_image_multiplier" field.
+func (m *UsageLogMutation) AddRateImageMultiplier(f float64) {
+	if m.addrate_image_multiplier != nil {
+		*m.addrate_image_multiplier += f
+	} else {
+		m.addrate_image_multiplier = &f
+	}
+}
+
+// AddedRateImageMultiplier returns the value that was added to the "rate_image_multiplier" field in this mutation.
+func (m *UsageLogMutation) AddedRateImageMultiplier() (r float64, exists bool) {
+	v := m.addrate_image_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRateImageMultiplier clears the value of the "rate_image_multiplier" field.
+func (m *UsageLogMutation) ClearRateImageMultiplier() {
+	m.rate_image_multiplier = nil
+	m.addrate_image_multiplier = nil
+	m.clearedFields[usagelog.FieldRateImageMultiplier] = struct{}{}
+}
+
+// RateImageMultiplierCleared returns if the "rate_image_multiplier" field was cleared in this mutation.
+func (m *UsageLogMutation) RateImageMultiplierCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldRateImageMultiplier]
+	return ok
+}
+
+// ResetRateImageMultiplier resets all changes to the "rate_image_multiplier" field.
+func (m *UsageLogMutation) ResetRateImageMultiplier() {
+	m.rate_image_multiplier = nil
+	m.addrate_image_multiplier = nil
+	delete(m.clearedFields, usagelog.FieldRateImageMultiplier)
+}
+
+// SetRateVideoMultiplier sets the "rate_video_multiplier" field.
+func (m *UsageLogMutation) SetRateVideoMultiplier(f float64) {
+	m.rate_video_multiplier = &f
+	m.addrate_video_multiplier = nil
+}
+
+// RateVideoMultiplier returns the value of the "rate_video_multiplier" field in the mutation.
+func (m *UsageLogMutation) RateVideoMultiplier() (r float64, exists bool) {
+	v := m.rate_video_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRateVideoMultiplier returns the old "rate_video_multiplier" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldRateVideoMultiplier(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRateVideoMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRateVideoMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRateVideoMultiplier: %w", err)
+	}
+	return oldValue.RateVideoMultiplier, nil
+}
+
+// AddRateVideoMultiplier adds f to the "rate_video_multiplier" field.
+func (m *UsageLogMutation) AddRateVideoMultiplier(f float64) {
+	if m.addrate_video_multiplier != nil {
+		*m.addrate_video_multiplier += f
+	} else {
+		m.addrate_video_multiplier = &f
+	}
+}
+
+// AddedRateVideoMultiplier returns the value that was added to the "rate_video_multiplier" field in this mutation.
+func (m *UsageLogMutation) AddedRateVideoMultiplier() (r float64, exists bool) {
+	v := m.addrate_video_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRateVideoMultiplier clears the value of the "rate_video_multiplier" field.
+func (m *UsageLogMutation) ClearRateVideoMultiplier() {
+	m.rate_video_multiplier = nil
+	m.addrate_video_multiplier = nil
+	m.clearedFields[usagelog.FieldRateVideoMultiplier] = struct{}{}
+}
+
+// RateVideoMultiplierCleared returns if the "rate_video_multiplier" field was cleared in this mutation.
+func (m *UsageLogMutation) RateVideoMultiplierCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldRateVideoMultiplier]
+	return ok
+}
+
+// ResetRateVideoMultiplier resets all changes to the "rate_video_multiplier" field.
+func (m *UsageLogMutation) ResetRateVideoMultiplier() {
+	m.rate_video_multiplier = nil
+	m.addrate_video_multiplier = nil
+	delete(m.clearedFields, usagelog.FieldRateVideoMultiplier)
+}
+
 // SetBillingType sets the "billing_type" field.
 func (m *UsageLogMutation) SetBillingType(i int8) {
 	m.billing_type = &i
@@ -46980,7 +47865,7 @@ func (m *UsageLogMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UsageLogMutation) Fields() []string {
-	fields := make([]string, 0, 47)
+	fields := make([]string, 0, 56)
 	if m.user != nil {
 		fields = append(fields, usagelog.FieldUserID)
 	}
@@ -47070,6 +47955,33 @@ func (m *UsageLogMutation) Fields() []string {
 	}
 	if m.account_rate_multiplier != nil {
 		fields = append(fields, usagelog.FieldAccountRateMultiplier)
+	}
+	if m.pricing_group_id != nil {
+		fields = append(fields, usagelog.FieldPricingGroupID)
+	}
+	if m.rate_match_model != nil {
+		fields = append(fields, usagelog.FieldRateMatchModel)
+	}
+	if m.rate_rule_source != nil {
+		fields = append(fields, usagelog.FieldRateRuleSource)
+	}
+	if m.rate_rule_key != nil {
+		fields = append(fields, usagelog.FieldRateRuleKey)
+	}
+	if m.rate_config_version != nil {
+		fields = append(fields, usagelog.FieldRateConfigVersion)
+	}
+	if m.rate_base_multiplier != nil {
+		fields = append(fields, usagelog.FieldRateBaseMultiplier)
+	}
+	if m.rate_token_multiplier != nil {
+		fields = append(fields, usagelog.FieldRateTokenMultiplier)
+	}
+	if m.rate_image_multiplier != nil {
+		fields = append(fields, usagelog.FieldRateImageMultiplier)
+	}
+	if m.rate_video_multiplier != nil {
+		fields = append(fields, usagelog.FieldRateVideoMultiplier)
 	}
 	if m.billing_type != nil {
 		fields = append(fields, usagelog.FieldBillingType)
@@ -47190,6 +48102,24 @@ func (m *UsageLogMutation) Field(name string) (ent.Value, bool) {
 		return m.LongContextBillingApplied()
 	case usagelog.FieldAccountRateMultiplier:
 		return m.AccountRateMultiplier()
+	case usagelog.FieldPricingGroupID:
+		return m.PricingGroupID()
+	case usagelog.FieldRateMatchModel:
+		return m.RateMatchModel()
+	case usagelog.FieldRateRuleSource:
+		return m.RateRuleSource()
+	case usagelog.FieldRateRuleKey:
+		return m.RateRuleKey()
+	case usagelog.FieldRateConfigVersion:
+		return m.RateConfigVersion()
+	case usagelog.FieldRateBaseMultiplier:
+		return m.RateBaseMultiplier()
+	case usagelog.FieldRateTokenMultiplier:
+		return m.RateTokenMultiplier()
+	case usagelog.FieldRateImageMultiplier:
+		return m.RateImageMultiplier()
+	case usagelog.FieldRateVideoMultiplier:
+		return m.RateVideoMultiplier()
 	case usagelog.FieldBillingType:
 		return m.BillingType()
 	case usagelog.FieldStream:
@@ -47293,6 +48223,24 @@ func (m *UsageLogMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldLongContextBillingApplied(ctx)
 	case usagelog.FieldAccountRateMultiplier:
 		return m.OldAccountRateMultiplier(ctx)
+	case usagelog.FieldPricingGroupID:
+		return m.OldPricingGroupID(ctx)
+	case usagelog.FieldRateMatchModel:
+		return m.OldRateMatchModel(ctx)
+	case usagelog.FieldRateRuleSource:
+		return m.OldRateRuleSource(ctx)
+	case usagelog.FieldRateRuleKey:
+		return m.OldRateRuleKey(ctx)
+	case usagelog.FieldRateConfigVersion:
+		return m.OldRateConfigVersion(ctx)
+	case usagelog.FieldRateBaseMultiplier:
+		return m.OldRateBaseMultiplier(ctx)
+	case usagelog.FieldRateTokenMultiplier:
+		return m.OldRateTokenMultiplier(ctx)
+	case usagelog.FieldRateImageMultiplier:
+		return m.OldRateImageMultiplier(ctx)
+	case usagelog.FieldRateVideoMultiplier:
+		return m.OldRateVideoMultiplier(ctx)
 	case usagelog.FieldBillingType:
 		return m.OldBillingType(ctx)
 	case usagelog.FieldStream:
@@ -47546,6 +48494,69 @@ func (m *UsageLogMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAccountRateMultiplier(v)
 		return nil
+	case usagelog.FieldPricingGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPricingGroupID(v)
+		return nil
+	case usagelog.FieldRateMatchModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRateMatchModel(v)
+		return nil
+	case usagelog.FieldRateRuleSource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRateRuleSource(v)
+		return nil
+	case usagelog.FieldRateRuleKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRateRuleKey(v)
+		return nil
+	case usagelog.FieldRateConfigVersion:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRateConfigVersion(v)
+		return nil
+	case usagelog.FieldRateBaseMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRateBaseMultiplier(v)
+		return nil
+	case usagelog.FieldRateTokenMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRateTokenMultiplier(v)
+		return nil
+	case usagelog.FieldRateImageMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRateImageMultiplier(v)
+		return nil
+	case usagelog.FieldRateVideoMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRateVideoMultiplier(v)
+		return nil
 	case usagelog.FieldBillingType:
 		v, ok := value.(int8)
 		if !ok {
@@ -47718,6 +48729,24 @@ func (m *UsageLogMutation) AddedFields() []string {
 	if m.addaccount_rate_multiplier != nil {
 		fields = append(fields, usagelog.FieldAccountRateMultiplier)
 	}
+	if m.addpricing_group_id != nil {
+		fields = append(fields, usagelog.FieldPricingGroupID)
+	}
+	if m.addrate_config_version != nil {
+		fields = append(fields, usagelog.FieldRateConfigVersion)
+	}
+	if m.addrate_base_multiplier != nil {
+		fields = append(fields, usagelog.FieldRateBaseMultiplier)
+	}
+	if m.addrate_token_multiplier != nil {
+		fields = append(fields, usagelog.FieldRateTokenMultiplier)
+	}
+	if m.addrate_image_multiplier != nil {
+		fields = append(fields, usagelog.FieldRateImageMultiplier)
+	}
+	if m.addrate_video_multiplier != nil {
+		fields = append(fields, usagelog.FieldRateVideoMultiplier)
+	}
 	if m.addbilling_type != nil {
 		fields = append(fields, usagelog.FieldBillingType)
 	}
@@ -47774,6 +48803,18 @@ func (m *UsageLogMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedRateMultiplier()
 	case usagelog.FieldAccountRateMultiplier:
 		return m.AddedAccountRateMultiplier()
+	case usagelog.FieldPricingGroupID:
+		return m.AddedPricingGroupID()
+	case usagelog.FieldRateConfigVersion:
+		return m.AddedRateConfigVersion()
+	case usagelog.FieldRateBaseMultiplier:
+		return m.AddedRateBaseMultiplier()
+	case usagelog.FieldRateTokenMultiplier:
+		return m.AddedRateTokenMultiplier()
+	case usagelog.FieldRateImageMultiplier:
+		return m.AddedRateImageMultiplier()
+	case usagelog.FieldRateVideoMultiplier:
+		return m.AddedRateVideoMultiplier()
 	case usagelog.FieldBillingType:
 		return m.AddedBillingType()
 	case usagelog.FieldDurationMs:
@@ -47900,6 +48941,48 @@ func (m *UsageLogMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddAccountRateMultiplier(v)
 		return nil
+	case usagelog.FieldPricingGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPricingGroupID(v)
+		return nil
+	case usagelog.FieldRateConfigVersion:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRateConfigVersion(v)
+		return nil
+	case usagelog.FieldRateBaseMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRateBaseMultiplier(v)
+		return nil
+	case usagelog.FieldRateTokenMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRateTokenMultiplier(v)
+		return nil
+	case usagelog.FieldRateImageMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRateImageMultiplier(v)
+		return nil
+	case usagelog.FieldRateVideoMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRateVideoMultiplier(v)
+		return nil
 	case usagelog.FieldBillingType:
 		v, ok := value.(int8)
 		if !ok {
@@ -47983,6 +49066,33 @@ func (m *UsageLogMutation) ClearedFields() []string {
 	if m.FieldCleared(usagelog.FieldAccountRateMultiplier) {
 		fields = append(fields, usagelog.FieldAccountRateMultiplier)
 	}
+	if m.FieldCleared(usagelog.FieldPricingGroupID) {
+		fields = append(fields, usagelog.FieldPricingGroupID)
+	}
+	if m.FieldCleared(usagelog.FieldRateMatchModel) {
+		fields = append(fields, usagelog.FieldRateMatchModel)
+	}
+	if m.FieldCleared(usagelog.FieldRateRuleSource) {
+		fields = append(fields, usagelog.FieldRateRuleSource)
+	}
+	if m.FieldCleared(usagelog.FieldRateRuleKey) {
+		fields = append(fields, usagelog.FieldRateRuleKey)
+	}
+	if m.FieldCleared(usagelog.FieldRateConfigVersion) {
+		fields = append(fields, usagelog.FieldRateConfigVersion)
+	}
+	if m.FieldCleared(usagelog.FieldRateBaseMultiplier) {
+		fields = append(fields, usagelog.FieldRateBaseMultiplier)
+	}
+	if m.FieldCleared(usagelog.FieldRateTokenMultiplier) {
+		fields = append(fields, usagelog.FieldRateTokenMultiplier)
+	}
+	if m.FieldCleared(usagelog.FieldRateImageMultiplier) {
+		fields = append(fields, usagelog.FieldRateImageMultiplier)
+	}
+	if m.FieldCleared(usagelog.FieldRateVideoMultiplier) {
+		fields = append(fields, usagelog.FieldRateVideoMultiplier)
+	}
 	if m.FieldCleared(usagelog.FieldDurationMs) {
 		fields = append(fields, usagelog.FieldDurationMs)
 	}
@@ -48062,6 +49172,33 @@ func (m *UsageLogMutation) ClearField(name string) error {
 		return nil
 	case usagelog.FieldAccountRateMultiplier:
 		m.ClearAccountRateMultiplier()
+		return nil
+	case usagelog.FieldPricingGroupID:
+		m.ClearPricingGroupID()
+		return nil
+	case usagelog.FieldRateMatchModel:
+		m.ClearRateMatchModel()
+		return nil
+	case usagelog.FieldRateRuleSource:
+		m.ClearRateRuleSource()
+		return nil
+	case usagelog.FieldRateRuleKey:
+		m.ClearRateRuleKey()
+		return nil
+	case usagelog.FieldRateConfigVersion:
+		m.ClearRateConfigVersion()
+		return nil
+	case usagelog.FieldRateBaseMultiplier:
+		m.ClearRateBaseMultiplier()
+		return nil
+	case usagelog.FieldRateTokenMultiplier:
+		m.ClearRateTokenMultiplier()
+		return nil
+	case usagelog.FieldRateImageMultiplier:
+		m.ClearRateImageMultiplier()
+		return nil
+	case usagelog.FieldRateVideoMultiplier:
+		m.ClearRateVideoMultiplier()
 		return nil
 	case usagelog.FieldDurationMs:
 		m.ClearDurationMs()
@@ -48193,6 +49330,33 @@ func (m *UsageLogMutation) ResetField(name string) error {
 		return nil
 	case usagelog.FieldAccountRateMultiplier:
 		m.ResetAccountRateMultiplier()
+		return nil
+	case usagelog.FieldPricingGroupID:
+		m.ResetPricingGroupID()
+		return nil
+	case usagelog.FieldRateMatchModel:
+		m.ResetRateMatchModel()
+		return nil
+	case usagelog.FieldRateRuleSource:
+		m.ResetRateRuleSource()
+		return nil
+	case usagelog.FieldRateRuleKey:
+		m.ResetRateRuleKey()
+		return nil
+	case usagelog.FieldRateConfigVersion:
+		m.ResetRateConfigVersion()
+		return nil
+	case usagelog.FieldRateBaseMultiplier:
+		m.ResetRateBaseMultiplier()
+		return nil
+	case usagelog.FieldRateTokenMultiplier:
+		m.ResetRateTokenMultiplier()
+		return nil
+	case usagelog.FieldRateImageMultiplier:
+		m.ResetRateImageMultiplier()
+		return nil
+	case usagelog.FieldRateVideoMultiplier:
+		m.ResetRateVideoMultiplier()
 		return nil
 	case usagelog.FieldBillingType:
 		m.ResetBillingType()
