@@ -139,6 +139,7 @@
           :utilization="usageInfo.seven_day.utilization"
           :resets-at="usageInfo.seven_day.resets_at"
           :window-stats="usageInfo.seven_day.window_stats"
+          :show-quota-summary="true"
           :overdraft-active="usageInfo.seven_day.overdraft_active"
           :overdraft-stats="usageInfo.seven_day.overdraft_stats"
           :overdraft-started-at="usageInfo.seven_day.overdraft_started_at"

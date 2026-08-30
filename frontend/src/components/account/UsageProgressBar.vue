@@ -59,6 +59,36 @@
         {{ formatResetTime }}
       </span>
     </div>
+
+    <!-- Optional quota estimate for native 7d windows. -->
+    <div
+      v-if="showQuotaSummary && quotaSummary"
+      data-test="quota-summary"
+      class="mt-0.5 space-y-0.5 text-[10px] text-gray-500 dark:text-gray-400"
+    >
+      <div
+        class="flex flex-wrap items-baseline gap-x-1"
+        :title="t('admin.accounts.usageWindow.quotaEstimateHint')"
+      >
+        <span>{{ t('admin.accounts.usageWindow.quotaEstimate') }}:</span>
+        <span class="font-semibold text-emerald-700 dark:text-emerald-300">
+          ${{ formatQuotaCost(quotaSummary.estimatedTotalCost) }}
+        </span>
+        <span class="text-[9px] text-gray-400 dark:text-gray-500">
+          ({{ t('admin.accounts.usageWindow.quotaAvailable') }}
+          ${{ formatQuotaCost(quotaSummary.availableCost) }})
+        </span>
+      </div>
+      <div class="flex flex-wrap items-baseline gap-x-1">
+        <span>{{ t('admin.accounts.usageWindow.usedQuota') }}:</span>
+        <span class="font-medium text-gray-700 dark:text-gray-300">
+          ${{ formatQuotaCost(quotaSummary.usedCost) }}
+        </span>
+        <span class="text-[9px] text-gray-400 dark:text-gray-500">
+          · {{ formatTokens }} Token
+        </span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -76,6 +106,7 @@ const props = defineProps<{
   resetsAt?: string | null
   color: 'indigo' | 'emerald' | 'purple' | 'amber'
   windowStats?: WindowStats | null
+  showQuotaSummary?: boolean
   showNowWhenIdle?: boolean
   remainingCapacity?: boolean
   overdraftActive?: boolean
@@ -229,5 +260,28 @@ const formatUserCost = computed(() => {
   if (!props.windowStats || props.windowStats.user_cost == null) return '0.00'
   return props.windowStats.user_cost.toFixed(2)
 })
+
+// Estimate the account's native quota from the observed 7d utilization.
+// The account cost is already aggregated across this account's usage logs.
+const quotaSummary = computed(() => {
+  if (!props.showQuotaSummary || !props.windowStats) return null
+
+  const usedCost = Number(props.windowStats.cost)
+  const utilization = Number(props.utilization)
+  if (!Number.isFinite(usedCost) || usedCost <= 0) return null
+  if (!Number.isFinite(utilization) || utilization <= 0) return null
+
+  const ratio = utilization / 100
+  const estimatedTotalCost = usedCost / ratio
+  if (!Number.isFinite(estimatedTotalCost) || estimatedTotalCost < 0) return null
+
+  return {
+    usedCost,
+    estimatedTotalCost,
+    availableCost: Math.max(estimatedTotalCost - usedCost, 0)
+  }
+})
+
+const formatQuotaCost = (value: number): string => value.toFixed(2)
 
 </script>

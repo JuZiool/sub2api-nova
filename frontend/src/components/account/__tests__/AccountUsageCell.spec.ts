@@ -259,6 +259,49 @@ describe('AccountUsageCell', () => {
     expect(wrapper.text()).toContain('7d|77|300')
   })
 
+  it('OpenAI OAuth 只为 7d 窗口开启额度汇总', async () => {
+    getUsage.mockResolvedValue({
+      five_hour: {
+        utilization: 5,
+        resets_at: '2099-03-07T12:00:00Z',
+        remaining_seconds: 3600,
+        window_stats: { requests: 1, tokens: 100, cost: 1 }
+      },
+      seven_day: {
+        utilization: 8,
+        resets_at: '2099-03-13T12:00:00Z',
+        remaining_seconds: 3600,
+        window_stats: { requests: 2, tokens: 200, cost: 2 }
+      }
+    })
+
+    const wrapper = mount(AccountUsageCell, {
+      props: {
+        account: makeAccount({
+          id: 2006,
+          platform: 'openai',
+          type: 'oauth',
+          extra: {}
+        })
+      },
+      global: {
+        stubs: {
+          UsageProgressBar: {
+            props: ['label', 'showQuotaSummary'],
+            template: '<div class="usage-bar">{{ label }}|{{ showQuotaSummary ? \'summary\' : \'plain\' }}</div>'
+          },
+          AccountQuotaInfo: true,
+          OpenAIQuotaResetCell: true
+        }
+      }
+    })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('5h|plain')
+    expect(wrapper.text()).toContain('7d|summary')
+  })
+
   it('OpenAI OAuth 有 codex 快照时仍然使用 /usage API 数据渲染', async () => {
     getUsage.mockResolvedValue({
       five_hour: {

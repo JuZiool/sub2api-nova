@@ -1488,7 +1488,11 @@ export default {
         grokLastProbe: 'Probe {time}',
         grokLastHeadersSeen: 'Headers {time}',
         passiveSampled: 'Passive',
-        activeQuery: 'Query'
+        activeQuery: 'Query',
+        quotaEstimate: 'Available quota estimate',
+        quotaAvailable: 'available about',
+        usedQuota: 'Used quota',
+        quotaEstimateHint: 'Estimated from this account\'s used amount divided by the 7d utilization; for reference only.'
       },
       openaiQuotaReset: {
         count: 'Credits',
