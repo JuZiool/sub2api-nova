@@ -760,8 +760,8 @@ describe('AccountUsageCell', () => {
       global: {
         stubs: {
           UsageProgressBar: {
-            props: ['label', 'hideOverdraftStats', 'overdraftActive'],
-            template: '<div class="usage-bar">{{ label }}|hide={{ hideOverdraftStats }}|active={{ overdraftActive }}</div>'
+            props: ['label', 'hideOverdraftStats', 'hideWindowStats', 'overdraftActive'],
+            template: '<div class="usage-bar">{{ label }}|hide={{ hideOverdraftStats }}|window={{ hideWindowStats }}|active={{ overdraftActive }}</div>'
           },
           AccountQuotaInfo: true,
           OpenAIQuotaResetCell: true
@@ -774,10 +774,12 @@ describe('AccountUsageCell', () => {
     const status = wrapper.get('[title*="quota_limited"]')
     expect(status.text()).toContain('usage.overdraftActive')
     expect(status.text()).toContain('1/1 · 7d')
-    expect(status.text()).toContain('0 req · 0 · $0.00')
+    expect(status.text()).toContain('0 Token · $0.00')
     expect(wrapper.findAll('.usage-bar')).toHaveLength(2)
     expect(wrapper.findAll('.usage-bar')[0].text()).toContain('hide=true')
     expect(wrapper.findAll('.usage-bar')[1].text()).toContain('hide=true')
+    expect(wrapper.findAll('.usage-bar')[0].text()).toContain('window=true')
+    expect(wrapper.findAll('.usage-bar')[1].text()).toContain('window=true')
     expect((wrapper.text().match(/usage\.overdraftActive/g) || []).length).toBe(1)
   })
 

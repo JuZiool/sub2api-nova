@@ -2,7 +2,8 @@
   <div>
     <!-- Window stats row (above progress bar) -->
     <div
-      v-if="windowStats && (windowStats.requests > 0 || windowStats.tokens > 0)"
+      v-if="!hideWindowStats && windowStats && (windowStats.requests > 0 || windowStats.tokens > 0)"
+      data-test="window-stats"
       class="mb-0.5 flex items-center"
     >
       <div class="flex items-center gap-1.5 text-[9px] text-gray-500 dark:text-gray-400">
@@ -65,30 +66,15 @@
     <div
       v-if="showQuotaSummary"
       data-test="quota-summary"
-      class="mt-0.5 space-y-0.5 text-[10px] text-gray-500 dark:text-gray-400"
+      class="mt-0.5 flex items-center gap-2 whitespace-nowrap text-[10px] text-gray-500 dark:text-gray-400"
+      :title="t('admin.accounts.usageWindow.quotaEstimateHint')"
     >
-      <div
-        class="flex flex-wrap items-baseline gap-x-1"
-        :title="t('admin.accounts.usageWindow.quotaEstimateHint')"
-      >
-        <span>{{ t('admin.accounts.usageWindow.quotaEstimate') }}:</span>
-        <span class="font-semibold text-emerald-700 dark:text-emerald-300">
-          {{ formatQuotaCost(quotaSummary?.estimatedTotalCost) }}
-        </span>
-        <span class="text-[9px] text-gray-400 dark:text-gray-500">
-          ({{ t('admin.accounts.usageWindow.quotaAvailable') }}
-          {{ formatQuotaCost(quotaSummary?.availableCost) }})
-        </span>
-      </div>
-      <div class="flex flex-wrap items-baseline gap-x-1">
-        <span>{{ t('admin.accounts.usageWindow.usedQuota') }}:</span>
-        <span class="font-medium text-gray-700 dark:text-gray-300">
-          {{ formatQuotaCost(quotaSummary?.usedCost) }}
-        </span>
-        <span class="text-[9px] text-gray-400 dark:text-gray-500">
-          · {{ formatTokens || '-' }} Token
-        </span>
-      </div>
+      <span class="font-semibold text-emerald-700 dark:text-emerald-300">
+        {{ t('admin.accounts.usageWindow.quotaEstimate') }}：{{ formatQuotaCost(quotaSummary?.estimatedTotalCost) }}
+      </span>
+      <span class="font-medium text-gray-700 dark:text-gray-300">
+        {{ t('admin.accounts.usageWindow.usedQuota') }}：{{ formatQuotaCost(quotaSummary?.usedCost) }}
+      </span>
     </div>
   </div>
 </template>
@@ -115,6 +101,7 @@ const props = defineProps<{
   overdraftStartedAt?: string | null
   overdraftRecoverAt?: string | null
   hideOverdraftStats?: boolean
+  hideWindowStats?: boolean
 }>()
 
 const { t } = useI18n()
@@ -285,11 +272,7 @@ const quotaSummary = computed(() => {
 
   return {
     usedCost,
-    estimatedTotalCost,
-    availableCost:
-      estimatedTotalCost === null || usedCost === null
-        ? null
-        : Math.max(estimatedTotalCost - usedCost, 0)
+    estimatedTotalCost
   }
 })
 

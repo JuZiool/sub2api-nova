@@ -169,6 +169,27 @@ describe('UsageProgressBar', () => {
     expect(wrapper.text()).toContain('$1.23')
   })
 
+  it('合并透支统计时隐藏重复的窗口统计行', () => {
+    const wrapper = mount(UsageProgressBar, {
+      props: {
+        label: '7d',
+        utilization: 100,
+        color: 'emerald',
+        hideWindowStats: true,
+        windowStats: {
+          requests: 50,
+          tokens: 3_900_000,
+          cost: 0.14,
+          user_cost: 0.06
+        }
+      }
+    })
+
+    expect(wrapper.find('[data-test="window-stats"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('50 req')
+    expect(wrapper.text()).not.toContain('U $0.06')
+  })
+
   it('启用额度汇总时按已用账号费用和利用率估算总额', () => {
     const wrapper = mount(UsageProgressBar, {
       props: {
@@ -188,11 +209,10 @@ describe('UsageProgressBar', () => {
     const summary = wrapper.get('[data-test="quota-summary"]')
     expect(summary.text()).toContain('admin.accounts.usageWindow.quotaEstimate')
     expect(summary.text()).toContain('$1011.13')
-    expect(summary.text()).toContain('admin.accounts.usageWindow.quotaAvailable')
-    expect(summary.text()).toContain('$930.24')
     expect(summary.text()).toContain('admin.accounts.usageWindow.usedQuota')
     expect(summary.text()).toContain('$80.89')
-    expect(summary.text()).toContain('61.5M Token')
+    expect(summary.text()).not.toContain('Token')
+    expect(summary.text()).not.toContain('quotaAvailable')
   })
 
   it('额度汇总在利用率或已用费用为零时仍保持显示', async () => {
@@ -215,6 +235,7 @@ describe('UsageProgressBar', () => {
     expect(summary.text()).toContain('admin.accounts.usageWindow.usedQuota')
     expect(summary.text()).toContain('$1.00')
     expect(summary.text()).toContain('-')
+    expect(summary.text()).not.toContain('Token')
 
     await wrapper.setProps({
       utilization: 8,
@@ -226,6 +247,6 @@ describe('UsageProgressBar', () => {
       utilization: 8,
       windowStats: null
     })
-    expect(wrapper.get('[data-test="quota-summary"]').text()).toContain('- Token')
+    expect(wrapper.get('[data-test="quota-summary"]').text()).not.toContain('Token')
   })
 })

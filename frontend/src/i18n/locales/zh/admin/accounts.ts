@@ -460,9 +460,8 @@ export default {
         grokLastHeadersSeen: '响应头 {time}',
         passiveSampled: '被动采样',
         activeQuery: '查询',
-        quotaEstimate: '可用额度预测',
-        quotaAvailable: '可用约',
-        usedQuota: '已用额度',
+        quotaEstimate: '约',
+        usedQuota: '已用',
         quotaEstimateHint: '按当前账号已用额度除以 7d 使用率估算，结果仅供参考。'
       },
       openaiQuotaReset: {

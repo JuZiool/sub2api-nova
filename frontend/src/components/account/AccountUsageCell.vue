@@ -135,6 +135,7 @@
           :overdraft-started-at="usageInfo.five_hour.overdraft_started_at"
           :overdraft-recover-at="usageInfo.five_hour.overdraft_recover_at"
           :hide-overdraft-stats="mergeOpenAIOverdraftStats"
+          :hide-window-stats="mergeOpenAIOverdraftStats"
           :show-now-when-idle="true"
           color="indigo"
         />
@@ -150,6 +151,7 @@
           :overdraft-started-at="usageInfo.seven_day.overdraft_started_at"
           :overdraft-recover-at="usageInfo.seven_day.overdraft_recover_at"
           :hide-overdraft-stats="mergeOpenAIOverdraftStats"
+          :hide-window-stats="mergeOpenAIOverdraftStats"
           :show-now-when-idle="true"
           color="emerald"
         />

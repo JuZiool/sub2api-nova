@@ -95,10 +95,9 @@ const statsDetail = computed(() => {
   const stats = props.stats
   if (!stats || props.state?.status !== 'passed') return ''
 
-  const requests = formatCompactNumber(Number(stats.requests) || 0, { allowBillions: false })
   const tokens = formatCompactNumber(Number(stats.tokens) || 0)
   const cost = Number(stats.cost)
   const formattedCost = Number.isFinite(cost) ? `$${cost.toFixed(2)}` : '$-'
-  return `${requests} req · ${tokens} · ${formattedCost}`
+  return `${tokens} Token · ${formattedCost}`
 })
 </script>
