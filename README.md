@@ -68,6 +68,16 @@ bash install.sh --mode 3
 
 脚本只拉取新镜像并重建 `sub2api`，不会覆盖 `.env`、`data/`、`postgres_data/` 或 `redis_data/`。
 
+如果服务器上的脚本版本较旧，或不想依赖服务器上的 Git 工作区，可以直接使用 GitHub 在线脚本升级现有部署：
+
+```bash
+curl --proto '=https' --tlsv1.2 -fsSL \
+  https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh \
+  | bash -s -- --mode 3 --dir /opt/sub2api-nova/deploy
+```
+
+在线脚本只会拉取镜像并重建应用容器，保留现有 `.env`、`data/`、`postgres_data/` 和 `redis_data/`。
+
 默认使用 `latest`，也可以固定镜像 tag 或 digest：
 
 ```bash

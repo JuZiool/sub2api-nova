@@ -30,6 +30,10 @@ Sub2API Nova GHCR 镜像部署脚本
   cd /目标目录
   curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh | bash
 
+现有部署在线升级：
+  curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh \
+    | bash -s -- --mode 3 --dir /opt/sub2api-nova/deploy
+
 启动菜单：
   1  全新安装：生成 .env、创建数据目录、拉取镜像并启动
   2  迁移后安装：保留已有 .env 和数据，补齐文件并启动
