@@ -97,6 +97,8 @@ var migrationChecksumCompatibilityRules = map[string]migrationChecksumCompatibil
 	"229_plugins.sql": newMigrationChecksumCompatibilityRule("b1e97991df385eba0f62426572d7d58a0ef5c96a876df356ba070cca68e88896", "4beb7dc798c9d7d53ebe66dd7d9e1e7ee7965840fb4ad6688e421e004d72389b"),
 	// 230 与 229 同批在 Windows 环境以 CRLF 换行应用；当前镜像使用 LF。
 	"230_plugin_artifacts.sql": newMigrationChecksumCompatibilityRule("f33a1a3fdf1f0645a6813a5f87c344a18017193243133c4f45471dad3748d664", "255058f5ea2b008869137fa5a3b5edafff301ede84504288e35fbc1ec3ce1ed4"),
+	// 232 在 Windows 环境曾以 CRLF 换行应用；当前镜像使用 LF，SQL 语义相同。
+	"232_add_usage_log_model_rate_audit.sql": newMigrationChecksumCompatibilityRule("89311c0b628556831f476e18e6554b03d5fe9e3b5abd45e97dfb0febe88cd0a6", "f67f8cba36db417757df20538d2f0de45c9cb8ef6ad30063bfefb5680e1aa5a6"),
 }
 
 // ApplyMigrations 将嵌入的 SQL 迁移文件应用到指定的数据库。
