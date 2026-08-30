@@ -462,7 +462,8 @@ export default {
         activeQuery: '查询',
         quotaEstimate: '约',
         usedQuota: '已用',
-        quotaEstimateHint: '按当前账号已用额度除以 7d 使用率估算，结果仅供参考。'
+        overdraftQuota: '透支',
+        quotaEstimateHint: '按当前账号正常窗口已用额度除以 7d 使用率估算，透支金额另行列出，结果仅供参考。'
       },
       openaiQuotaReset: {
         count: '次数',

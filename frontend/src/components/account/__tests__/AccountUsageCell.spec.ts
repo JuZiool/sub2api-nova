@@ -665,7 +665,7 @@ describe('AccountUsageCell', () => {
   expect(wrapper.text()).toContain('7d|100|106540000')
   })
 
-  it('OpenAI OAuth 会显示单次确认的限额状态', async () => {
+  it('OpenAI OAuth 不再显示透支探测状态行', async () => {
     getUsage.mockResolvedValue({
       five_hour: {
         utilization: 100,
@@ -706,11 +706,12 @@ describe('AccountUsageCell', () => {
 
     await flushPromises()
 
-    expect(wrapper.text()).toContain('usage.overdraftProbeFailed')
-    expect(wrapper.text()).toContain('1/1 · 5h')
+    expect(wrapper.find('usage-progress-bar-stub').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('usage.overdraftProbeFailed')
+    expect(wrapper.text()).not.toContain('1/1 · 5h')
   })
 
-  it('OpenAI OAuth 将透支统计合并到首行且不重复渲染', async () => {
+  it('OpenAI OAuth 将 5h/7d 透支统计统一传给底部汇总', async () => {
     getUsage.mockResolvedValue({
       five_hour: {
         utilization: 100,
@@ -730,8 +731,8 @@ describe('AccountUsageCell', () => {
         overdraft_active: true,
         overdraft_stats: {
           requests: 0,
-          tokens: 0,
-          cost: 0
+          tokens: 9_800_000,
+          cost: 0.34
         }
       },
       codex_quota_overdraft: {
@@ -760,8 +761,8 @@ describe('AccountUsageCell', () => {
       global: {
         stubs: {
           UsageProgressBar: {
-            props: ['label', 'hideOverdraftStats', 'hideWindowStats', 'overdraftActive'],
-            template: '<div class="usage-bar">{{ label }}|hide={{ hideOverdraftStats }}|window={{ hideWindowStats }}|active={{ overdraftActive }}</div>'
+            props: ['label', 'hideOverdraftStats', 'hideWindowStats', 'overdraftActive', 'overdraftStats', 'showQuotaSummary'],
+            template: '<div class="usage-bar">{{ label }}|hide={{ hideOverdraftStats }}|window={{ hideWindowStats }}|active={{ overdraftActive }}|quota={{ showQuotaSummary }}|overdraft={{ overdraftStats?.cost }}|tokens={{ overdraftStats?.tokens }}</div>'
           },
           AccountQuotaInfo: true,
           OpenAIQuotaResetCell: true
@@ -771,19 +772,19 @@ describe('AccountUsageCell', () => {
 
     await flushPromises()
 
-    const status = wrapper.get('[title*="quota_limited"]')
-    expect(status.text()).toContain('usage.overdraftActive')
-    expect(status.text()).toContain('1/1 · 7d')
-    expect(status.text()).toContain('0 Token · $0.00')
     expect(wrapper.findAll('.usage-bar')).toHaveLength(2)
+    expect(wrapper.text()).not.toContain('usage.overdraftActive')
+    expect(wrapper.text()).not.toContain('1/1 · 7d')
     expect(wrapper.findAll('.usage-bar')[0].text()).toContain('hide=true')
     expect(wrapper.findAll('.usage-bar')[1].text()).toContain('hide=true')
     expect(wrapper.findAll('.usage-bar')[0].text()).toContain('window=true')
     expect(wrapper.findAll('.usage-bar')[1].text()).toContain('window=true')
-    expect((wrapper.text().match(/usage\.overdraftActive/g) || []).length).toBe(1)
+    expect(wrapper.findAll('.usage-bar')[1].text()).toContain('quota=true')
+    expect(wrapper.findAll('.usage-bar')[1].text()).toContain('overdraft=0.34')
+    expect(wrapper.findAll('.usage-bar')[1].text()).toContain('tokens=9800000')
   })
 
-  it('OpenAI OAuth 无法确认探测时不会显示自动重试信息', async () => {
+  it('OpenAI OAuth 不再显示透支探测重试状态行', async () => {
     getUsage.mockResolvedValue({
       five_hour: {
         utilization: 100,
@@ -825,10 +826,10 @@ describe('AccountUsageCell', () => {
 
     await flushPromises()
 
-    const status = wrapper.get('[title*="upstream_unavailable"]')
-    expect(status.text()).toContain('usage.overdraftProbeInconclusive')
-    expect(status.text()).toContain('1/1 · 5h')
-    expect(status.attributes('title')).not.toContain('usage.overdraftRetryAt')
+    expect(wrapper.find('usage-progress-bar-stub').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('usage.overdraftProbeInconclusive')
+    expect(wrapper.text()).not.toContain('1/1 · 5h')
+    expect(wrapper.text()).not.toContain('usage.overdraftRetryAt')
   })
 
   it('Key 账号会展示 today stats 徽章并带 A/U 提示', async () => {

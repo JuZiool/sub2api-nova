@@ -119,11 +119,6 @@
     <!-- OpenAI OAuth accounts: single source from /usage API -->
     <template v-else-if="account.platform === 'openai' && account.type === 'oauth'">
       <div v-if="hasOpenAIUsageFallback" class="space-y-1">
-        <!-- Keep the probe state and the selected window's overdraft stats on one row. -->
-        <CodexOverdraftStatus
-          :state="usageInfo?.codex_quota_overdraft"
-          :stats="openAIOverdraftStats"
-        />
         <UsageProgressBar
           v-if="usageInfo?.five_hour"
           label="5h"
@@ -134,8 +129,8 @@
           :overdraft-stats="usageInfo.five_hour.overdraft_stats"
           :overdraft-started-at="usageInfo.five_hour.overdraft_started_at"
           :overdraft-recover-at="usageInfo.five_hour.overdraft_recover_at"
-          :hide-overdraft-stats="mergeOpenAIOverdraftStats"
-          :hide-window-stats="mergeOpenAIOverdraftStats"
+          :hide-overdraft-stats="true"
+          :hide-window-stats="true"
           :show-now-when-idle="true"
           color="indigo"
         />
@@ -146,12 +141,12 @@
           :resets-at="usageInfo.seven_day.resets_at"
           :window-stats="usageInfo.seven_day.window_stats"
           :show-quota-summary="true"
-          :overdraft-active="usageInfo.seven_day.overdraft_active"
-          :overdraft-stats="usageInfo.seven_day.overdraft_stats"
+          :overdraft-active="openAIOverdraftStats !== null"
+          :overdraft-stats="openAIOverdraftStats"
           :overdraft-started-at="usageInfo.seven_day.overdraft_started_at"
           :overdraft-recover-at="usageInfo.seven_day.overdraft_recover_at"
-          :hide-overdraft-stats="mergeOpenAIOverdraftStats"
-          :hide-window-stats="mergeOpenAIOverdraftStats"
+          :hide-overdraft-stats="true"
+          :hide-window-stats="true"
           :show-now-when-idle="true"
           color="emerald"
         />
@@ -660,7 +655,6 @@ import { enqueueUsageRequest } from '@/utils/usageLoadQueue'
 import { formatCompactNumber } from '@/utils/format'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import UsageProgressBar from './UsageProgressBar.vue'
-import CodexOverdraftStatus from './CodexOverdraftStatus.vue'
 import AccountQuotaInfo from './AccountQuotaInfo.vue'
 import OpenAIQuotaResetCell from './OpenAIQuotaResetCell.vue'
 import GrokQuotaProbeCell from './GrokQuotaProbeCell.vue'
@@ -794,37 +788,32 @@ const hasOpenAIUsageFallback = computed(() => {
   return !!usageInfo.value?.five_hour || !!usageInfo.value?.seven_day || !!usageInfo.value?.codex_quota_overdraft
 })
 
-// The probe state is the canonical overdraft label. Pick the matching window's
-// stats so the label and amount stay together instead of producing a second row
-// for each progress bar.
+// Pick the active overdraft stats from either quota window so the summary has a
+// single source regardless of whether the 5h or 7d limit triggered it.
 const openAIOverdraftStats = computed<WindowStats | null>(() => {
   const usage = usageInfo.value
   const probe = usage?.codex_quota_overdraft
-  if (!usage || !probe || probe.status !== 'passed') return null
+  if (!usage || probe?.status !== 'passed') return null
 
   const windows =
-    probe.quota_window === '5h'
+    probe?.quota_window === '5h'
       ? [usage.five_hour, usage.seven_day]
       : [usage.seven_day, usage.five_hour]
 
-  // Prefer an explicitly active window. The fallback keeps the merged line
-  // useful for older API responses that only returned overdraft_stats.
+  // Pick the active window indicated by the API, regardless of whether the
+  // quota limit came from the 5h or 7d window.
   for (const window of windows) {
     if (window?.overdraft_active && window.overdraft_stats) return window.overdraft_stats
   }
 
-  // Older responses may omit the activity flag. In that case, use the first
-  // matching stats object; an explicit `false` must never resurrect stale data.
+  // Older passed responses may omit the activity flag. An explicit `false`
+  // must never resurrect stale data.
   if (!windows.some((window) => typeof window?.overdraft_active === 'boolean')) {
     for (const window of windows) {
       if (window?.overdraft_stats) return window.overdraft_stats
     }
   }
   return null
-})
-
-const mergeOpenAIOverdraftStats = computed(() => {
-  return usageInfo.value?.codex_quota_overdraft?.status === 'passed' && openAIOverdraftStats.value !== null
 })
 
 const openAIUsageRefreshKey = computed(() => buildOpenAIUsageRefreshKey(props.account))

@@ -1491,7 +1491,8 @@ export default {
         activeQuery: 'Query',
         quotaEstimate: 'Approx.',
         usedQuota: 'Used',
-        quotaEstimateHint: 'Estimated from this account\'s used amount divided by the 7d utilization; for reference only.'
+        overdraftQuota: 'Overdraft',
+        quotaEstimateHint: 'Estimated from this account\'s native-window usage divided by the 7d utilization; overdraft is listed separately and the result is for reference only.'
       },
       openaiQuotaReset: {
         count: 'Credits',

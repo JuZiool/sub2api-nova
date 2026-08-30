@@ -66,15 +66,24 @@
     <div
       v-if="showQuotaSummary"
       data-test="quota-summary"
-      class="mt-0.5 flex items-center gap-2 whitespace-nowrap text-[10px] text-gray-500 dark:text-gray-400"
+      class="mt-0.5 space-y-0.5 text-[10px] text-gray-500 dark:text-gray-400"
       :title="t('admin.accounts.usageWindow.quotaEstimateHint')"
     >
-      <span class="font-semibold text-emerald-700 dark:text-emerald-300">
-        {{ t('admin.accounts.usageWindow.quotaEstimate') }}：{{ formatQuotaCost(quotaSummary?.estimatedTotalCost) }}
-      </span>
-      <span class="font-medium text-gray-700 dark:text-gray-300">
-        {{ t('admin.accounts.usageWindow.usedQuota') }}：{{ formatQuotaCost(quotaSummary?.usedCost) }}
-      </span>
+      <div class="flex items-center gap-2 whitespace-nowrap">
+        <span class="font-semibold text-emerald-700 dark:text-emerald-300">
+          {{ t('admin.accounts.usageWindow.quotaEstimate') }}：{{ formatQuotaCost(quotaSummary?.estimatedTotalCost) }}
+        </span>
+        <span class="font-medium text-gray-700 dark:text-gray-300">
+          {{ t('admin.accounts.usageWindow.usedQuota') }}：{{ formatQuotaCost(quotaSummary?.usedCost) }}
+        </span>
+      </div>
+      <div
+        v-if="quotaSummary?.overdraftCost != null"
+        class="whitespace-nowrap font-medium text-red-600 dark:text-red-400"
+      >
+        {{ t('admin.accounts.usageWindow.overdraftQuota') }}：{{ formatQuotaCost(quotaSummary.overdraftCost) }} ·
+        {{ formatQuotaTokens(quotaSummary.overdraftTokens) }}
+      </div>
     </div>
   </div>
 </template>
@@ -251,20 +260,34 @@ const formatUserCost = computed(() => {
 })
 
 // Estimate the account's native quota from the observed 7d utilization.
-// The account cost is already aggregated across this account's usage logs.
+// Overdraft usage is returned separately from the regular window stats. Keep it
+// separate in the summary so the native usage and overdraft usage are visible
+// independently, while the estimate still represents the native window only.
 // Keep the summary object present whenever the feature is enabled so the UI
 // remains visible even while the API has returned zero or incomplete values.
 const quotaSummary = computed(() => {
   if (!props.showQuotaSummary) return null
 
-  const usedCostValue = props.windowStats ? Number(props.windowStats.cost) : Number.NaN
-  const usedCost = Number.isFinite(usedCostValue) && usedCostValue >= 0 ? usedCostValue : null
+  const regularCost = props.windowStats ? Number(props.windowStats.cost) : Number.NaN
+  const validRegularCost = Number.isFinite(regularCost) && regularCost >= 0 ? regularCost : null
+  const overdraftCost =
+    props.overdraftStats && props.overdraftActive !== false
+      ? Number(props.overdraftStats.cost)
+      : Number.NaN
+  const overdraftTokens =
+    props.overdraftStats && props.overdraftActive !== false
+      ? Number(props.overdraftStats.tokens)
+      : Number.NaN
+  const validOverdraftCost = Number.isFinite(overdraftCost) && overdraftCost >= 0 ? overdraftCost : null
+  const validOverdraftTokens =
+    Number.isFinite(overdraftTokens) && overdraftTokens >= 0 ? overdraftTokens : null
+  const usedCost = validRegularCost
   const utilization = Number(props.utilization)
 
   let estimatedTotalCost: number | null = null
-  if (usedCost !== null && Number.isFinite(utilization) && utilization > 0) {
+  if (validRegularCost !== null && Number.isFinite(utilization) && utilization > 0) {
     const ratio = utilization / 100
-    const estimate = usedCost / ratio
+    const estimate = validRegularCost / ratio
     if (Number.isFinite(estimate) && estimate >= 0) {
       estimatedTotalCost = estimate
     }
@@ -272,6 +295,8 @@ const quotaSummary = computed(() => {
 
   return {
     usedCost,
+    overdraftCost: validOverdraftCost,
+    overdraftTokens: validOverdraftTokens,
     estimatedTotalCost
   }
 })
@@ -279,6 +304,11 @@ const quotaSummary = computed(() => {
 const formatQuotaCost = (value: number | null | undefined): string => {
   if (value == null || !Number.isFinite(value)) return '-'
   return `$${value.toFixed(2)}`
+}
+
+const formatQuotaTokens = (value: number | null | undefined): string => {
+  if (value == null || !Number.isFinite(value)) return '- Token'
+  return `${formatCompactNumber(value)} Token`
 }
 
 </script>
