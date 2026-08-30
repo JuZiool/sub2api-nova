@@ -230,6 +230,7 @@ describe('UsageProgressBar', () => {
     })
 
     const summary = wrapper.get('[data-test="quota-summary"]')
+    expect(summary.classes()).toContain('text-left')
     expect(summary.text()).toContain('admin.accounts.usageWindow.quotaEstimate')
     expect(summary.text()).toContain('$1011.13')
     expect(summary.text()).toContain('admin.accounts.usageWindow.usedQuota')

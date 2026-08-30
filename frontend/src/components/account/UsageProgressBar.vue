@@ -66,7 +66,7 @@
     <div
       v-if="showQuotaSummary"
       data-test="quota-summary"
-      class="mt-0.5 space-y-0.5 text-[10px] text-gray-500 dark:text-gray-400"
+      class="mt-0.5 space-y-0.5 text-left text-[10px] text-gray-500 dark:text-gray-400"
       :title="t('admin.accounts.usageWindow.quotaEstimateHint')"
     >
       <div class="flex items-center gap-2 whitespace-nowrap">
