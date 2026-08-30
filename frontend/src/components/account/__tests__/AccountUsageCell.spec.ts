@@ -710,6 +710,77 @@ describe('AccountUsageCell', () => {
     expect(wrapper.text()).toContain('1/1 · 5h')
   })
 
+  it('OpenAI OAuth 将透支统计合并到首行且不重复渲染', async () => {
+    getUsage.mockResolvedValue({
+      five_hour: {
+        utilization: 100,
+        resets_at: '2099-03-07T12:00:00Z',
+        remaining_seconds: 3600,
+        overdraft_active: true,
+        overdraft_stats: {
+          requests: 5,
+          tokens: 1_000,
+          cost: 1.25
+        }
+      },
+      seven_day: {
+        utilization: 100,
+        resets_at: '2099-03-13T12:00:00Z',
+        remaining_seconds: 3600,
+        overdraft_active: true,
+        overdraft_stats: {
+          requests: 0,
+          tokens: 0,
+          cost: 0
+        }
+      },
+      codex_quota_overdraft: {
+        status: 'passed',
+        quota_window: '7d',
+        cycle_key: '7d:4077096000',
+        attempts: 1,
+        limit: 1,
+        model: 'gpt-5.5',
+        reason_code: 'quota_limited',
+        started_at: '2099-03-07T10:00:00Z',
+        tested_at: '2099-03-07T10:01:00Z',
+        recover_at: '2099-03-13T12:00:00Z'
+      }
+    })
+
+    const wrapper = mount(AccountUsageCell, {
+      props: {
+        account: makeAccount({
+          id: 2007,
+          platform: 'openai',
+          type: 'oauth',
+          extra: {}
+        })
+      },
+      global: {
+        stubs: {
+          UsageProgressBar: {
+            props: ['label', 'hideOverdraftStats', 'overdraftActive'],
+            template: '<div class="usage-bar">{{ label }}|hide={{ hideOverdraftStats }}|active={{ overdraftActive }}</div>'
+          },
+          AccountQuotaInfo: true,
+          OpenAIQuotaResetCell: true
+        }
+      }
+    })
+
+    await flushPromises()
+
+    const status = wrapper.get('[title*="quota_limited"]')
+    expect(status.text()).toContain('usage.overdraftActive')
+    expect(status.text()).toContain('1/1 · 7d')
+    expect(status.text()).toContain('0 req · 0 · $0.00')
+    expect(wrapper.findAll('.usage-bar')).toHaveLength(2)
+    expect(wrapper.findAll('.usage-bar')[0].text()).toContain('hide=true')
+    expect(wrapper.findAll('.usage-bar')[1].text()).toContain('hide=true')
+    expect((wrapper.text().match(/usage\.overdraftActive/g) || []).length).toBe(1)
+  })
+
   it('OpenAI OAuth 无法确认探测时不会显示自动重试信息', async () => {
     getUsage.mockResolvedValue({
       five_hour: {

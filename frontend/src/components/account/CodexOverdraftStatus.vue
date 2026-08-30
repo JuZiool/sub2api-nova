@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="status"
-    class="flex items-center gap-1.5 text-[9px]"
+    class="flex items-center gap-1.5 whitespace-nowrap text-[9px]"
     :class="status.textClass"
     :title="status.title"
   >
@@ -11,16 +11,21 @@
     <span v-if="status.detail" class="text-gray-500 dark:text-gray-400">
       {{ status.detail }}
     </span>
+    <span v-if="statsDetail" class="text-gray-500 dark:text-gray-400">
+      · {{ statsDetail }}
+    </span>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CodexQuotaOverdraftProbeState } from '@/types'
+import type { CodexQuotaOverdraftProbeState, WindowStats } from '@/types'
+import { formatCompactNumber } from '@/utils/format'
 
 const props = defineProps<{
   state?: CodexQuotaOverdraftProbeState | null
+  stats?: WindowStats | null
 }>()
 
 const { t } = useI18n()
@@ -84,5 +89,16 @@ const status = computed(() => {
     default:
       return null
   }
+})
+
+const statsDetail = computed(() => {
+  const stats = props.stats
+  if (!stats || props.state?.status !== 'passed') return ''
+
+  const requests = formatCompactNumber(Number(stats.requests) || 0, { allowBillions: false })
+  const tokens = formatCompactNumber(Number(stats.tokens) || 0)
+  const cost = Number(stats.cost)
+  const formattedCost = Number.isFinite(cost) ? `$${cost.toFixed(2)}` : '$-'
+  return `${requests} req · ${tokens} · ${formattedCost}`
 })
 </script>

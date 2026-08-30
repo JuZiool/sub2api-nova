@@ -119,7 +119,11 @@
     <!-- OpenAI OAuth accounts: single source from /usage API -->
     <template v-else-if="account.platform === 'openai' && account.type === 'oauth'">
       <div v-if="hasOpenAIUsageFallback" class="space-y-1">
-        <CodexOverdraftStatus :state="usageInfo?.codex_quota_overdraft" />
+        <!-- Keep the probe state and the selected window's overdraft stats on one row. -->
+        <CodexOverdraftStatus
+          :state="usageInfo?.codex_quota_overdraft"
+          :stats="openAIOverdraftStats"
+        />
         <UsageProgressBar
           v-if="usageInfo?.five_hour"
           label="5h"
@@ -130,6 +134,7 @@
           :overdraft-stats="usageInfo.five_hour.overdraft_stats"
           :overdraft-started-at="usageInfo.five_hour.overdraft_started_at"
           :overdraft-recover-at="usageInfo.five_hour.overdraft_recover_at"
+          :hide-overdraft-stats="mergeOpenAIOverdraftStats"
           :show-now-when-idle="true"
           color="indigo"
         />
@@ -144,6 +149,7 @@
           :overdraft-stats="usageInfo.seven_day.overdraft_stats"
           :overdraft-started-at="usageInfo.seven_day.overdraft_started_at"
           :overdraft-recover-at="usageInfo.seven_day.overdraft_recover_at"
+          :hide-overdraft-stats="mergeOpenAIOverdraftStats"
           :show-now-when-idle="true"
           color="emerald"
         />
@@ -784,6 +790,39 @@ const geminiUsageAvailable = computed(() => {
 const hasOpenAIUsageFallback = computed(() => {
   if (props.account.platform !== 'openai' || props.account.type !== 'oauth') return false
   return !!usageInfo.value?.five_hour || !!usageInfo.value?.seven_day || !!usageInfo.value?.codex_quota_overdraft
+})
+
+// The probe state is the canonical overdraft label. Pick the matching window's
+// stats so the label and amount stay together instead of producing a second row
+// for each progress bar.
+const openAIOverdraftStats = computed<WindowStats | null>(() => {
+  const usage = usageInfo.value
+  const probe = usage?.codex_quota_overdraft
+  if (!usage || !probe || probe.status !== 'passed') return null
+
+  const windows =
+    probe.quota_window === '5h'
+      ? [usage.five_hour, usage.seven_day]
+      : [usage.seven_day, usage.five_hour]
+
+  // Prefer an explicitly active window. The fallback keeps the merged line
+  // useful for older API responses that only returned overdraft_stats.
+  for (const window of windows) {
+    if (window?.overdraft_active && window.overdraft_stats) return window.overdraft_stats
+  }
+
+  // Older responses may omit the activity flag. In that case, use the first
+  // matching stats object; an explicit `false` must never resurrect stale data.
+  if (!windows.some((window) => typeof window?.overdraft_active === 'boolean')) {
+    for (const window of windows) {
+      if (window?.overdraft_stats) return window.overdraft_stats
+    }
+  }
+  return null
+})
+
+const mergeOpenAIOverdraftStats = computed(() => {
+  return usageInfo.value?.codex_quota_overdraft?.status === 'passed' && openAIOverdraftStats.value !== null
 })
 
 const openAIUsageRefreshKey = computed(() => buildOpenAIUsageRefreshKey(props.account))

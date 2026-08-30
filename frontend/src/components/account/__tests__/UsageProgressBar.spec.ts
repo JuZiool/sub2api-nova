@@ -195,7 +195,7 @@ describe('UsageProgressBar', () => {
     expect(summary.text()).toContain('61.5M Token')
   })
 
-  it('利用率为零或已用费用为零时隐藏额度汇总', async () => {
+  it('额度汇总在利用率或已用费用为零时仍保持显示', async () => {
     const wrapper = mount(UsageProgressBar, {
       props: {
         label: '7d',
@@ -210,12 +210,22 @@ describe('UsageProgressBar', () => {
       }
     })
 
-    expect(wrapper.find('[data-test="quota-summary"]').exists()).toBe(false)
+    const summary = wrapper.get('[data-test="quota-summary"]')
+    expect(summary.text()).toContain('admin.accounts.usageWindow.quotaEstimate')
+    expect(summary.text()).toContain('admin.accounts.usageWindow.usedQuota')
+    expect(summary.text()).toContain('$1.00')
+    expect(summary.text()).toContain('-')
 
     await wrapper.setProps({
       utilization: 8,
       windowStats: { requests: 1, tokens: 100, cost: 0 }
     })
-    expect(wrapper.find('[data-test="quota-summary"]').exists()).toBe(false)
+    expect(wrapper.get('[data-test="quota-summary"]').text()).toContain('$0.00')
+
+    await wrapper.setProps({
+      utilization: 8,
+      windowStats: null
+    })
+    expect(wrapper.get('[data-test="quota-summary"]').text()).toContain('- Token')
   })
 })

@@ -26,6 +26,7 @@
     </div>
 
     <CodexOverdraftStats
+      v-if="!hideOverdraftStats"
       :active="overdraftActive"
       :stats="overdraftStats"
       :started-at="overdraftStartedAt"
@@ -62,7 +63,7 @@
 
     <!-- Optional quota estimate for native 7d windows. -->
     <div
-      v-if="showQuotaSummary && quotaSummary"
+      v-if="showQuotaSummary"
       data-test="quota-summary"
       class="mt-0.5 space-y-0.5 text-[10px] text-gray-500 dark:text-gray-400"
     >
@@ -72,20 +73,20 @@
       >
         <span>{{ t('admin.accounts.usageWindow.quotaEstimate') }}:</span>
         <span class="font-semibold text-emerald-700 dark:text-emerald-300">
-          ${{ formatQuotaCost(quotaSummary.estimatedTotalCost) }}
+          {{ formatQuotaCost(quotaSummary?.estimatedTotalCost) }}
         </span>
         <span class="text-[9px] text-gray-400 dark:text-gray-500">
           ({{ t('admin.accounts.usageWindow.quotaAvailable') }}
-          ${{ formatQuotaCost(quotaSummary.availableCost) }})
+          {{ formatQuotaCost(quotaSummary?.availableCost) }})
         </span>
       </div>
       <div class="flex flex-wrap items-baseline gap-x-1">
         <span>{{ t('admin.accounts.usageWindow.usedQuota') }}:</span>
         <span class="font-medium text-gray-700 dark:text-gray-300">
-          ${{ formatQuotaCost(quotaSummary.usedCost) }}
+          {{ formatQuotaCost(quotaSummary?.usedCost) }}
         </span>
         <span class="text-[9px] text-gray-400 dark:text-gray-500">
-          · {{ formatTokens }} Token
+          · {{ formatTokens || '-' }} Token
         </span>
       </div>
     </div>
@@ -113,6 +114,7 @@ const props = defineProps<{
   overdraftStats?: WindowStats | null
   overdraftStartedAt?: string | null
   overdraftRecoverAt?: string | null
+  hideOverdraftStats?: boolean
 }>()
 
 const { t } = useI18n()
@@ -263,25 +265,37 @@ const formatUserCost = computed(() => {
 
 // Estimate the account's native quota from the observed 7d utilization.
 // The account cost is already aggregated across this account's usage logs.
+// Keep the summary object present whenever the feature is enabled so the UI
+// remains visible even while the API has returned zero or incomplete values.
 const quotaSummary = computed(() => {
-  if (!props.showQuotaSummary || !props.windowStats) return null
+  if (!props.showQuotaSummary) return null
 
-  const usedCost = Number(props.windowStats.cost)
+  const usedCostValue = props.windowStats ? Number(props.windowStats.cost) : Number.NaN
+  const usedCost = Number.isFinite(usedCostValue) && usedCostValue >= 0 ? usedCostValue : null
   const utilization = Number(props.utilization)
-  if (!Number.isFinite(usedCost) || usedCost <= 0) return null
-  if (!Number.isFinite(utilization) || utilization <= 0) return null
 
-  const ratio = utilization / 100
-  const estimatedTotalCost = usedCost / ratio
-  if (!Number.isFinite(estimatedTotalCost) || estimatedTotalCost < 0) return null
+  let estimatedTotalCost: number | null = null
+  if (usedCost !== null && Number.isFinite(utilization) && utilization > 0) {
+    const ratio = utilization / 100
+    const estimate = usedCost / ratio
+    if (Number.isFinite(estimate) && estimate >= 0) {
+      estimatedTotalCost = estimate
+    }
+  }
 
   return {
     usedCost,
     estimatedTotalCost,
-    availableCost: Math.max(estimatedTotalCost - usedCost, 0)
+    availableCost:
+      estimatedTotalCost === null || usedCost === null
+        ? null
+        : Math.max(estimatedTotalCost - usedCost, 0)
   }
 })
 
-const formatQuotaCost = (value: number): string => value.toFixed(2)
+const formatQuotaCost = (value: number | null | undefined): string => {
+  if (value == null || !Number.isFinite(value)) return '-'
+  return `$${value.toFixed(2)}`
+}
 
 </script>
