@@ -761,8 +761,8 @@ describe('AccountUsageCell', () => {
       global: {
         stubs: {
           UsageProgressBar: {
-            props: ['label', 'hideOverdraftStats', 'hideWindowStats', 'overdraftActive', 'overdraftStats', 'showQuotaSummary'],
-            template: '<div class="usage-bar">{{ label }}|hide={{ hideOverdraftStats }}|window={{ hideWindowStats }}|active={{ overdraftActive }}|quota={{ showQuotaSummary }}|overdraft={{ overdraftStats?.cost }}|tokens={{ overdraftStats?.tokens }}</div>'
+            props: ['label', 'hideOverdraftStats', 'hideWindowStats', 'hideUserCost', 'overdraftActive', 'overdraftStats', 'showQuotaSummary'],
+            template: '<div class="usage-bar">{{ label }}|hide={{ hideOverdraftStats }}|window={{ hideWindowStats }}|user={{ hideUserCost }}|active={{ overdraftActive }}|quota={{ showQuotaSummary }}|overdraft={{ overdraftStats?.cost }}|tokens={{ overdraftStats?.tokens }}</div>'
           },
           AccountQuotaInfo: true,
           OpenAIQuotaResetCell: true
@@ -777,8 +777,10 @@ describe('AccountUsageCell', () => {
     expect(wrapper.text()).not.toContain('1/1 · 7d')
     expect(wrapper.findAll('.usage-bar')[0].text()).toContain('hide=true')
     expect(wrapper.findAll('.usage-bar')[1].text()).toContain('hide=true')
-    expect(wrapper.findAll('.usage-bar')[0].text()).toContain('window=true')
-    expect(wrapper.findAll('.usage-bar')[1].text()).toContain('window=true')
+    expect(wrapper.findAll('.usage-bar')[0].text()).not.toContain('window=true')
+    expect(wrapper.findAll('.usage-bar')[1].text()).not.toContain('window=true')
+    expect(wrapper.findAll('.usage-bar')[0].text()).toContain('user=true')
+    expect(wrapper.findAll('.usage-bar')[1].text()).toContain('user=true')
     expect(wrapper.findAll('.usage-bar')[1].text()).toContain('quota=true')
     expect(wrapper.findAll('.usage-bar')[1].text()).toContain('overdraft=0.34')
     expect(wrapper.findAll('.usage-bar')[1].text()).toContain('tokens=9800000')

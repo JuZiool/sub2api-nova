@@ -190,6 +190,29 @@ describe('UsageProgressBar', () => {
     expect(wrapper.text()).not.toContain('U $0.06')
   })
 
+  it('显示窗口统计中的请求数、Token和账号金额，不显示用户金额', () => {
+    const wrapper = mount(UsageProgressBar, {
+      props: {
+        label: '5h',
+        utilization: 42,
+        color: 'indigo',
+        windowStats: {
+          requests: 12,
+          tokens: 3456,
+          cost: 1.23,
+          user_cost: 0.45
+        },
+        hideUserCost: true
+      }
+    })
+
+    const stats = wrapper.get('[data-test="window-stats"]')
+    expect(stats.text()).toContain('12 req')
+    expect(stats.text()).toContain('3.5K')
+    expect(stats.text()).toContain('A $1.23')
+    expect(stats.text()).not.toContain('U $0.45')
+  })
+
   it('启用额度汇总时按已用账号费用和利用率估算总额', () => {
     const wrapper = mount(UsageProgressBar, {
       props: {
