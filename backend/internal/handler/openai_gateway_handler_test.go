@@ -1618,6 +1618,71 @@ func TestShouldReportOpenAIWSProxyAccountFailure(t *testing.T) {
 	})
 }
 
+func TestOpenAIWSIngressEndedByClient(t *testing.T) {
+	tests := []struct {
+		name                  string
+		err                   error
+		wantClientTermination bool
+	}{
+		{
+			name:                  "bare normal close",
+			err:                   coderws.CloseError{Code: coderws.StatusNormalClosure, Reason: "client done"},
+			wantClientTermination: true,
+		},
+		{
+			name:                  "wrapped normal close",
+			err:                   fmt.Errorf("ingress turn: %w", coderws.CloseError{Code: coderws.StatusNormalClosure}),
+			wantClientTermination: true,
+		},
+		{
+			name: "gateway normal close",
+			err: service.NewOpenAIWSClientCloseError(
+				coderws.StatusNormalClosure,
+				"websocket idle timeout",
+				context.DeadlineExceeded,
+			),
+			wantClientTermination: true,
+		},
+		{
+			name: "client cancellation",
+			err: service.NewOpenAIWSClientCloseError(
+				coderws.StatusGoingAway,
+				"websocket request canceled",
+				context.Canceled,
+			),
+			wantClientTermination: true,
+		},
+		{
+			name: "going away without cancellation",
+			err: service.NewOpenAIWSClientCloseError(
+				coderws.StatusGoingAway,
+				"upstream closed session",
+				errors.New("upstream closed session"),
+			),
+			wantClientTermination: false,
+		},
+		{
+			name:                  "abnormal close",
+			err:                   coderws.CloseError{Code: coderws.StatusAbnormalClosure, Reason: "connection reset"},
+			wantClientTermination: false,
+		},
+		{
+			name:                  "upstream error",
+			err:                   errors.New("upstream websocket read failed"),
+			wantClientTermination: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.wantClientTermination, openAIWSIngressEndedByClient(tt.err))
+			if !tt.wantClientTermination {
+				require.True(t, shouldReportOpenAIWSProxyAccountFailure(tt.err))
+			}
+		})
+	}
+}
+
 func TestSetOpenAIClientTransportHTTP(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
