@@ -678,7 +678,7 @@ const props = withDefaults(
     batchedUsage?: AccountUsageInfo | null
     batchedUsageError?: string | null
     batchedUsageLoading?: boolean
-    requestBatchedUsage?: ((account: Account, options?: { force?: boolean }) => void) | null
+    requestBatchedUsage?: ((account: Account, options?: { force?: boolean; bypassClientCache?: boolean }) => void) | null
   }>(),
   {
     todayStats: null,
@@ -1663,7 +1663,7 @@ watch(openAIUsageRefreshKey, (nextKey, prevKey) => {
   }
 
   if (isBatchManaged.value) {
-    requestParentBatchUsage({ force: true })
+    requestParentBatchUsage({ bypassClientCache: true })
     return
   }
 

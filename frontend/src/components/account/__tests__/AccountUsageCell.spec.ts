@@ -434,6 +434,56 @@ describe('AccountUsageCell', () => {
     expect(wrapper.text()).toContain('5h|18|900')
   })
 
+  it('OpenAI OAuth 刷新键变化时跳过批量缓存而不强制上游查询', async () => {
+    const requestBatchedUsage = vi.fn()
+    const account = makeAccount({
+      id: 2011,
+      platform: 'openai',
+      type: 'oauth',
+      last_used_at: '2099-03-07T10:00:00Z',
+      extra: {
+        codex_usage_updated_at: '2099-03-07T10:00:00Z',
+        codex_5h_used_percent: 12,
+        codex_5h_reset_at: '2099-03-07T12:00:00Z',
+        codex_7d_used_percent: 34,
+        codex_7d_reset_at: '2099-03-13T12:00:00Z'
+      }
+    })
+
+    const wrapper = mount(AccountUsageCell, {
+      props: {
+        account,
+        requestBatchedUsage
+      },
+      global: {
+        stubs: {
+          UsageProgressBar: true,
+          AccountQuotaInfo: true,
+          OpenAIQuotaResetCell: true
+        }
+      }
+    })
+
+    await flushPromises()
+    requestBatchedUsage.mockClear()
+
+    await wrapper.setProps({
+      account: {
+        ...account,
+        last_used_at: '2099-03-07T10:01:00Z'
+      }
+    })
+    await flushPromises()
+
+    expect(requestBatchedUsage).toHaveBeenCalledTimes(1)
+    expect(requestBatchedUsage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: 2011 }),
+      { bypassClientCache: true }
+    )
+    expect(requestBatchedUsage.mock.calls[0][1]).not.toHaveProperty('force')
+    expect(getUsage).not.toHaveBeenCalled()
+  })
+
   it('OpenAI OAuth 在无 codex 快照时会回退显示 usage 接口窗口', async () => {
 	getUsage.mockResolvedValue({
 	  five_hour: {
