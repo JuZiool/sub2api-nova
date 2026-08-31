@@ -134,6 +134,10 @@ type UsageLog struct {
 	// OpenAI: "low" / "medium" / "high" / "xhigh"; Claude: "low" / "medium" / "high" / "max".
 	// Nil means not provided / not applicable.
 	ReasoningEffort *string
+	// RequestedReasoningEffort preserves the client-requested effort before
+	// group policy rewriting and model-family mapping. Nil keeps historical rows
+	// distinguishable from requests that explicitly provided an effort.
+	RequestedReasoningEffort *string
 	// InboundEndpoint is the client-facing API endpoint path, e.g. /v1/chat/completions.
 	InboundEndpoint *string
 	// UpstreamEndpoint is the normalized upstream endpoint path, e.g. /v1/responses.
@@ -183,10 +187,13 @@ type UsageLog struct {
 	RequestType  RequestType
 	Stream       bool
 	OpenAIWSMode bool
-	DurationMs   *int
-	FirstTokenMs *int
-	UserAgent    *string
-	IPAddress    *string
+	// NativeCompactionV2 is true only for requests identified as OpenAI remote
+	// compaction v2. It is metadata and never changes billing or routing.
+	NativeCompactionV2 bool
+	DurationMs         *int
+	FirstTokenMs       *int
+	UserAgent          *string
+	IPAddress          *string
 	// SessionID is the explicit client-provided request correlation identifier
 	// (e.g. the session_id / X-Session-Id headers). Nil when the client sent no
 	// valid session header. It is never derived from prompt_cache_key or content.
