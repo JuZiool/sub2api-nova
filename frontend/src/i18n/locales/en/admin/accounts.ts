@@ -1492,7 +1492,7 @@ export default {
         quotaEstimate: 'Approx.',
         usedQuota: 'Used',
         overdraftQuota: 'Overdraft',
-        quotaEstimateHint: 'Estimated from this account\'s native-window usage divided by the 7d utilization; overdraft is listed separately and the result is for reference only.'
+        quotaEstimateHint: 'Estimated from this account\'s local 7d cost minus active 7d overdraft, divided by 7d utilization; overdraft is listed separately. This is not an upstream real-time bill and is for reference only.'
       },
       openaiQuotaReset: {
         count: 'Credits',

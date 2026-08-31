@@ -239,7 +239,7 @@ describe('UsageProgressBar', () => {
     expect(summary.text()).not.toContain('quotaAvailable')
   })
 
-  it('额度汇总将正常使用和透支费用分开显示', () => {
+  it('额度汇总从窗口总成本中剔除透支后再估算正常额度', () => {
     const wrapper = mount(UsageProgressBar, {
       props: {
         label: '7d',
@@ -249,7 +249,7 @@ describe('UsageProgressBar', () => {
         windowStats: {
           requests: 0,
           tokens: 0,
-          cost: 0
+          cost: 1.34
         },
         overdraftActive: true,
         overdraftStats: {
@@ -263,16 +263,43 @@ describe('UsageProgressBar', () => {
     const summary = wrapper.get('[data-test="quota-summary"]')
     const rows = summary.element.children
     expect(rows).toHaveLength(2)
-    expect(rows[0].textContent).toContain('admin.accounts.usageWindow.quotaEstimate：$0.00')
-    expect(rows[0].textContent).toContain('admin.accounts.usageWindow.usedQuota：$0.00')
+    expect(rows[0].textContent).toContain('admin.accounts.usageWindow.quotaEstimate：$1.00')
+    expect(rows[0].textContent).toContain('admin.accounts.usageWindow.usedQuota：$1.00')
     expect(rows[1].textContent).toContain('admin.accounts.usageWindow.overdraftQuota：$0.34 · 9.8M Token')
-    expect(summary.text()).toContain('$0.00')
+    expect(summary.text()).toContain('$1.00')
     expect(summary.text()).toContain('$0.34')
+    expect(summary.text()).toContain('admin.accounts.usageWindow.quotaEstimate：$1.00')
+    expect(summary.text()).toContain('admin.accounts.usageWindow.usedQuota：$1.00')
+    expect(summary.text()).toContain('admin.accounts.usageWindow.overdraftQuota：$0.34 · 9.8M Token')
+    expect(summary.text().match(/\$1\.00/g)).toHaveLength(2)
+    expect(summary.text().match(/\$0\.34/g)).toHaveLength(1)
+  })
+
+  it('透支金额异常大于窗口总额时将正常已用钳制为零', () => {
+    const wrapper = mount(UsageProgressBar, {
+      props: {
+        label: '7d',
+        utilization: 100,
+        color: 'emerald',
+        showQuotaSummary: true,
+        windowStats: {
+          requests: 1,
+          tokens: 100,
+          cost: 0.2
+        },
+        overdraftActive: true,
+        overdraftStats: {
+          requests: 1,
+          tokens: 100,
+          cost: 0.34
+        }
+      }
+    })
+
+    const summary = wrapper.get('[data-test="quota-summary"]')
     expect(summary.text()).toContain('admin.accounts.usageWindow.quotaEstimate：$0.00')
     expect(summary.text()).toContain('admin.accounts.usageWindow.usedQuota：$0.00')
-    expect(summary.text()).toContain('admin.accounts.usageWindow.overdraftQuota：$0.34 · 9.8M Token')
-    expect(summary.text().match(/\$0\.00/g)).toHaveLength(2)
-    expect(summary.text().match(/\$0\.34/g)).toHaveLength(1)
+    expect(summary.text()).toContain('admin.accounts.usageWindow.overdraftQuota：$0.34')
   })
 
   it('额度汇总在利用率或已用费用为零时仍保持显示', async () => {

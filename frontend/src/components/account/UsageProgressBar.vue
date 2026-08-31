@@ -261,16 +261,17 @@ const formatUserCost = computed(() => {
 })
 
 // Estimate the account's native quota from the observed 7d utilization.
-// Overdraft usage is returned separately from the regular window stats. Keep it
-// separate in the summary so the native usage and overdraft usage are visible
-// independently, while the estimate still represents the native window only.
+// windowStats contains every local usage log in the window, including active
+// overdraft usage. Remove the latter before showing native usage or estimating
+// the native quota, while continuing to show overdraft separately.
 // Keep the summary object present whenever the feature is enabled so the UI
 // remains visible even while the API has returned zero or incomplete values.
 const quotaSummary = computed(() => {
   if (!props.showQuotaSummary) return null
 
-  const regularCost = props.windowStats ? Number(props.windowStats.cost) : Number.NaN
-  const validRegularCost = Number.isFinite(regularCost) && regularCost >= 0 ? regularCost : null
+  const totalWindowCost = props.windowStats ? Number(props.windowStats.cost) : Number.NaN
+  const validTotalWindowCost =
+    Number.isFinite(totalWindowCost) && totalWindowCost >= 0 ? totalWindowCost : null
   const overdraftCost =
     props.overdraftStats && props.overdraftActive !== false
       ? Number(props.overdraftStats.cost)
@@ -282,13 +283,16 @@ const quotaSummary = computed(() => {
   const validOverdraftCost = Number.isFinite(overdraftCost) && overdraftCost >= 0 ? overdraftCost : null
   const validOverdraftTokens =
     Number.isFinite(overdraftTokens) && overdraftTokens >= 0 ? overdraftTokens : null
-  const usedCost = validRegularCost
+  const usedCost =
+    validTotalWindowCost === null
+      ? null
+      : Math.max(validTotalWindowCost - (validOverdraftCost ?? 0), 0)
   const utilization = Number(props.utilization)
 
   let estimatedTotalCost: number | null = null
-  if (validRegularCost !== null && Number.isFinite(utilization) && utilization > 0) {
+  if (usedCost !== null && Number.isFinite(utilization) && utilization > 0) {
     const ratio = utilization / 100
-    const estimate = validRegularCost / ratio
+    const estimate = usedCost / ratio
     if (Number.isFinite(estimate) && estimate >= 0) {
       estimatedTotalCost = estimate
     }

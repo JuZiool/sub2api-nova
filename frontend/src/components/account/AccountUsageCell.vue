@@ -129,7 +129,7 @@
           :overdraft-stats="usageInfo.five_hour.overdraft_stats"
           :overdraft-started-at="usageInfo.five_hour.overdraft_started_at"
           :overdraft-recover-at="usageInfo.five_hour.overdraft_recover_at"
-          :hide-overdraft-stats="true"
+          :hide-overdraft-stats="false"
           :hide-user-cost="true"
           :show-now-when-idle="true"
           color="indigo"
@@ -141,8 +141,8 @@
           :resets-at="usageInfo.seven_day.resets_at"
           :window-stats="usageInfo.seven_day.window_stats"
           :show-quota-summary="true"
-          :overdraft-active="openAIOverdraftStats !== null"
-          :overdraft-stats="openAIOverdraftStats"
+          :overdraft-active="usageInfo.seven_day.overdraft_active"
+          :overdraft-stats="usageInfo.seven_day.overdraft_stats"
           :overdraft-started-at="usageInfo.seven_day.overdraft_started_at"
           :overdraft-recover-at="usageInfo.seven_day.overdraft_recover_at"
           :hide-overdraft-stats="true"
@@ -788,34 +788,6 @@ const hasOpenAIUsageFallback = computed(() => {
   return !!usageInfo.value?.five_hour || !!usageInfo.value?.seven_day || !!usageInfo.value?.codex_quota_overdraft
 })
 
-// Pick the active overdraft stats from either quota window so the summary has a
-// single source regardless of whether the 5h or 7d limit triggered it.
-const openAIOverdraftStats = computed<WindowStats | null>(() => {
-  const usage = usageInfo.value
-  const probe = usage?.codex_quota_overdraft
-  if (!usage || probe?.status !== 'passed') return null
-
-  const windows =
-    probe?.quota_window === '5h'
-      ? [usage.five_hour, usage.seven_day]
-      : [usage.seven_day, usage.five_hour]
-
-  // Pick the active window indicated by the API, regardless of whether the
-  // quota limit came from the 5h or 7d window.
-  for (const window of windows) {
-    if (window?.overdraft_active && window.overdraft_stats) return window.overdraft_stats
-  }
-
-  // Older passed responses may omit the activity flag. An explicit `false`
-  // must never resurrect stale data.
-  if (!windows.some((window) => typeof window?.overdraft_active === 'boolean')) {
-    for (const window of windows) {
-      if (window?.overdraft_stats) return window.overdraft_stats
-    }
-  }
-  return null
-})
-
 const openAIUsageRefreshKey = computed(() => buildOpenAIUsageRefreshKey(props.account))
 
 const shouldAutoLoadUsageOnMount = computed(() => {
@@ -1379,7 +1351,7 @@ const isAnthropicOAuthOrSetupToken = computed(() => {
   return props.account.platform === 'anthropic' && (props.account.type === 'oauth' || props.account.type === 'setup-token')
 })
 
-const requestParentBatchUsage = (options?: { force?: boolean }) => {
+const requestParentBatchUsage = (options?: { force?: boolean; bypassClientCache?: boolean }) => {
   if (!isBatchManaged.value || !shouldFetchUsage.value) return
   props.requestBatchedUsage?.(props.account, options)
 }

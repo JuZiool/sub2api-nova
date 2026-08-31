@@ -463,7 +463,7 @@ export default {
         quotaEstimate: '约',
         usedQuota: '已用',
         overdraftQuota: '透支',
-        quotaEstimateHint: '按当前账号正常窗口已用额度除以 7d 使用率估算，透支金额另行列出，结果仅供参考。'
+        quotaEstimateHint: '按当前账号 7d 本地成本减去当前 7d 透支后，再除以 7d 使用率估算；透支金额另行列出。这不是上游实时账单，仅供参考。'
       },
       openaiQuotaReset: {
         count: '次数',

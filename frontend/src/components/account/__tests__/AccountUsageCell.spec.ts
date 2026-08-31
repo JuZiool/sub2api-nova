@@ -761,7 +761,7 @@ describe('AccountUsageCell', () => {
     expect(wrapper.text()).not.toContain('1/1 · 5h')
   })
 
-  it('OpenAI OAuth 将 5h/7d 透支统计统一传给底部汇总', async () => {
+  it('OpenAI OAuth 将透支统计保留在对应窗口，避免 5h 影响 7d 额度汇总', async () => {
     getUsage.mockResolvedValue({
       five_hour: {
         utilization: 100,
@@ -775,27 +775,21 @@ describe('AccountUsageCell', () => {
         }
       },
       seven_day: {
-        utilization: 100,
+        utilization: 36,
         resets_at: '2099-03-13T12:00:00Z',
-        remaining_seconds: 3600,
-        overdraft_active: true,
-        overdraft_stats: {
-          requests: 0,
-          tokens: 9_800_000,
-          cost: 0.34
-        }
+        remaining_seconds: 3600
       },
       codex_quota_overdraft: {
         status: 'passed',
-        quota_window: '7d',
-        cycle_key: '7d:4077096000',
+        quota_window: '5h',
+        cycle_key: '5h:4076577600',
         attempts: 1,
         limit: 1,
         model: 'gpt-5.5',
         reason_code: 'quota_limited',
         started_at: '2099-03-07T10:00:00Z',
         tested_at: '2099-03-07T10:01:00Z',
-        recover_at: '2099-03-13T12:00:00Z'
+        recover_at: '2099-03-07T12:00:00Z'
       }
     })
 
@@ -825,15 +819,16 @@ describe('AccountUsageCell', () => {
     expect(wrapper.findAll('.usage-bar')).toHaveLength(2)
     expect(wrapper.text()).not.toContain('usage.overdraftActive')
     expect(wrapper.text()).not.toContain('1/1 · 7d')
-    expect(wrapper.findAll('.usage-bar')[0].text()).toContain('hide=true')
+    expect(wrapper.findAll('.usage-bar')[0].text()).toContain('hide=false')
     expect(wrapper.findAll('.usage-bar')[1].text()).toContain('hide=true')
     expect(wrapper.findAll('.usage-bar')[0].text()).not.toContain('window=true')
     expect(wrapper.findAll('.usage-bar')[1].text()).not.toContain('window=true')
     expect(wrapper.findAll('.usage-bar')[0].text()).toContain('user=true')
     expect(wrapper.findAll('.usage-bar')[1].text()).toContain('user=true')
     expect(wrapper.findAll('.usage-bar')[1].text()).toContain('quota=true')
-    expect(wrapper.findAll('.usage-bar')[1].text()).toContain('overdraft=0.34')
-    expect(wrapper.findAll('.usage-bar')[1].text()).toContain('tokens=9800000')
+    expect(wrapper.findAll('.usage-bar')[0].text()).toContain('overdraft=1.25')
+    expect(wrapper.findAll('.usage-bar')[0].text()).toContain('tokens=1000')
+    expect(wrapper.findAll('.usage-bar')[1].text()).not.toContain('overdraft=1.25')
   })
 
   it('OpenAI OAuth 不再显示透支探测重试状态行', async () => {
