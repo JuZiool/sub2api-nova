@@ -1664,6 +1664,7 @@ export interface UsageLog {
   model: string
   service_tier?: string | null
   reasoning_effort?: string | null
+  requested_reasoning_effort?: string | null
   inbound_endpoint?: string | null
   upstream_endpoint?: string | null
 
@@ -1690,6 +1691,7 @@ export interface UsageLog {
   request_type?: UsageRequestType
   stream: boolean
   openai_ws_mode?: boolean
+  native_compaction_v2: boolean
   duration_ms: number | null
   first_token_ms: number | null
 

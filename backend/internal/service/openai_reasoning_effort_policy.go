@@ -17,6 +17,7 @@ const (
 var openAIReasoningEffortValues = []string{"minimal", "low", "medium", "high", "xhigh", "max"}
 
 type openAIReasoningEffortPolicyContextKey struct{}
+type requestedReasoningEffortContextKey struct{}
 
 type openAIReasoningEffortPolicy struct {
 	maxEffort string
@@ -46,6 +47,36 @@ func NormalizeMaxReasoningEffort(raw string) string {
 	default:
 		return ""
 	}
+}
+
+// WithRequestedReasoningEffort binds the client-requested value captured from
+// the inbound body before policy rewriting or model-family normalization.
+func WithRequestedReasoningEffort(ctx context.Context, effort string) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	effort = strings.TrimSpace(effort)
+	if effort == "" {
+		return ctx
+	}
+	return context.WithValue(ctx, requestedReasoningEffortContextKey{}, effort)
+}
+
+// RequestedReasoningEffortFromContext returns the captured client value, or
+// nil when the request did not provide a recognized reasoning effort.
+func RequestedReasoningEffortFromContext(ctx context.Context) *string {
+	if ctx == nil {
+		return nil
+	}
+	value, ok := ctx.Value(requestedReasoningEffortContextKey{}).(string)
+	if !ok {
+		return nil
+	}
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	return &value
 }
 
 func reasoningEffortValuesForPlatform(platform string) []string {

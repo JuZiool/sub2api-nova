@@ -101,6 +101,18 @@ func TestOpenAIReasoningEffortPolicyContext(t *testing.T) {
 	require.Equal(t, "medium", gjson.GetBytes(got, "reasoning.effort").String())
 }
 
+func TestRequestedReasoningEffortContext(t *testing.T) {
+	require.Nil(t, RequestedReasoningEffortFromContext(context.Background()))
+
+	ctx := WithRequestedReasoningEffort(context.Background(), " max ")
+	got := RequestedReasoningEffortFromContext(ctx)
+	require.NotNil(t, got)
+	require.Equal(t, "max", *got)
+
+	// Empty values deliberately do not replace an existing request context.
+	require.Equal(t, ctx, WithRequestedReasoningEffort(ctx, ""))
+}
+
 func TestApplyOpenAIReasoningEffortPolicy(t *testing.T) {
 	tests := []struct {
 		name     string

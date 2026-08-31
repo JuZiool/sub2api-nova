@@ -89,6 +89,13 @@ func TestNormalizeOpenAIResponsesCompactRequest_RemoteV2StaysOnResponses(t *test
 	}
 }
 
+func TestIsOpenAINativeCompactionV2ExposesRequestScopedMarker(t *testing.T) {
+	c := newCompactBodySignalTestContext(t, "/v1/responses", nil)
+	require.False(t, service.IsOpenAINativeCompactionV2(c))
+	service.MarkOpenAINativeCompactionV2(c)
+	require.True(t, service.IsOpenAINativeCompactionV2(c))
+}
+
 func TestNormalizeOpenAIResponsesCompactRequest_RemoteV2PathAliasesStayOnResponses(t *testing.T) {
 	h := &OpenAIGatewayHandler{}
 	body := []byte(`{"model":"gpt-5.6-sol","stream":true,"input":[{"type":"compaction_trigger"}]}`)
