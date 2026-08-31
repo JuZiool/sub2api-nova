@@ -30,8 +30,8 @@ Sub2API Nova GHCR 镜像部署脚本
   cd /目标目录
   curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh | bash
 
-现有部署在线升级：
-  cd /opt/sub2api-nova && curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh | bash -s -- --mode 3
+现有部署在线升级（在部署目录或旧版 Git 仓库根目录执行）：
+  curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh | bash -s -- --mode 3
 
 启动菜单：
   1  全新安装：生成 .env、创建数据目录、拉取镜像并启动
@@ -107,6 +107,22 @@ choose_mode() {
   fi
   MODE="${MODE:-1}"
   [[ "$MODE" =~ ^[123]$ ]] || die "模式必须是 1、2 或 3。"
+}
+
+resolve_upgrade_deploy_dir() {
+  local candidate
+  [[ "$MODE" == 3 ]] || return 0
+
+  if [[ -f "$DEPLOY_DIR/.env" ]]; then
+    candidate="$DEPLOY_DIR"
+  elif [[ -f "$DEPLOY_DIR/deploy/.env" ]]; then
+    candidate="$DEPLOY_DIR/deploy"
+  else
+    die "未在 $DEPLOY_DIR 或 $DEPLOY_DIR/deploy 找到 .env；请在现有部署目录或旧版 Git 仓库根目录执行升级。"
+  fi
+
+  DEPLOY_DIR="$(cd -- "$candidate" && pwd -P)"
+  log "自动识别部署目录：$DEPLOY_DIR"
 }
 
 detect_platform() {
@@ -332,10 +348,13 @@ upgrade_application() {
 }
 
 main() {
+  local deploy_dir_shell
   parse_args "$@"
   require_root
   validate_settings
   choose_mode
+  resolve_upgrade_deploy_dir
+  [[ "$MODE" == 3 ]] && require_upgrade_config
   detect_platform
   ensure_base_dependencies
   mkdir -p -- "$DEPLOY_DIR"
@@ -348,14 +367,15 @@ main() {
   case "$MODE" in
     1) initialize_fresh; deploy_application ;;
     2) require_migration_config; deploy_application ;;
-    3) require_upgrade_config; upgrade_application ;;
+    3) upgrade_application ;;
   esac
 
   printf '\n'
   log "操作完成（模式 $MODE）"
   log "部署目录：$DEPLOY_DIR"
   log "访问地址：http://服务器IP:$(read_env_value SERVER_PORT 8080)"
-  log "查看状态：cd $DEPLOY_DIR && $COMPOSE_COMMAND_LABEL --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml ps"
+  printf -v deploy_dir_shell '%q' "$DEPLOY_DIR"
+  log "查看状态：cd $deploy_dir_shell && $COMPOSE_COMMAND_LABEL --env-file .env -f docker-compose.local.yml -f docker-compose.ghcr.yml ps"
 }
 
 main "$@"

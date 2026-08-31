@@ -13,6 +13,7 @@ scripts=(
   "$ROOT_DIR/scripts/verify_database_backup_restore.sh"
   "$ROOT_DIR/backend/scripts/resolve-version.sh"
   "$ROOT_DIR/deploy/tests/docker-compose-gateway-env-test.sh"
+  "$ROOT_DIR/deploy/tests/install-path-detection-test.sh"
   "$ROOT_DIR/deploy/tests/version-consistency-test.sh"
 )
 

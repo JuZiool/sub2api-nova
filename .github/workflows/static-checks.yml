@@ -51,6 +51,10 @@ jobs:
         shell: bash
         run: bash deploy/tests/scripts-syntax-test.sh
 
+      - name: 验证安装脚本路径识别
+        shell: bash
+        run: bash deploy/tests/install-path-detection-test.sh
+
       - name: 运行 Python 脚本回归
         shell: bash
         run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'

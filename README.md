@@ -59,22 +59,21 @@ data/
 
 ### 3. 镜像升级
 
-在当前部署目录执行安装脚本并选择 `3`：
+进入现有部署目录后执行安装脚本并选择 `3`：
 
 ```bash
-cd /opt/sub2api-nova
 bash install.sh --mode 3
 ```
 
 脚本只拉取新镜像并重建 `sub2api`，不会覆盖 `.env`、`data/`、`postgres_data/` 或 `redis_data/`。
 
-如果服务器上的脚本版本较旧，或不想依赖服务器上的 Git 工作区，可以直接使用 GitHub 在线脚本升级现有部署：
+如果服务器上的脚本版本较旧，或不想依赖服务器上的 Git 工作区，可以在现有部署目录或旧版 Git 仓库根目录直接运行 GitHub 在线脚本：
 
 ```bash
-cd /opt/sub2api-nova && curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh | bash -s -- --mode 3
+curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh | bash -s -- --mode 3
 ```
 
-在线脚本只会拉取镜像并重建应用容器，保留现有 `.env`、`data/`、`postgres_data/` 和 `redis_data/`。
+脚本会优先使用当前目录中的 `.env`；如果当前目录没有 `.env`、但存在 `deploy/.env`，则自动识别旧版 Git 部署目录。找不到配置时会在下载文件或创建数据目录前退出。在线脚本只会拉取镜像并重建应用容器，保留现有 `.env`、`data/`、`postgres_data/` 和 `redis_data/`。
 
 默认使用 `latest`，也可以固定镜像 tag 或 digest：
 
