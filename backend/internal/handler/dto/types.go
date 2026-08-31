@@ -48,6 +48,8 @@ type AdminUser struct {
 	// GroupRates 用户专属分组倍率配置
 	// map[groupID]rateMultiplier
 	GroupRates map[int64]float64 `json:"group_rates,omitempty"`
+	// RestrictPublicGroups 是管理员侧权限开关，普通用户 DTO 不携带该字段。
+	RestrictPublicGroups bool `json:"restrict_public_groups"`
 }
 
 type APIKey struct {

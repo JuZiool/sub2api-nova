@@ -23,7 +23,10 @@ type User struct {
 	Concurrency    int
 	Status         string
 	AllowedGroups  []int64
-	TokenVersion   int64 // Incremented on password change to invalidate existing tokens
+	// RestrictPublicGroups 开启后，公开分组也必须在 AllowedGroups 中；
+	// false 保持历史默认行为，所有公开分组都可绑定。
+	RestrictPublicGroups bool
+	TokenVersion         int64 // Incremented on password change to invalidate existing tokens
 	// TokenVersionResolved indicates TokenVersion already contains the fingerprint-derived
 	// value expected in JWT claims and refresh-token state.
 	TokenVersionResolved bool
@@ -73,15 +76,14 @@ func (u *User) IsActive() bool {
 }
 
 // CanBindGroup checks whether a user can bind to a given group.
-// For standard groups:
-// - Public groups (non-exclusive): all users can bind
-// - Exclusive groups: only users with the group in AllowedGroups can bind
+// 对公开分组，默认所有用户都可绑定；仅当 RestrictPublicGroups 为 true 时，
+// 才与专属分组一样要求存在于 AllowedGroups 中。
 func (u *User) CanBindGroup(groupID int64, isExclusive bool) bool {
-	// 公开分组（非专属）：所有用户都可以绑定
-	if !isExclusive {
+	// 默认公开分组行为不能改变，确保已有用户和 API Key 的授权结果保持一致。
+	if !isExclusive && !u.RestrictPublicGroups {
 		return true
 	}
-	// 专属分组：需要在 AllowedGroups 中
+	// 专属分组始终需要授权；受限用户的公开分组也走同一授权列表。
 	for _, id := range u.AllowedGroups {
 		if id == groupID {
 			return true
