@@ -1608,6 +1608,15 @@ func TestShouldReportOpenAIWSProxyAccountFailure(t *testing.T) {
 		require.False(t, shouldReportOpenAIWSProxyAccountFailure(service.NewOpenAIWSSessionPreemptedError()))
 	})
 
+	t.Run("cyber session block does not penalize account", func(t *testing.T) {
+		err := service.NewOpenAIWSClientCloseError(
+			coderws.StatusPolicyViolation,
+			cyberSessionBlockedClientMsg,
+			nil,
+		)
+		require.False(t, shouldReportOpenAIWSProxyAccountFailure(err))
+	})
+
 	t.Run("upstream policy violation still penalizes account", func(t *testing.T) {
 		err := service.NewOpenAIWSClientCloseError(
 			coderws.StatusPolicyViolation,
