@@ -1604,6 +1604,10 @@ func TestShouldReportOpenAIWSProxyAccountFailure(t *testing.T) {
 		require.Equal(t, "model switch requires reconnect", closeErr.Reason())
 	})
 
+	t.Run("session preemption does not penalize account", func(t *testing.T) {
+		require.False(t, shouldReportOpenAIWSProxyAccountFailure(service.NewOpenAIWSSessionPreemptedError()))
+	})
+
 	t.Run("upstream policy violation still penalizes account", func(t *testing.T) {
 		err := service.NewOpenAIWSClientCloseError(
 			coderws.StatusPolicyViolation,
