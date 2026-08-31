@@ -43,7 +43,17 @@ type openAICompactSSEKeepalive struct {
 // 响应构造都会先在心跳互斥锁下停拍，未被显式拦截的写回路径（如 Forward
 // 内部的本地拒绝）也不会与心跳 goroutine 产生数据竞争或字节交错。
 func StartOpenAICompactSSEKeepalive(c *gin.Context, interval time.Duration) func() {
-	if c == nil || c.Writer == nil || interval <= 0 || !openAICompactClientWantsStream(c) {
+	if !openAICompactClientWantsStream(c) {
+		return func() {}
+	}
+	return startOpenAISSEKeepalive(c, interval)
+}
+
+// startOpenAISSEKeepalive starts keepalive for a confirmed SSE response.
+// It intentionally does not require the compact-client marker so regular
+// /v1/responses passthrough streams can use the same synchronized writer.
+func startOpenAISSEKeepalive(c *gin.Context, interval time.Duration) func() {
+	if c == nil || c.Writer == nil || interval <= 0 {
 		return func() {}
 	}
 	originalWriter := c.Writer
