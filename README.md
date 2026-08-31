@@ -71,7 +71,7 @@ bash install.sh --mode 3
 如果服务器上的脚本版本较旧，或不想依赖服务器上的 Git 工作区，可以直接使用 GitHub 在线脚本升级现有部署：
 
 ```bash
-cd /opt/sub2api-nova/deploy && curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh | bash -s -- --mode 3
+cd /opt/sub2api-nova && curl -fsSL https://raw.githubusercontent.com/JuZiool/sub2api-nova/main/deploy/install.sh | bash -s -- --mode 3
 ```
 
 在线脚本只会拉取镜像并重建应用容器，保留现有 `.env`、`data/`、`postgres_data/` 和 `redis_data/`。
