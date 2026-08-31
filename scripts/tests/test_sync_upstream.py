@@ -31,6 +31,27 @@ class SyncUpstreamTests(unittest.TestCase):
         with mock.patch.object(module.subprocess, "run", return_value=completed):
             self.assertFalse(module.is_upstream_ancestor(config, OLD, NEW))
 
+    def test_classifies_preflight_diagnostics(self):
+        result = module.parse_preflight_diagnostics(
+            "\n".join(
+                (
+                    "Applied patch to 'conflict.go' with conflicts.",
+                    "error: missing.go: does not exist in index",
+                    "error: mismatch.go: does not match index",
+                    "error: patch failed: failed.go:42",
+                    "error: unapplied.go: patch does not apply",
+                    "error: unknown git apply failure",
+                )
+            )
+        )
+
+        self.assertTrue(result.blocked)
+        self.assertEqual(result.conflicts, ["conflict.go"])
+        self.assertEqual(result.missing_index_paths, ["missing.go"])
+        self.assertEqual(result.index_mismatch_paths, ["mismatch.go"])
+        self.assertEqual(result.unapplied_paths, ["failed.go", "unapplied.go"])
+        self.assertEqual(result.diagnostics, ["error: unknown git apply failure"])
+
     def test_success_path_passes_one_patch_to_apply_and_provenance(self):
         policy = {
             "criticalPaths": [],
@@ -67,7 +88,11 @@ class SyncUpstreamTests(unittest.TestCase):
                 mock.patch.object(module, "changed_paths", return_value=[]),
                 mock.patch.object(module, "deleted_paths", return_value=[]),
                 mock.patch.object(module, "patch_bytes", return_value=patch),
-                mock.patch.object(module, "preflight_three_way", return_value=[]),
+                mock.patch.object(
+                    module,
+                    "preflight_three_way",
+                    return_value=module.PreflightResult(False, [], [], [], [], []),
+                ),
                 mock.patch.object(module, "apply_three_way") as apply,
                 mock.patch.object(module, "version_at", side_effect=["0.1.178", "0.1.179", "0.1.179"]),
                 mock.patch.object(module, "diff_stat", return_value=[]),
