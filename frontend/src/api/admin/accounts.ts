@@ -23,6 +23,7 @@ import type {
   CheckMixedChannelResponse,
   UpstreamBillingProbeResult,
   UpstreamBillingProbeSettings,
+  UpstreamBillingRatesResponse,
   OllamaCloudUsageSettings,
   OllamaCloudUsageState
 } from '@/types'
@@ -68,6 +69,51 @@ export interface AccountListWithEtagResult {
   notModified: boolean
   etag: string | null
   data: PaginatedResponse<Account> | null
+}
+
+export interface UpstreamBillingRatesWithEtagResult {
+  notModified: boolean
+  etag: string | null
+  data: UpstreamBillingRatesResponse | null
+}
+
+export async function getUpstreamBillingRatesWithEtag(
+  page: number = 1,
+  pageSize: number = 20,
+  filters?: {
+    platform?: string
+    type?: string
+    status?: string
+    group?: string
+    search?: string
+    privacy_mode?: string
+    sort_by?: string
+    sort_order?: 'asc' | 'desc'
+  },
+  options?: {
+    signal?: AbortSignal
+    etag?: string | null
+  }
+): Promise<UpstreamBillingRatesWithEtagResult> {
+  const headers: Record<string, string> = {}
+  if (options?.etag) headers['If-None-Match'] = options.etag
+
+  const response = await apiClient.get<UpstreamBillingRatesResponse>('/admin/accounts/upstream-billing-rates', {
+    params: {
+      page,
+      page_size: pageSize,
+      ...filters
+    },
+    headers,
+    signal: options?.signal,
+    validateStatus: (status) => (status >= 200 && status < 300) || status === 304
+  })
+  const etagHeader = typeof response.headers?.etag === 'string' ? response.headers.etag : null
+  return {
+    notModified: response.status === 304,
+    etag: etagHeader,
+    data: response.status === 304 ? null : response.data
+  }
 }
 
 export async function listWithEtag(
@@ -539,8 +585,27 @@ export async function getAvailableModels(id: number): Promise<ClaudeModel[]> {
   return data
 }
 
+export interface SyncUpstreamModelMetadata {
+  id: string
+  display_name?: string
+  description?: string
+  reasoning?: boolean
+  default_reasoning_level?: string
+  supported_reasoning_levels?: string[]
+  input_modalities?: string[]
+  context_window?: number
+  max_output_tokens?: number
+}
+
+export interface SyncUpstreamModelWarning {
+  code: string
+  message: string
+}
+
 export interface SyncUpstreamModelsResult {
   models: string[]
+  metadata?: Record<string, SyncUpstreamModelMetadata>
+  warnings?: SyncUpstreamModelWarning[]
 }
 
 /**
@@ -558,6 +623,7 @@ export interface SyncUpstreamPreviewParams {
   type: string
   base_url?: string
   api_key: string
+  model_mapping?: Record<string, string>
 }
 
 /**
@@ -988,6 +1054,7 @@ export async function refreshOllamaCloudUsage(id: number): Promise<OllamaCloudUs
 export const accountsAPI = {
   list,
   listWithEtag,
+  getUpstreamBillingRatesWithEtag,
   getById,
   create,
   duplicate,

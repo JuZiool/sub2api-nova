@@ -95,7 +95,7 @@ def verify_candidate_tree(
         )
         if result.returncode != 0:
             detail = result.stderr.decode("utf-8", errors="replace").strip()
-            raise VerificationError(f"expected candidate patch does not apply: {detail}")
+            raise VerificationError(f"expected direct upstream patch does not apply: {detail}")
 
         new_version = require(provenance.get("newVersion"), "missing new upstream version")
         for relative in ("FORK_VERSION", "backend/cmd/server/VERSION"):
@@ -103,9 +103,57 @@ def verify_candidate_tree(
             if version_path.exists():
                 version_path.write_text(nova_version(new_version) + "\n", encoding="utf-8")
 
+        git_bytes(root, "-C", str(temp_root), "add", "--all")
+        expected_direct_tree = git_text(root, "-C", str(temp_root), "write-tree").strip()
+        overlay_scope = [":(exclude).nova-upstream-provenance.json"]
+        overlay_patch = git_bytes(
+            root,
+            "diff",
+            "--binary",
+            "--no-renames",
+            expected_direct_tree,
+            candidate_sha,
+            "--",
+            *overlay_scope,
+        )
+        overlay_paths = sorted(
+            path
+            for path in git_text(
+                root,
+                "diff",
+                "--name-only",
+                "--no-renames",
+                expected_direct_tree,
+                candidate_sha,
+                "--",
+                *overlay_scope,
+            ).splitlines()
+            if path
+        )
+        if provenance.get("overlayPaths") != overlay_paths:
+            raise VerificationError("provenance overlayPaths does not match candidate overlay")
+        if provenance.get("overlayPatchSha256") != sha256_bytes(overlay_patch):
+            raise VerificationError("provenance overlay patch hash does not match candidate")
+        if overlay_patch:
+            result = subprocess.run(
+                ["git", "apply", "--3way", "--binary", "-"],
+                cwd=temp_root,
+                input=overlay_patch,
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            if result.returncode != 0:
+                detail = result.stderr.decode("utf-8", errors="replace").strip()
+                raise VerificationError(f"expected Nova overlay patch does not apply: {detail}")
+
         expected_provenance = temp_root / ".nova-upstream-provenance.json"
+        expected_provenance_value = dict(provenance)
+        # The merge commit hash is self-referential and is recorded by the follow-up
+        # baseline metadata commit; it must not alter the merge tree reconstruction.
+        expected_provenance_value.pop("novaMergeCommit", None)
         expected_provenance.write_text(
-            json.dumps(provenance, ensure_ascii=False, indent=2) + "\n",
+            json.dumps(expected_provenance_value, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
         git_bytes(root, "-C", str(temp_root), "add", "--all")
@@ -199,7 +247,20 @@ def verify_candidate(
     )
     protected = protected_patterns(policy)
     preserved_protected = sorted(path for path in paths if path_matches(path, protected))
-    applied = sorted(path for path in paths if path not in preserved_protected)
+    applied = sorted(path for path in provenance.get("appliedPaths", []) if path)
+    adapted = sorted(path for path in provenance.get("adaptedPaths", []) if path)
+    if any(path not in paths for path in applied + adapted):
+        raise VerificationError("provenance applied or adapted paths contain a non-upstream path")
+    if any(path in preserved_protected for path in applied + adapted):
+        raise VerificationError("provenance applied or adapted paths contain a protected path")
+    if set(applied).intersection(adapted):
+        raise VerificationError("provenance appliedPaths and adaptedPaths overlap")
+    excluded = sorted(
+        path for path in paths if path not in set(applied).union(adapted, preserved_protected)
+    )
+    declared_excluded = sorted(path for path in provenance.get("excludedPaths", []) if path)
+    if declared_excluded != excluded:
+        raise VerificationError("provenance excludedPaths does not match upstream classification")
     version_paths = [
         relative
         for relative in ("FORK_VERSION", "backend/cmd/server/VERSION")

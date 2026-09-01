@@ -91,8 +91,13 @@
         </template>
 
         <template #cell-reasoning_effort="{ row }">
-          <span class="text-sm text-gray-900 dark:text-white">
-            {{ formatReasoningEffort(row.reasoning_effort) }}
+          <span
+            data-testid="reasoning-effort-cell"
+            class="text-sm text-gray-900 dark:text-white"
+          >
+            {{ showUpstreamReasoningEffort
+              ? formatReasoningEffortMapping(row.reasoning_effort, row.upstream_reasoning_effort)
+              : formatReasoningEffort(row.reasoning_effort) }}
           </span>
         </template>
 
@@ -500,7 +505,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
-import { formatDateTime, formatReasoningEffort } from '@/utils/format'
+import { formatDateTime, formatReasoningEffort, formatReasoningEffortMapping } from '@/utils/format'
 import { formatCacheTokens, formatMultiplier } from '@/utils/formatters'
 import { formatTokenPricePerMillion } from '@/utils/usagePricing'
 import { getUsageServiceTierLabel } from '@/utils/usageServiceTier'
@@ -560,6 +565,7 @@ interface Props {
   defaultSortOrder?: 'asc' | 'desc'
   showAccountBilling?: boolean
   showUpstreamEndpoint?: boolean
+  showUpstreamReasoningEffort?: boolean
   /** 嵌入统一卡片内使用：去掉自身卡片外观 */
   flat?: boolean
 }
@@ -571,6 +577,7 @@ const props = withDefaults(defineProps<Props>(), {
   defaultSortOrder: 'asc',
   showAccountBilling: true,
   showUpstreamEndpoint: true,
+  showUpstreamReasoningEffort: false,
   flat: false
 })
 const emit = defineEmits<{
@@ -583,6 +590,7 @@ const appStore = useAppStore()
 const copiedRequestId = ref<string | null>(null)
 const showAccountBilling = props.showAccountBilling
 const showUpstreamEndpoint = props.showUpstreamEndpoint
+const showUpstreamReasoningEffort = props.showUpstreamReasoningEffort
 const ipGeoBatchLoading = ref(false)
 
 const showIpGeoToolbar = computed(() => props.columns.some((col) => col.key === 'ip_address'))

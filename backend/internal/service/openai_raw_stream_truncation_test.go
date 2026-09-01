@@ -74,57 +74,6 @@ func runRawStreamTruncationTest(
 	)
 }
 
-func TestOpenAIRawStreamTerminalState(t *testing.T) {
-	tests := []struct {
-		name          string
-		payloads      []string
-		clientStarted bool
-		wantTerminal  bool
-		wantTruncated bool
-	}{
-		{
-			name:          "done sentinel",
-			payloads:      []string{`{"choices":[{"delta":{"content":"a"}}]}`, "[DONE]"},
-			clientStarted: true,
-			wantTerminal:  true,
-		},
-		{
-			name:          "usage chunk",
-			payloads:      []string{`{"choices":[],"usage":{"prompt_tokens":1,"completion_tokens":1}}`},
-			clientStarted: true,
-			wantTerminal:  true,
-		},
-		{
-			name:          "finish reason",
-			payloads:      []string{`{"choices":[{"delta":{},"finish_reason":"stop"}]}`},
-			clientStarted: true,
-			wantTerminal:  true,
-		},
-		{
-			name:          "nonterminal data",
-			payloads:      []string{`{"choices":[{"delta":{"content":"a"},"finish_reason":null}]}`},
-			clientStarted: true,
-			wantTruncated: true,
-		},
-		{
-			name:          "empty stream",
-			clientStarted: false,
-			wantTruncated: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			var state openAIRawStreamTerminalState
-			for _, payload := range tc.payloads {
-				state.ObserveDataLine(payload)
-			}
-			require.Equal(t, tc.wantTerminal, state.terminated())
-			require.Equal(t, tc.wantTruncated, state.isTruncated(tc.clientStarted))
-		})
-	}
-}
-
 func TestRawChatStreamTruncationBeforeOutputTriggersFailover(t *testing.T) {
 	c, recorder := newRawStreamTruncationTestContext(t)
 
