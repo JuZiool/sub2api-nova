@@ -100,7 +100,7 @@ read_env_value() {
 state_value() {
   local key="$1" value
   [[ -f "$DEPLOY_STATE_FILE" ]] || return 0
-  value="$(sed -nE 's/^[[:space:]]*"'"$key"'"[[:space:]]*:[[:space:]]*"([^"]*)"[, ]*$/\1/p' "$DEPLOY_STATE_FILE" | head -n 1)"
+  value="$(tr '\n' ' ' < "$DEPLOY_STATE_FILE" | sed -nE 's/.*"'"$key"'"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p')"
   printf '%s' "$value"
 }
 
