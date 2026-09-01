@@ -28,6 +28,36 @@ func TestUsageLogFromService_IncludesOpenAIWSMode(t *testing.T) {
 	require.False(t, UsageLogFromServiceAdmin(httpLog).OpenAIWSMode)
 }
 
+func TestUsageLogFromService_PreservesEffectiveAndRequestedReasoningMetadata(t *testing.T) {
+	t.Parallel()
+
+	effective := "xhigh"
+	requested := "max"
+	log := &service.UsageLog{
+		RequestID:                "req_reasoning_metadata",
+		Model:                    "gpt-5.4",
+		ReasoningEffort:          &effective,
+		RequestedReasoningEffort: &requested,
+		NativeCompactionV2:       true,
+	}
+
+	userDTO := UsageLogFromService(log)
+	adminDTO := UsageLogFromServiceAdmin(log)
+	for _, got := range []*UsageLog{userDTO, &adminDTO.UsageLog} {
+		require.NotNil(t, got.ReasoningEffort)
+		require.Equal(t, effective, *got.ReasoningEffort)
+		require.NotNil(t, got.RequestedReasoningEffort)
+		require.Equal(t, requested, *got.RequestedReasoningEffort)
+		require.True(t, got.NativeCompactionV2)
+	}
+
+	userJSON, err := json.Marshal(userDTO)
+	require.NoError(t, err)
+	require.Contains(t, string(userJSON), `"reasoning_effort":"xhigh"`)
+	require.Contains(t, string(userJSON), `"requested_reasoning_effort":"max"`)
+	require.Contains(t, string(userJSON), `"native_compaction_v2":true`)
+}
+
 func TestUsageLogFromService_PrefersRequestTypeForLegacyFields(t *testing.T) {
 	t.Parallel()
 

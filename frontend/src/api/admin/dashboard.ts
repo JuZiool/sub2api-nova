@@ -133,6 +133,7 @@ export interface DashboardSnapshotV2Params extends TrendParams {
   include_group_stats?: boolean
   include_users_trend?: boolean
   users_trend_limit?: number
+  native_compaction_v2?: boolean | null
 }
 
 export interface DashboardSnapshotV2Stats extends DashboardStats {

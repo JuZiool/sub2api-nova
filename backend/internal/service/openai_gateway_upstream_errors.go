@@ -156,6 +156,10 @@ func isOpenAITransientProcessingError(upstreamStatusCode int, upstreamMsg string
 		if strings.Contains(lower, "selected model is at capacity") {
 			return true
 		}
+		if strings.Contains(lower, "temporary") &&
+			(strings.Contains(lower, "retry") || strings.Contains(lower, "try again")) {
+			return true
+		}
 		return strings.Contains(lower, "you can retry your request") &&
 			strings.Contains(lower, "help.openai.com") &&
 			strings.Contains(lower, "request id")

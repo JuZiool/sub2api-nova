@@ -48,6 +48,8 @@ type AdminUser struct {
 	// GroupRates 用户专属分组倍率配置
 	// map[groupID]rateMultiplier
 	GroupRates map[int64]float64 `json:"group_rates,omitempty"`
+	// RestrictPublicGroups 是管理员侧权限开关，普通用户 DTO 不携带该字段。
+	RestrictPublicGroups bool `json:"restrict_public_groups"`
 }
 
 type APIKey struct {
@@ -491,6 +493,9 @@ type UsageLog struct {
 	// ReasoningEffort is the request's reasoning effort level.
 	// OpenAI: "low"/"medium"/"high"/"xhigh"; Claude: "low"/"medium"/"high"/"max".
 	ReasoningEffort *string `json:"reasoning_effort,omitempty"`
+	// RequestedReasoningEffort is the client value captured before policy and
+	// model-family rewriting. ReasoningEffort above retains Nova's effective-value semantics.
+	RequestedReasoningEffort *string `json:"requested_reasoning_effort,omitempty"`
 	// InboundEndpoint is the client-facing API endpoint path, e.g. /v1/chat/completions.
 	InboundEndpoint *string `json:"inbound_endpoint,omitempty"`
 	// UpstreamEndpoint is the normalized upstream endpoint path, e.g. /v1/responses.
@@ -520,8 +525,11 @@ type UsageLog struct {
 	RequestType  string `json:"request_type"`
 	Stream       bool   `json:"stream"`
 	OpenAIWSMode bool   `json:"openai_ws_mode"`
-	DurationMs   *int   `json:"duration_ms"`
-	FirstTokenMs *int   `json:"first_token_ms"`
+	// NativeCompactionV2 is true only for handler-identified OpenAI remote
+	// compaction v2 requests. It does not change the transport request type.
+	NativeCompactionV2 bool `json:"native_compaction_v2"`
+	DurationMs         *int `json:"duration_ms"`
+	FirstTokenMs       *int `json:"first_token_ms"`
 
 	// 图片生成字段
 	ImageCount         int            `json:"image_count"`

@@ -311,6 +311,10 @@ func (s *adminServiceImpl) DuplicateAccount(ctx context.Context, id int64, actor
 	if err != nil {
 		return nil, fmt.Errorf("normalize duplicate account extra: %w", err)
 	}
+	accountExtra, err = normalizeOpenAIAutoResetCreditExtra(input.Platform, input.Type, false, accountExtra)
+	if err != nil {
+		return nil, fmt.Errorf("normalize duplicate auto reset credit extra: %w", err)
+	}
 	if err := NormalizeHeaderOverrideCredentials(input.Credentials); err != nil {
 		return nil, err
 	}
@@ -470,6 +474,10 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 	if err != nil {
 		return nil, err
 	}
+	accountExtra, err = normalizeOpenAIAutoResetCreditExtra(input.Platform, input.Type, false, accountExtra)
+	if err != nil {
+		return nil, err
+	}
 
 	// 绑定分组
 	groupIDs := input.GroupIDs
@@ -556,6 +564,10 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 			return nil, err
 		}
 		normalizedExtra, err = normalizeGrokMediaEligibilityUpdateExtra(account, input, normalizedExtra)
+		if err != nil {
+			return nil, err
+		}
+		normalizedExtra, err = normalizeOpenAIAutoResetCreditUpdateExtra(account, normalizedExtra)
 		if err != nil {
 			return nil, err
 		}
@@ -860,19 +872,52 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 // （如 model_rate_limits / passive_usage_* 等）。
 func (s *adminServiceImpl) UpdateAccountExtra(ctx context.Context, id int64, updates map[string]any) error {
 	updates = sanitizedCodexFingerprintExtraUpdates(updates)
+	updates = stripOpenAIAutoResetCreditManagedExtra(updates, false)
 	delete(updates, UpstreamBillingProbeEnabledExtraKey)
 	delete(updates, UpstreamBillingRateSyncEnabledExtraKey)
 	delete(updates, UpstreamBillingProbeExtraKey)
 	delete(updates, OllamaCloudUsageSessionExtraKey)
 	delete(updates, OllamaCloudUsageAutoRefreshExtraKey)
 	delete(updates, OllamaCloudUsageSnapshotExtraKey)
+	needsAccountValidation := false
 	if _, exists := updates[openAILongContextBillingEnabledKey]; exists {
+		needsAccountValidation = true
+	}
+	for _, key := range []string{
+		OpenAIAutoResetCreditEnabledExtraKey,
+		OpenAIAutoResetCredit5hThresholdExtraKey,
+		OpenAIAutoResetCredit7dThresholdExtraKey,
+	} {
+		if _, exists := updates[key]; exists {
+			needsAccountValidation = true
+			break
+		}
+	}
+	if needsAccountValidation {
 		account, err := s.accountRepo.GetByID(ctx, id)
 		if err != nil {
 			return err
 		}
-		if err := ValidateOpenAILongContextBillingExtra(account.Platform, updates); err != nil {
-			return err
+		if _, exists := updates[openAILongContextBillingEnabledKey]; exists {
+			if err := ValidateOpenAILongContextBillingExtra(account.Platform, updates); err != nil {
+				return err
+			}
+		}
+		if _, exists := updates[OpenAIAutoResetCreditEnabledExtraKey]; exists {
+			updates, err = normalizeOpenAIAutoResetCreditExtra(account.Platform, account.Type, account.IsShadow(), updates)
+			if err != nil {
+				return err
+			}
+		} else if _, exists := updates[OpenAIAutoResetCredit5hThresholdExtraKey]; exists {
+			updates, err = normalizeOpenAIAutoResetCreditExtra(account.Platform, account.Type, account.IsShadow(), updates)
+			if err != nil {
+				return err
+			}
+		} else if _, exists := updates[OpenAIAutoResetCredit7dThresholdExtraKey]; exists {
+			updates, err = normalizeOpenAIAutoResetCreditExtra(account.Platform, account.Type, account.IsShadow(), updates)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if len(updates) == 0 {
@@ -1544,7 +1589,7 @@ func (s *adminServiceImpl) ResetAccountQuota(ctx context.Context, id int64) erro
 		return infraerrors.New(http.StatusBadRequest, "SPARK_SHADOW_NO_QUOTA_RESET",
 			"cannot reset quota for a spark shadow account; manage it on the parent account")
 	}
-	return s.accountRepo.ResetQuotaUsed(ctx, id)
+	return s.accountRepo.ResetQuotaUsedAndClearRateLimitCooldown(ctx, id)
 }
 
 // EnsureOpenAIPrivacy 检查 OpenAI OAuth 账号是否已设置 privacy_mode，

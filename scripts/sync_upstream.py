@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Iterable, Sequence
 
@@ -37,6 +37,32 @@ class Config:
     commit: bool
     create_branch: bool
     apply: bool
+
+
+@dataclass(frozen=True)
+class PreflightResult:
+    """Classified result of applying the filtered patch in a temporary worktree."""
+
+    failed: bool
+    conflicts: list[str]
+    unapplied_paths: list[str]
+    missing_index_paths: list[str]
+    index_mismatch_paths: list[str]
+    diagnostics: list[str]
+
+    @property
+    def blocked(self) -> bool:
+        return self.failed
+
+
+CONFLICT_DIAGNOSTIC_RE = re.compile(r"^Applied patch to '(.+)' with conflicts\.$")
+MISSING_INDEX_DIAGNOSTIC_RE = re.compile(r"^error: (.+): does not exist in index$")
+INDEX_MISMATCH_DIAGNOSTIC_RE = re.compile(r"^error: (.+): does not match index$")
+PATCH_FAILED_DIAGNOSTIC_RE = re.compile(r"^error: patch failed: (.+):\d+(?::.*)?$")
+PATCH_DOES_NOT_APPLY_DIAGNOSTIC_RE = re.compile(r"^error: (.+): patch does not apply$")
+WORKTREE_EXISTS_DIAGNOSTIC_RE = re.compile(
+    r"^error: (.+): already exists in working directory$"
+)
 
 
 def run_git(config: Config, *args: str, check: bool = True) -> str:
@@ -155,7 +181,9 @@ def write_provenance(config: Config, report: dict, patch: bytes) -> str:
         "patchSha256": sha256_bytes(patch),
         "applyStatus": report["applyStatus"],
         "appliedPaths": report.get("appliedPaths", []),
+        "adaptedPaths": report.get("adaptedPaths", []),
         "preservedProtectedPaths": report.get("preservedProtectedPaths", []),
+        "excludedPaths": report.get("excludedPaths", []),
         "versionPaths": report.get("versionPaths", []),
     }
     provenance_path.write_text(
@@ -247,7 +275,50 @@ def update_nova_versions(config: Config, version: str) -> list[str]:
     return updated
 
 
-def preflight_three_way(config: Config, patch: bytes) -> list[str]:
+def parse_preflight_diagnostics(output: str) -> PreflightResult:
+    """Classify git-apply diagnostics that do not always reach porcelain status."""
+    conflicts: set[str] = set()
+    unapplied_paths: set[str] = set()
+    missing_index_paths: set[str] = set()
+    index_mismatch_paths: set[str] = set()
+    diagnostics: list[str] = []
+
+    for line in output.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if match := CONFLICT_DIAGNOSTIC_RE.match(line):
+            conflicts.add(match.group(1))
+            continue
+        if match := MISSING_INDEX_DIAGNOSTIC_RE.match(line):
+            missing_index_paths.add(match.group(1))
+            continue
+        if match := INDEX_MISMATCH_DIAGNOSTIC_RE.match(line):
+            index_mismatch_paths.add(match.group(1))
+            continue
+        if match := PATCH_FAILED_DIAGNOSTIC_RE.match(line):
+            unapplied_paths.add(match.group(1))
+            continue
+        if match := PATCH_DOES_NOT_APPLY_DIAGNOSTIC_RE.match(line):
+            unapplied_paths.add(match.group(1))
+            continue
+        if match := WORKTREE_EXISTS_DIAGNOSTIC_RE.match(line):
+            unapplied_paths.add(match.group(1))
+            continue
+        if line.startswith("error:"):
+            diagnostics.append(line)
+
+    return PreflightResult(
+        failed=True,
+        conflicts=sorted(conflicts),
+        unapplied_paths=sorted(unapplied_paths),
+        missing_index_paths=sorted(missing_index_paths),
+        index_mismatch_paths=sorted(index_mismatch_paths),
+        diagnostics=diagnostics,
+    )
+
+
+def preflight_three_way(config: Config, patch: bytes) -> PreflightResult:
     temp_root = Path(tempfile.mkdtemp(prefix="nova-sync-preflight-"))
     worktree_added = False
     try:
@@ -262,7 +333,14 @@ def preflight_three_way(config: Config, patch: bytes) -> list[str]:
             stderr=subprocess.PIPE,
         )
         if result.returncode == 0:
-            return []
+            return PreflightResult(
+                failed=False,
+                conflicts=[],
+                unapplied_paths=[],
+                missing_index_paths=[],
+                index_mismatch_paths=[],
+                diagnostics=[],
+            )
         status = subprocess.run(
             ["git", "status", "--porcelain"],
             cwd=temp_root,
@@ -278,10 +356,24 @@ def preflight_three_way(config: Config, patch: bytes) -> list[str]:
             for line in status.splitlines()
             if len(line) >= 3 and line[:2] in {"UU", "AA", "DD", "AU", "UA", "DU", "UD"}
         )
-        if conflicts:
-            return conflicts
-        detail = result.stderr.decode("utf-8", errors="replace").strip()
-        raise SyncError(f"三方应用失败但未发现冲突文件: {detail}")
+        diagnostics = parse_preflight_diagnostics(
+            "\n".join(
+                part
+                for part in (
+                    result.stdout.decode("utf-8", errors="replace"),
+                    result.stderr.decode("utf-8", errors="replace"),
+                )
+                if part
+            )
+        )
+        return PreflightResult(
+            failed=True,
+            conflicts=sorted(set(conflicts).union(diagnostics.conflicts)),
+            unapplied_paths=diagnostics.unapplied_paths,
+            missing_index_paths=diagnostics.missing_index_paths,
+            index_mismatch_paths=diagnostics.index_mismatch_paths,
+            diagnostics=diagnostics.diagnostics,
+        )
     finally:
         if worktree_added:
             run_git(config, "worktree", "remove", "--force", str(temp_root), check=False)
@@ -302,6 +394,25 @@ def apply_three_way(config: Config, patch: bytes) -> None:
         raise SyncError(f"三方应用失败: {detail}")
 
 
+def report_config_for(config: Config) -> Config:
+    """Keep --no-apply reports outside the repository so its tree stays untouched."""
+    if config.apply:
+        return config
+    try:
+        config.report_path.relative_to(config.root)
+    except ValueError:
+        return config
+    temp_root = Path(tempfile.mkdtemp(prefix="nova-sync-report-"))
+    return replace(config, report_path=temp_root / config.report_path.name)
+
+
+def display_report_path(config: Config) -> str:
+    try:
+        return str(config.report_path.relative_to(config.root)).replace("\\", "/")
+    except ValueError:
+        return str(config.report_path)
+
+
 def write_report(config: Config, report: dict) -> None:
     config.report_path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
@@ -314,6 +425,8 @@ def write_report(config: Config, report: dict) -> None:
         f"- Nova 候选版本：`{report.get('novaCandidateVersion', '未生成')}`",
         f"- Nova 目标分支：`{report['targetRef']}`",
         f"- 候选分支：`{report.get('candidateBranch') or '未创建'}`",
+        f"- 预检报告：`{report['reportPath']}`",
+        f"- 预检状态：`{report['preflightStatus']}`",
         f"- Provenance：`{report.get('provenancePath', '未生成')}`",
         f"- 应用状态：`{report['applyStatus']}`",
         f"- 自动合并判定：`{report['autoMergeDecision']}`",
@@ -326,7 +439,11 @@ def write_report(config: Config, report: dict) -> None:
         ("实际应用路径", "appliedPaths"),
         ("已保留 Nova 代码的保护路径", "preservedProtectedPaths"),
         ("版本元数据路径", "versionPaths"),
-        ("冲突文件", "conflicts"),
+        ("真实三方冲突路径", "conflicts"),
+        ("无法应用路径", "unappliedPaths"),
+        ("缺失 index 路径", "missingIndexPaths"),
+        ("index 不匹配路径", "indexMismatchPaths"),
+        ("未归类预检诊断", "preflightDiagnostics"),
         ("Critical 路径影响", "criticalPaths"),
         ("人工复核路径影响", "manualReviewPaths"),
         ("保护路径删除影响", "stopOnDeletePaths"),
@@ -404,6 +521,7 @@ def is_upstream_ancestor(config: Config, old: str, new: str) -> bool:
 
 def main(argv: Sequence[str] | None = None) -> int:
     config = parse_args(argv or sys.argv[1:])
+    report_config = report_config_for(config)
     try:
         state = load_json(config.state_path)
         manifest = load_json(config.manifest_path)
@@ -438,13 +556,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         manual = [path for path in paths if path_matches(path, policy["manualReviewPaths"])]
         stop_deleted = [path for path in deleted_paths(config, old, new) if path_matches(path, policy["stopOnDeletePaths"])]
         patch = patch_bytes(config, old, new, applied_paths)
-        conflicts = preflight_three_way(config, patch)
+        preflight = preflight_three_way(config, patch)
         version_paths = [
             relative
             for relative in ("FORK_VERSION", "backend/cmd/server/VERSION")
             if (config.root / relative).exists()
         ]
-        blocked = bool(conflicts)
+        blocked = preflight.blocked
         report = {
             "generatedAt": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "oldUpstreamCommit": old,
@@ -454,10 +572,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             "novaCandidateVersion": nova_version(version_at(config, new)),
             "targetRef": config.target_ref,
             "candidateBranch": None,
+            "reportPath": display_report_path(report_config),
+            "preflightStatus": "blocked" if blocked else "passed",
             "applyStatus": "blocked" if blocked else "ready",
             "autoMergeDecision": "blocked" if blocked else "eligible-after-required-checks",
             "diffStat": diff_stat(config, old, new, applied_paths) if applied_paths else [],
-            "conflicts": conflicts,
+            "conflicts": preflight.conflicts,
+            "unappliedPaths": preflight.unapplied_paths,
+            "missingIndexPaths": preflight.missing_index_paths,
+            "indexMismatchPaths": preflight.index_mismatch_paths,
+            "preflightDiagnostics": preflight.diagnostics,
             "appliedPaths": applied_paths,
             "preservedProtectedPaths": preserved_protected_paths,
             "versionPaths": version_paths,
@@ -475,18 +599,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             report["updatedVersionFiles"] = updated_versions
             provenance_path = write_provenance(config, report, patch)
             report["provenancePath"] = provenance_path
-            config.report_path.parent.mkdir(parents=True, exist_ok=True)
-            write_report(config, report)
+            report_config.report_path.parent.mkdir(parents=True, exist_ok=True)
+            write_report(report_config, report)
             if config.commit:
                 stage_paths = [*applied_paths, *updated_versions, provenance_path]
                 try:
-                    stage_paths.append(str(config.report_path.relative_to(config.root)))
+                    stage_paths.append(str(report_config.report_path.relative_to(config.root)))
                 except ValueError:
                     pass
                 run_git(config, "add", "--", *stage_paths)
                 run_git(config, "commit", "-m", f"同步：融合上游 {new[:12]}")
         else:
-            write_report(config, report)
+            write_report(report_config, report)
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 2 if blocked else 0
     except (KeyError, SyncError) as exc:

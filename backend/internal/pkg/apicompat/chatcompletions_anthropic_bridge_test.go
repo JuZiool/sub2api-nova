@@ -143,8 +143,10 @@ func TestAnthropicToChatCompletionsRequest_ThinkingDropped(t *testing.T) {
 	out, err := AnthropicToChatCompletionsRequest(req)
 	require.NoError(t, err)
 	require.Len(t, out.Messages, 1)
-	// Only text survives; thinking is dropped
+	// Pure text turns retain the existing behavior: thinking is not forwarded
+	// unless the assistant message carries a tool call.
 	require.Equal(t, `"answer"`, string(out.Messages[0].Content))
+	require.Empty(t, out.Messages[0].ReasoningContent)
 }
 
 func TestAnthropicToChatCompletionsRequest_ToolChoiceAuto(t *testing.T) {

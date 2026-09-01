@@ -146,13 +146,6 @@
                 {{ primaryActionLabel }}
                 <Icon name="arrowRight" size="sm" :stroke-width="2" />
               </router-link>
-              <router-link
-                to="/model-plaza"
-                class="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 text-sm font-semibold text-rose-900 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 sm:gap-2 sm:px-6 sm:text-base"
-              >
-                <Icon name="grid" size="sm" />
-                {{ t('home.viewModels') }}
-              </router-link>
             </div>
 
             <div class="mt-6 grid grid-cols-3 gap-2 border-t border-rose-100 pt-4 sm:mt-9 sm:gap-4 sm:pt-6">
@@ -190,11 +183,6 @@
               :alt="t('home.mascotAlt')"
               class="mascot-image absolute bottom-0 left-1/2 z-10 h-[96%] w-auto max-w-none -translate-x-1/2 object-contain object-bottom"
             />
-
-            <div class="absolute bottom-[8%] right-[2%] z-20 hidden items-center gap-2 rounded-lg border border-rose-100 bg-white px-3 py-2 shadow-lg shadow-rose-200/30 sm:right-[8%] sm:flex">
-              <Icon name="shield" size="sm" class="text-emerald-500" :stroke-width="2" />
-              <span class="text-xs font-bold text-rose-950">{{ t('home.serviceOnline') }}</span>
-            </div>
           </div>
         </div>
       </section>

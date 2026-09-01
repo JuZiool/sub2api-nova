@@ -1296,6 +1296,7 @@ func (s *GatewayService) buildRecordUsageLog(
 		SubscriptionID:        optionalSubscriptionID(subscription),
 		CreatedAt:             time.Now(),
 	}
+	usageLog.RequestedReasoningEffort = coalesceRequestedReasoningEffort(result.RequestedReasoningEffort, result.ReasoningEffort)
 	if result.ImageCount > 0 && (cost == nil || cost.BillingMode != string(BillingModeToken)) {
 		usageLog.RateMultiplier = imageMultiplier
 	}

@@ -69,6 +69,53 @@ func TestExtractOpenAIReasoningEffortFromBodyModelCandidates(t *testing.T) {
 	}
 }
 
+func TestCanonicalRequestedReasoningEffortPreservesInboundValue(t *testing.T) {
+	tests := []struct {
+		name       string
+		body       []byte
+		candidates []string
+		want       string
+	}{
+		{
+			name: "explicit max stays max before model normalization",
+			body: []byte(`{"model":"gpt-5.4","reasoning":{"effort":"max"}}`),
+			want: "max",
+		},
+		{
+			name: "flat effort canonicalizes aliases",
+			body: []byte(`{"reasoning_effort":"x-high"}`),
+			want: "xhigh",
+		},
+		{
+			name: "anthropic bridge output config is captured",
+			body: []byte(`{"output_config":{"effort":"high"}}`),
+			want: "high",
+		},
+		{
+			name:       "model suffix is captured before mapping",
+			body:       []byte(`{"model":"gpt-5.4"}`),
+			candidates: []string{"gpt-5.4-max"},
+			want:       "max",
+		},
+		{
+			name: "unknown effort is not persisted",
+			body: []byte(`{"reasoning":{"effort":"future"}}`),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := CanonicalRequestedReasoningEffort(tt.body, tt.candidates...)
+			if tt.want == "" {
+				require.Nil(t, got)
+				return
+			}
+			require.NotNil(t, got)
+			require.Equal(t, tt.want, *got)
+		})
+	}
+}
+
 func TestExtractOpenAIReasoningEffortModelCandidates(t *testing.T) {
 	reqBody := map[string]any{"model": "gpt-5.3-codex-high", "input": "hello"}
 

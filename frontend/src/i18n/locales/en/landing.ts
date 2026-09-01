@@ -15,7 +15,6 @@ export default {
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
     freeRegister: 'Sign Up Free',
-    viewModels: 'Explore Models',
     heroEyebrow: 'Your Personal AI Service Hub',
     // User-focused value proposition
     heroSubtitle: 'One Key, All AI Models',
@@ -25,7 +24,6 @@ export default {
     mascotGreeting: 'Welcome back. Which AI shall we work with today?',
     mascotAlt: 'Nova virtual assistant',
     modelReady: 'Models are ready',
-    serviceOnline: 'All systems online',
     modelsEyebrow: 'MODEL COLLECTION',
     modelsDescription: 'Your favorite AI models in one place, without jumping between platforms.',
     startEyebrow: 'QUICK START',

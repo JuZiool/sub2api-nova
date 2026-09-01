@@ -5,10 +5,15 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/config"
+
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 
@@ -139,4 +144,71 @@ func TestNewOpenAIWSSessionPreemptKeyRequiresFullIsolationScope(t *testing.T) {
 	key, ok := newOpenAIWSSessionPreemptKey(7, 11, " sess ")
 	require.True(t, ok)
 	require.Equal(t, "sess", key.sessionHash)
+}
+
+func TestOpenAIWSIngressSessionPreemptionRespectsResolvedMode(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	groupID := int64(7)
+	newContext := func() *gin.Context {
+		c, _ := gin.CreateTestContext(httptest.NewRecorder())
+		c.Request = httptest.NewRequest(http.MethodGet, "/v1/responses", nil)
+		c.Set("api_key", &APIKey{ID: 11, GroupID: &groupID})
+		return c
+	}
+	newAccount := func(mode string) *Account {
+		return &Account{
+			ID:       1,
+			Platform: PlatformOpenAI,
+			Type:     AccountTypeOAuth,
+			Extra: map[string]any{
+				"openai_oauth_responses_websockets_v2_mode": mode,
+			},
+		}
+	}
+	firstMessage := []byte(`{"type":"response.create","prompt_cache_key":"session-1","input":"hello"}`)
+
+	legacySvc := &OpenAIGatewayService{cfg: &config.Config{}}
+	legacyCtx, legacyCleanup, armed := legacySvc.BeginOpenAIWSIngressSessionPreemption(
+		context.Background(), newContext(), newAccount(OpenAIWSIngressModePassthrough), firstMessage,
+	)
+	require.True(t, armed, "mode router disabled must preserve legacy preemption")
+	defer legacyCleanup()
+	_, legacyReplacementCleanup, armed := legacySvc.BeginOpenAIWSIngressSessionPreemption(
+		context.Background(), newContext(), newAccount(OpenAIWSIngressModePassthrough), firstMessage,
+	)
+	require.True(t, armed)
+	defer legacyReplacementCleanup()
+	require.True(t, IsOpenAIWSSessionPreemptedError(context.Cause(legacyCtx)))
+
+	cfg := &config.Config{}
+	cfg.Gateway.OpenAIWS.ModeRouterV2Enabled = true
+	cfg.Gateway.OpenAIWS.IngressModeDefault = OpenAIWSIngressModeCtxPool
+	svc := &OpenAIGatewayService{cfg: cfg}
+
+	passthrough := newAccount(OpenAIWSIngressModePassthrough)
+	firstCtx, firstCleanup, armed := svc.BeginOpenAIWSIngressSessionPreemption(
+		context.Background(), newContext(), passthrough, firstMessage,
+	)
+	require.False(t, armed)
+	defer firstCleanup()
+	secondCtx, secondCleanup, armed := svc.BeginOpenAIWSIngressSessionPreemption(
+		context.Background(), newContext(), passthrough, firstMessage,
+	)
+	require.False(t, armed)
+	defer secondCleanup()
+	require.NoError(t, firstCtx.Err(), "concurrent passthrough request must remain isolated")
+	require.NoError(t, secondCtx.Err())
+
+	ctxPool := newAccount(OpenAIWSIngressModeCtxPool)
+	sharedCtx, sharedCleanup, armed := svc.BeginOpenAIWSIngressSessionPreemption(
+		context.Background(), newContext(), ctxPool, firstMessage,
+	)
+	require.True(t, armed)
+	defer sharedCleanup()
+	_, replacementCleanup, armed := svc.BeginOpenAIWSIngressSessionPreemption(
+		context.Background(), newContext(), ctxPool, firstMessage,
+	)
+	require.True(t, armed)
+	defer replacementCleanup()
+	require.True(t, IsOpenAIWSSessionPreemptedError(context.Cause(sharedCtx)), "ctx_pool must retain shared-session preemption")
 }

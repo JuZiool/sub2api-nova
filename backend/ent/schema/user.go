@@ -96,6 +96,11 @@ func (User) Fields() []ent.Field {
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 
+		// 公开分组访问限制：关闭时维持既有行为，用户可绑定任意非专属分组；
+		// 开启后，公开分组也必须出现在 user_allowed_groups 中。
+		field.Bool("restrict_public_groups").
+			Default(false),
+
 		// 余额不足通知
 		field.Bool("balance_notify_enabled").
 			Default(true),

@@ -100,7 +100,7 @@ read_env_value() {
 state_value() {
   local key="$1" value
   [[ -f "$DEPLOY_STATE_FILE" ]] || return 0
-  value="$(sed -nE 's/^[[:space:]]*"'"$key"'"[[:space:]]*:[[:space:]]*"([^"]*)"[, ]*$/\1/p' "$DEPLOY_STATE_FILE" | head -n 1)"
+  value="$(tr '\n' ' ' < "$DEPLOY_STATE_FILE" | sed -nE 's/.*"'"$key"'"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p')"
   printf '%s' "$value"
 }
 
@@ -136,7 +136,9 @@ write_state() {
 }
 
 wait_for_application() {
-  local port="$(read_env_value SERVER_PORT 8080)" deadline=$((SECONDS + HEALTH_TIMEOUT))
+  local port deadline
+  port="$(read_env_value SERVER_PORT 8080)"
+  deadline=$((SECONDS + HEALTH_TIMEOUT))
   local container_id health
   log "等待应用健康检查：http://127.0.0.1:${port}/health"
   while ((SECONDS < deadline)); do
@@ -154,7 +156,8 @@ wait_for_application() {
 }
 
 rollback_application() {
-  local image="$(state_value rollbackTag)"
+  local image
+  image="$(state_value rollbackTag)"
   [[ -n "$image" ]] || die "没有可用的回滚镜像。"
   docker image inspect "$image" >/dev/null 2>&1 || die "本地不存在回滚镜像：$image"
   log "回滚到应用镜像：$image"
@@ -164,7 +167,8 @@ rollback_application() {
 }
 
 upgrade_application() {
-  local image="${SUB2API_IMAGE:-$(read_env_value SUB2API_IMAGE "$DEFAULT_IMAGE")}" old_id old_image rollback_tag
+  local image old_id old_image rollback_tag
+  image="${SUB2API_IMAGE:-$(read_env_value SUB2API_IMAGE "$DEFAULT_IMAGE")}"
   old_id="$(compose images -q sub2api 2>/dev/null | head -n 1 || true)"
   old_image="$(compose images --format '{{.Repository}}:{{.Tag}}' sub2api 2>/dev/null | head -n 1 || true)"
   [[ -n "$old_id" ]] || old_id="$(state_value imageId)"

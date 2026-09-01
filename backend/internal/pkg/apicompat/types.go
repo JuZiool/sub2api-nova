@@ -358,8 +358,11 @@ func (t *ResponsesTool) UnmarshalJSON(data []byte) error {
 
 // ResponsesResponse is the non-streaming response from POST /v1/responses.
 type ResponsesResponse struct {
-	ID          string            `json:"id"`
-	Object      string            `json:"object"` // "response"
+	ID     string `json:"id"`
+	Object string `json:"object"` // "response"
+	// CreatedAt 是 Unix 创建时间。严格 Responses 客户端把它视为必填字段，
+	// 因此不能使用 omitempty，即使调用方意外给出 0 也要保留字段本身。
+	CreatedAt   int64             `json:"created_at"`
 	Model       string            `json:"model"`
 	Status      string            `json:"status"` // "completed" | "incomplete" | "failed"
 	Output      []ResponsesOutput `json:"output"`

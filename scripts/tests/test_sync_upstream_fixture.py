@@ -120,7 +120,45 @@ class SyncUpstreamFixtureTests(unittest.TestCase):
             self.assertEqual(result.returncode, 2, result.stderr)
             self.assertNotIn("sync/conflict", git(fixture.root, "branch"))
             self.assertEqual(json.loads((fixture.root / "state/upstreams.json").read_text(encoding="utf-8"))["lastSuccessfulCommit"], fixture.success_baseline)
-            self.assertIn("blocked", (fixture.root / "artifacts/report.md").read_text(encoding="utf-8"))
+            report = (fixture.root / "artifacts/report.md").read_text(encoding="utf-8")
+            self.assertIn("blocked", report)
+            self.assertIn("真实三方冲突路径", report)
+            self.assertIn("tracked.txt", report)
+
+    def test_missing_index_path_is_reported_without_creating_a_branch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = SyncFixture(Path(directory), {"criticalPaths": [], "manualReviewPaths": [], "stopOnDeletePaths": []})
+            git(fixture.root, "switch", "-c", "upstream-work", fixture.success_baseline)
+            (fixture.root / "tracked.txt").write_text("upstream\n", encoding="utf-8")
+            new = commit(fixture.root, "upstream changes historical file")
+            git(fixture.root, "switch", "main")
+            (fixture.root / "tracked.txt").unlink()
+            commit(fixture.root, "nova removes historical file")
+            git(fixture.root, "branch", "-D", "upstream-work")
+
+            result = fixture.run(new, "--branch", "sync/missing-index")
+
+            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertNotIn("sync/missing-index", git(fixture.root, "branch"))
+            report = (fixture.root / "artifacts/report.md").read_text(encoding="utf-8")
+            self.assertIn("缺失 index 路径", report)
+            self.assertIn("tracked.txt", report)
+
+    def test_no_apply_keeps_repository_clean_and_writes_report_to_temp_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = SyncFixture(Path(directory), {"criticalPaths": [], "manualReviewPaths": [], "stopOnDeletePaths": []})
+            new = fixture.upstream_commit("tracked.txt", "upstream\n", "upstream ordinary update")
+
+            result = fixture.run(new, "--no-apply")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual((fixture.root / "tracked.txt").read_text(encoding="utf-8"), "base\n")
+            self.assertFalse((fixture.root / "artifacts/report.md").exists())
+            report_path = Path(json.loads(result.stdout)["reportPath"])
+            self.assertTrue(report_path.is_file())
+            with self.assertRaises(ValueError):
+                report_path.relative_to(fixture.root)
+            self.assertEqual(git(fixture.root, "status", "--porcelain"), "")
 
     def test_protected_change_preserves_nova_code_and_stays_mergeable(self):
         with tempfile.TemporaryDirectory() as directory:

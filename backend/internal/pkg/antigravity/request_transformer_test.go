@@ -286,6 +286,21 @@ func TestBuildTools_PreservesWebSearchAlongsideFunctions(t *testing.T) {
 	require.Equal(t, 5, result[1].GoogleSearch.EnhancedContent.ImageSearch.MaxResultCount)
 }
 
+func TestBuildTools_PreservesMixedBuiltInTools(t *testing.T) {
+	tools := []ClaudeTool{
+		{Name: "read_file", InputSchema: map[string]any{"type": "object"}},
+		{Type: "web_search_20250305", Name: "web_search"},
+		{Type: "code_execution"},
+	}
+
+	result := buildTools(tools)
+	require.Len(t, result, 3)
+	require.Len(t, result[0].FunctionDeclarations, 1)
+	require.NotNil(t, result[1].GoogleSearch)
+	require.NotNil(t, result[2].CodeExecution)
+	require.True(t, hasMixedToolInvocations(result))
+}
+
 func TestBuildGenerationConfig_ThinkingDynamicBudget(t *testing.T) {
 	tests := []struct {
 		name        string

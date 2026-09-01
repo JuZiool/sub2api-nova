@@ -109,6 +109,8 @@ func TestUsageLogRepositoryCreateSyncRequestTypeAndLegacyFields(t *testing.T) {
 			sqlmock.AnyArg(), // rate_image_multiplier
 			sqlmock.AnyArg(), // rate_video_multiplier
 			createdAt,
+			sqlmock.AnyArg(), // requested_reasoning_effort
+			log.NativeCompactionV2,
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(int64(99), createdAt))
 
@@ -210,6 +212,8 @@ func TestUsageLogRepositoryCreate_PersistsServiceTier(t *testing.T) {
 			sqlmock.AnyArg(), // rate_image_multiplier
 			sqlmock.AnyArg(), // rate_video_multiplier
 			createdAt,
+			sqlmock.AnyArg(),
+			log.NativeCompactionV2,
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(int64(100), createdAt))
 
@@ -237,6 +241,33 @@ func TestBuildUsageLogBestEffortInsertQuery_IncludesRequestedModelColumn(t *test
 	require.Contains(t, query, "\n\t\t\trequest_id,\n\t\t\tmodel,\n\t\t\trequested_model,\n\t\t\tupstream_model,\n\t\t\tupstream_response_model,\n\t\t\tupstream_model_mismatch,")
 	require.Len(t, args, len(prepared.args))
 	require.Equal(t, prepared.args[5], args[5])
+}
+
+func TestUsageLogInsertQueriesIncludeRequestMetadata(t *testing.T) {
+	prepared := prepareUsageLogInsert(&service.UsageLog{
+		UserID:             1,
+		APIKeyID:           2,
+		AccountID:          3,
+		RequestID:          "req-query-metadata",
+		Model:              "gpt-5.4",
+		RequestedModel:     "gpt-5.4",
+		NativeCompactionV2: true,
+		CreatedAt:          time.Date(2025, 1, 4, 12, 0, 0, 0, time.UTC),
+	})
+	key := usageLogBatchKey(prepared.requestID, 2)
+
+	batchQuery, batchArgs := buildUsageLogBatchInsertQuery(
+		[]string{key},
+		map[string]usageLogInsertPrepared{key: prepared},
+	)
+	bestEffortQuery, bestEffortArgs := buildUsageLogBestEffortInsertQuery([]usageLogInsertPrepared{prepared})
+
+	for _, query := range []string{batchQuery, bestEffortQuery} {
+		require.Contains(t, query, "requested_reasoning_effort")
+		require.Contains(t, query, "native_compaction_v2")
+	}
+	require.Len(t, batchArgs, len(prepared.args)+1, "batch input prepends input_idx")
+	require.Len(t, bestEffortArgs, len(prepared.args))
 }
 
 func TestExecUsageLogInsertNoResult_PersistsRequestedModel(t *testing.T) {
@@ -272,6 +303,24 @@ func TestPrepareUsageLogInsert_ArgCountMatchesTypes(t *testing.T) {
 	})
 
 	require.Len(t, prepared.args, len(usageLogInsertArgTypes))
+}
+
+func TestPrepareUsageLogInsert_PersistsRequestMetadata(t *testing.T) {
+	requestedEffort := "max"
+	prepared := prepareUsageLogInsert(&service.UsageLog{
+		UserID:                   1,
+		APIKeyID:                 2,
+		AccountID:                3,
+		RequestID:                "req-request-metadata",
+		Model:                    "gpt-5.4",
+		RequestedModel:           "gpt-5.4",
+		RequestedReasoningEffort: &requestedEffort,
+		NativeCompactionV2:       true,
+		CreatedAt:                time.Date(2025, 1, 5, 12, 0, 0, 0, time.UTC),
+	})
+
+	require.Equal(t, sql.NullString{String: requestedEffort, Valid: true}, prepared.args[len(prepared.args)-2])
+	require.Equal(t, true, prepared.args[len(prepared.args)-1])
 }
 
 func TestPrepareUsageLogInsert_PersistsImageSizeMetadata(t *testing.T) {
@@ -882,7 +931,18 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{},
 			sql.NullFloat64{},
 			sql.NullString{},
+			sql.NullInt64{},
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullInt64{},
+			sql.NullFloat64{},
+			sql.NullFloat64{},
+			sql.NullFloat64{},
+			sql.NullFloat64{},
 			now,
+			sql.NullString{Valid: true, String: "max"},
+			true,
 		}})
 		require.NoError(t, err)
 		require.Equal(t, 2, log.ImageCount)
@@ -895,6 +955,9 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 		require.NotNil(t, log.ImageSizeSource)
 		require.Equal(t, "output", *log.ImageSizeSource)
 		require.Equal(t, map[string]int{"4K": 2}, log.ImageSizeBreakdown)
+		require.NotNil(t, log.RequestedReasoningEffort)
+		require.Equal(t, "max", *log.RequestedReasoningEffort)
+		require.True(t, log.NativeCompactionV2)
 	})
 
 	t.Run("request_type_ws_v2_overrides_legacy", func(t *testing.T) {
@@ -959,7 +1022,18 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{},  // billing_mode
 			sql.NullFloat64{}, // account_stats_cost
 			sql.NullString{},  // session_id
+			sql.NullInt64{},   // pricing_group_id
+			sql.NullString{},  // rate_match_model
+			sql.NullString{},  // rate_rule_source
+			sql.NullString{},  // rate_rule_key
+			sql.NullInt64{},   // rate_config_version
+			sql.NullFloat64{}, // rate_base_multiplier
+			sql.NullFloat64{}, // rate_token_multiplier
+			sql.NullFloat64{}, // rate_image_multiplier
+			sql.NullFloat64{}, // rate_video_multiplier
 			now,
+			sql.NullString{}, // requested_reasoning_effort
+			false,            // native_compaction_v2
 		}})
 		require.NoError(t, err)
 		require.NotNil(t, log.ServiceTier)
@@ -1019,7 +1093,18 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{},  // billing_mode
 			sql.NullFloat64{}, // account_stats_cost
 			sql.NullString{},  // session_id
+			sql.NullInt64{},   // pricing_group_id
+			sql.NullString{},  // rate_match_model
+			sql.NullString{},  // rate_rule_source
+			sql.NullString{},  // rate_rule_key
+			sql.NullInt64{},   // rate_config_version
+			sql.NullFloat64{}, // rate_base_multiplier
+			sql.NullFloat64{}, // rate_token_multiplier
+			sql.NullFloat64{}, // rate_image_multiplier
+			sql.NullFloat64{}, // rate_video_multiplier
 			now,
+			sql.NullString{}, // requested_reasoning_effort
+			false,            // native_compaction_v2
 		}})
 		require.NoError(t, err)
 		require.NotNil(t, log.ServiceTier)
@@ -1079,7 +1164,18 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{},  // billing_mode
 			sql.NullFloat64{}, // account_stats_cost
 			sql.NullString{},  // session_id
+			sql.NullInt64{},   // pricing_group_id
+			sql.NullString{},  // rate_match_model
+			sql.NullString{},  // rate_rule_source
+			sql.NullString{},  // rate_rule_key
+			sql.NullInt64{},   // rate_config_version
+			sql.NullFloat64{}, // rate_base_multiplier
+			sql.NullFloat64{}, // rate_token_multiplier
+			sql.NullFloat64{}, // rate_image_multiplier
+			sql.NullFloat64{}, // rate_video_multiplier
 			now,
+			sql.NullString{}, // requested_reasoning_effort
+			false,            // native_compaction_v2
 		}})
 		require.NoError(t, err)
 		require.NotNil(t, log.ServiceTier)

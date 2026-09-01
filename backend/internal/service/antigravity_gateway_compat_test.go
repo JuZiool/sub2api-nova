@@ -269,6 +269,34 @@ func TestBuildAntigravityCompatGeminiBody_ConfiguresMixedToolInvocations(t *test
 	}
 }
 
+func TestAntigravityCompatChatMixedBuiltInToolsEnableServerSideInvocations(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	upstream := &queuedHTTPUpstreamStub{responses: []*http.Response{antigravityCompatSuccessResponse()}}
+	svc := newAntigravityCompatService(config.GatewayConfig{MaxLineSize: defaultMaxLineSize}, upstream)
+	body := []byte(`{
+		"model":"claude-sonnet-4-5",
+		"messages":[{"role":"user","content":"hello"}],
+		"stream":true,
+		"tools":[
+			{"type":"function","function":{"name":"read_file","parameters":{"type":"object","properties":{"path":{"type":"string"}}}}},
+			{"type":"web_search"},
+			{"type":"code_execution"}
+		]
+	}`)
+	ginContext, _ := newAntigravityCompatContext(http.MethodPost, "/v1/chat/completions", body)
+
+	result, err := svc.ForwardAsChatCompletions(context.Background(), ginContext, newAntigravityCompatAccount(AccountTypeOAuth), body, nil)
+
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Len(t, upstream.requestBodies, 1)
+	requestBody := upstream.requestBodies[0]
+	require.True(t, gjson.GetBytes(requestBody, "request.toolConfig.includeServerSideToolInvocations").Bool())
+	require.Len(t, gjson.GetBytes(requestBody, "request.tools.0.functionDeclarations").Array(), 1)
+	require.True(t, gjson.GetBytes(requestBody, "request.tools.1.googleSearch").Exists())
+	require.True(t, gjson.GetBytes(requestBody, "request.tools.2.codeExecution").Exists())
+}
+
 func TestAntigravityCompatPreservesChatTokenLimit(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	tests := []struct {

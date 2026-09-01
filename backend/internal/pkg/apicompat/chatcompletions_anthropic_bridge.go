@@ -249,8 +249,8 @@ func anthropicUserToChatMessages(raw json.RawMessage) ([]ChatMessage, error) {
 
 // anthropicAssistantToChatMessages handles an Anthropic assistant message.
 // Text content → assistant message content; tool_use blocks → tool_calls on the
-// same assistant message; thinking blocks are dropped (Chat Completions has no
-// inbound thinking field, matching anthropicAssistantToResponses).
+// same assistant message; thinking blocks → reasoning_content only when the
+// message carries tool calls.
 func anthropicAssistantToChatMessages(raw json.RawMessage) ([]ChatMessage, error) {
 	// Plain string → single assistant message.
 	var s string
@@ -289,7 +289,26 @@ func anthropicAssistantToChatMessages(raw json.RawMessage) ([]ChatMessage, error
 		})
 	}
 
+	msg.ReasoningContent = anthropicThinkingToReasoningContent(blocks, len(msg.ToolCalls) > 0)
+
 	return []ChatMessage{msg}, nil
+}
+
+// anthropicThinkingToReasoningContent restores plaintext thinking blocks to
+// the reasoning_content that produced an assistant tool call. This mirrors the
+// Responses-to-Chat bridge: only tool-call messages carry replayed reasoning,
+// so ordinary assistant text turns preserve their existing wire shape.
+func anthropicThinkingToReasoningContent(blocks []AnthropicContentBlock, hasToolCalls bool) string {
+	if !hasToolCalls {
+		return ""
+	}
+	parts := make([]string, 0, len(blocks))
+	for _, block := range blocks {
+		if block.Type == "thinking" && block.Thinking != "" {
+			parts = append(parts, block.Thinking)
+		}
+	}
+	return strings.Join(parts, "\n")
 }
 
 // anthropicToolsToChatTools maps Anthropic tool definitions to Chat Completions
