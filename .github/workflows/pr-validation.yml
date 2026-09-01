@@ -54,7 +54,7 @@ jobs:
               base_sha="$(git rev-parse --verify HEAD^)"
             fi
           fi
-          git diff --check "$base_sha...HEAD"
+          git -c core.whitespace=cr-at-eol diff --check "$base_sha...HEAD"
 
       - name: Set up Go
         uses: actions/setup-go@v5

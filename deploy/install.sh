@@ -312,7 +312,9 @@ read_env_value() {
 }
 
 wait_for_application() {
-  local port="$(read_env_value SERVER_PORT 8080)" deadline=$((SECONDS + HEALTH_TIMEOUT))
+  local port deadline
+  port="$(read_env_value SERVER_PORT 8080)"
+  deadline=$((SECONDS + HEALTH_TIMEOUT))
   local container_id health
   log "等待服务健康检查：http://127.0.0.1:${port}/health"
   while ((SECONDS < deadline)); do
