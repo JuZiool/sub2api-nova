@@ -171,6 +171,32 @@ func TestFilterCodexModelIDsForGroupOmitsWildcardKeys(t *testing.T) {
 	require.Equal(t, []string{"deepseek-v4-pro", "gpt-5.5"}, got)
 }
 
+func TestFilterCodexModelIDsForGroupOmitsHiddenModels(t *testing.T) {
+	t.Parallel()
+
+	group := &Group{ModelsListConfig: GroupModelsListConfig{
+		HiddenModels: []string{"gpt-5.4", "gpt-5.6-*"},
+	}}
+
+	got := FilterCodexModelIDsForGroup([]string{"gpt-5.4", "gpt-5.5", "gpt-5.6-pro"}, group)
+	require.Equal(t, []string{"gpt-5.5"}, got)
+}
+
+func TestMergeConfiguredCodexModelsManifestOmitsHiddenModelsBeforeETag(t *testing.T) {
+	t.Parallel()
+
+	body, changed, err := mergeConfiguredCodexModelsManifest(
+		[]byte(`{"models":[{"slug":"gpt-5.4"},{"slug":"gpt-5.5"}]}`),
+		nil,
+		nil,
+		false,
+		[]string{"gpt-5.4"},
+	)
+	require.NoError(t, err)
+	require.True(t, changed)
+	require.Equal(t, []string{"gpt-5.5"}, codexManifestModelSlugs(t, body))
+}
+
 func decodeCodexManifestModels(t *testing.T, body []byte) []map[string]any {
 	t.Helper()
 

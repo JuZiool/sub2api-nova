@@ -854,6 +854,20 @@
               </div>
             </div>
           </div>
+          <div class="mt-4 border-t border-gray-200 pt-4 dark:border-dark-600">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t("admin.groups.modelsList.hiddenTitle") }}
+            </label>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t("admin.groups.modelsList.hiddenHint") }}
+            </p>
+            <textarea
+              v-model="createModelsListState.hiddenModelsText"
+              rows="3"
+              class="input mt-2 w-full resize-y"
+              :placeholder="t('admin.groups.modelsList.hiddenPlaceholder')"
+            ></textarea>
+          </div>
         </div>
 
         <!-- 图片生成计费配置 -->
@@ -2483,6 +2497,20 @@
                 </button>
               </div>
             </div>
+          </div>
+          <div class="mt-4 border-t border-gray-200 pt-4 dark:border-dark-600">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t("admin.groups.modelsList.hiddenTitle") }}
+            </label>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t("admin.groups.modelsList.hiddenHint") }}
+            </p>
+            <textarea
+              v-model="editModelsListState.hiddenModelsText"
+              rows="3"
+              class="input mt-2 w-full resize-y"
+              :placeholder="t('admin.groups.modelsList.hiddenPlaceholder')"
+            ></textarea>
           </div>
         </div>
 
@@ -5130,6 +5158,7 @@ const resetModelsListState = (
   state.enabled = fresh.enabled;
   state.savedModels = fresh.savedModels;
   state.items = fresh.items;
+  state.hiddenModelsText = fresh.hiddenModelsText;
 };
 
 const loadModelsListCandidates = async (

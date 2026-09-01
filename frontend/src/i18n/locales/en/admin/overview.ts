@@ -1071,7 +1071,10 @@ export default {
         empty: 'No displayable models',
         selectedSummary: 'Selected {selected} / {total}',
         selectAll: 'Select all',
-        invertSelection: 'Invert'
+        invertSelection: 'Invert',
+        hiddenTitle: 'Models hidden from clients',
+        hiddenHint: 'Enter one model per line or separate models with commas. Hidden models are removed from client catalogs and rejected at request time; append * for prefix matching.',
+        hiddenPlaceholder: 'For example:\ngpt-5.4\ngpt-5.5'
       },
       compositeRoutes: {
         action: 'Routes',

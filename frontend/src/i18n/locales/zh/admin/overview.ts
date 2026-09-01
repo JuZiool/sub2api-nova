@@ -1068,7 +1068,10 @@ export default {
         empty: '暂无可展示模型',
         selectedSummary: '已选 {selected} / {total}',
         selectAll: '全选',
-        invertSelection: '反选'
+        invertSelection: '反选',
+        hiddenTitle: '客户端不可见模型列表',
+        hiddenHint: '每行填写一个模型名，也支持逗号分隔。命中的模型不会出现在客户端模型列表中，也无法调用；末尾加 * 可按前缀匹配。',
+        hiddenPlaceholder: '例如：\ngpt-5.4\ngpt-5.5'
       },
       compositeRoutes: {
         action: '路由',

@@ -61,6 +61,9 @@ func FilterCodexModelIDsForGroup(modelIDs []string, group *Group) []string {
 		if modelID == "" {
 			continue
 		}
+		if group != nil && group.IsModelHidden(modelID) {
+			continue
+		}
 		if isCodexDedicatedMediaModel(modelID) {
 			continue
 		}
@@ -139,6 +142,7 @@ func (s *OpenAIGatewayService) BuildGroupConfiguredCodexModelsManifest(
 		nil,
 		group.ModelsListConfig.Models,
 		group.CustomModelsListEnabled(),
+		group.ModelsListConfig.HiddenModels,
 	)
 	if err != nil {
 		return nil, false, fmt.Errorf("build group configured Codex models: %w", err)
@@ -180,6 +184,7 @@ func (s *OpenAIGatewayService) MergeGroupConfiguredCodexModels(
 		configuredModels,
 		group.ModelsListConfig.Models,
 		group.CustomModelsListEnabled(),
+		group.ModelsListConfig.HiddenModels,
 	)
 	if err != nil {
 		return fmt.Errorf("merge group configured Codex models: %w", err)
@@ -280,7 +285,7 @@ func openAIConfiguredCodexModelIDsForGroup(accounts []Account, group *Group) []s
 	}
 	for _, selectedModel := range group.ModelsListConfig.Models {
 		selectedModel = strings.TrimSpace(selectedModel)
-		if selectedModel == "" || strings.Contains(selectedModel, "*") {
+		if selectedModel == "" || strings.Contains(selectedModel, "*") || group.IsModelHidden(selectedModel) {
 			continue
 		}
 		for i := range accounts {
@@ -1143,6 +1148,7 @@ func mergeConfiguredCodexModelsManifest(
 	configuredModels []string,
 	selectedModels []string,
 	filterBySelection bool,
+	hiddenModels []string,
 ) ([]byte, bool, error) {
 	var envelope map[string]json.RawMessage
 	if err := json.Unmarshal(body, &envelope); err != nil {
@@ -1176,6 +1182,10 @@ func mergeConfiguredCodexModelsManifest(
 			continue
 		}
 		descriptor.Slug = strings.TrimSpace(descriptor.Slug)
+		if isGroupModelHidden(hiddenModels, descriptor.Slug) {
+			changed = true
+			continue
+		}
 		if isCodexDedicatedMediaModel(descriptor.Slug) {
 			changed = true
 			continue
@@ -1205,6 +1215,9 @@ func mergeConfiguredCodexModelsManifest(
 	}
 
 	for _, modelID := range configuredModels {
+		if isGroupModelHidden(hiddenModels, modelID) {
+			continue
+		}
 		if isCodexDedicatedMediaModel(modelID) {
 			continue
 		}

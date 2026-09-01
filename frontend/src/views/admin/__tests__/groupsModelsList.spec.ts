@@ -93,6 +93,30 @@ describe("groupsModelsList", () => {
     });
   });
 
+  it("normalizes hidden models from multiline and comma-separated input", () => {
+    const state = createModelsListState({
+      enabled: false,
+      models: [],
+      hidden_models: ["gpt-5.4", "gpt-5.4"],
+    });
+    state.hiddenModelsText = "gpt-5.4, gpt-5.5\n  gpt-5.4  ";
+
+    expect(buildModelsListConfig(state)).toEqual({
+      enabled: false,
+      models: [],
+      hidden_models: ["gpt-5.4", "gpt-5.5"],
+    });
+  });
+
+  it("omits an empty hidden model list for backward-compatible payloads", () => {
+    const state = createModelsListState();
+
+    expect(buildModelsListConfig(state)).toEqual({
+      enabled: false,
+      models: [],
+    });
+  });
+
   it("selects all candidate models from the toolbar action", () => {
     const state = hydrateModelsListState({
       enabled: true,
