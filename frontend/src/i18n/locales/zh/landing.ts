@@ -15,7 +15,6 @@ export default {
     getStarted: '立即开始',
     goToDashboard: '进入控制台',
     freeRegister: '免费注册',
-    viewModels: '查看模型',
     heroEyebrow: '你的专属 AI 服务站',
     // 新增：面向用户的价值主张
     heroSubtitle: '一个密钥，畅用多个 AI 模型',
@@ -25,7 +24,6 @@ export default {
     mascotGreeting: '欢迎回来，今天想和哪个 AI 一起完成任务？',
     mascotAlt: 'Nova 看板娘',
     modelReady: '多模型已就绪',
-    serviceOnline: '服务运行正常',
     modelsEyebrow: 'MODEL COLLECTION',
     modelsDescription: '不用在多个平台之间来回切换，你熟悉的主流模型都在这里。',
     startEyebrow: 'QUICK START',
