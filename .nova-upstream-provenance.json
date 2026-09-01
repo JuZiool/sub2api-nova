@@ -15,6 +15,7 @@
   "manifestSha256": "4a9837310a95c76ac4d60524a405b3888f082996d1958160188b334f02fa6137",
   "patchSha256": "fa037c5fbe3c163319283498b3a4ef904e57b611d4e7b934956ac51a02e8f592",
   "applyStatus": "ready",
+  "novaMergeCommit": "2761d35d26a218596d7b49f18b6329755b0a9332",
   "appliedPaths": [
     "assets/partners/logos/axisnow.jpg",
     "assets/partners/logos/codex-everywhere.jpg",

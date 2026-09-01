@@ -203,6 +203,8 @@ def verify_candidate(
         raise VerificationError("candidate branch does not match provenance")
     if provenance.get("applyStatus") != "ready":
         raise VerificationError("candidate was not applied successfully")
+    if provenance.get("novaMergeCommit") not in (None, candidate_sha):
+        raise VerificationError("provenance novaMergeCommit does not match candidate")
 
     old = require(provenance.get("oldUpstreamCommit"), "missing old upstream commit")
     new = require(provenance.get("newUpstreamCommit"), "missing new upstream commit")

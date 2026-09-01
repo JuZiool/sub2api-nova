@@ -181,7 +181,9 @@ def write_provenance(config: Config, report: dict, patch: bytes) -> str:
         "patchSha256": sha256_bytes(patch),
         "applyStatus": report["applyStatus"],
         "appliedPaths": report.get("appliedPaths", []),
+        "adaptedPaths": report.get("adaptedPaths", []),
         "preservedProtectedPaths": report.get("preservedProtectedPaths", []),
+        "excludedPaths": report.get("excludedPaths", []),
         "versionPaths": report.get("versionPaths", []),
     }
     provenance_path.write_text(
