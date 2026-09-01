@@ -180,6 +180,42 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 		require.False(t, ok)
 	})
 
+	t.Run("225 Codex 回填迁移的 Windows checksum 可兼容当前格式", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"225_backfill_codex_fingerprint_seed.sql",
+			"d1af7ad680486b1735d35ed56fbe8cc03b71e59f319e9a92d230c2e0a405f42a",
+			"bd8d6dff505e417eee69a2da300aa1df06e832fd668c7848f06944c7c0c3fd26",
+		)
+		require.True(t, ok)
+	})
+
+	t.Run("225 渠道价格迁移的 Windows checksum 可兼容当前格式", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"225_channel_model_time_pricing.sql",
+			"54e7f0c5e989ae9eae1ca658fc96432401bfec355e7cf742ed02fa10449fe0b3",
+			"23f0a4da20f2f78f385e9f1cd1ed57db1a31b99b1ba54b0f498985e3a66647b1",
+		)
+		require.True(t, ok)
+	})
+
+	t.Run("226 渠道监控迁移的 Windows checksum 可兼容当前格式", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"226_channel_monitor_quota_mode.sql",
+			"190a6a680a7c01cd58c719cb8b2b143226541621ec6a7fb871d0a641f05b9978",
+			"c36c6c0ec6cc8727bb986e8cdc645990dcf8dad8f56a8c4647422e24e9dff88d",
+		)
+		require.True(t, ok)
+	})
+
+	t.Run("229 Windows换行checksum可兼容当前格式", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"229_plugins.sql",
+			"4beb7dc798c9d7d53ebe66dd7d9e1e7ee7965840fb4ad6688e421e004d72389b",
+			"b1e97991df385eba0f62426572d7d58a0ef5c96a876df356ba070cca68e88896",
+		)
+		require.True(t, ok)
+	})
+
 	t.Run("230 Windows换行checksum可兼容当前格式", func(t *testing.T) {
 		ok := isMigrationChecksumCompatible(
 			"230_plugin_artifacts.sql",

@@ -95,6 +95,12 @@ var migrationChecksumCompatibilityRules = map[string]migrationChecksumCompatibil
 	"224_channel_monitor_mode_v2_default.sql": newMigrationChecksumCompatibilityRule("1484fbf7f979f0bdc5915d2f0d73049713abb43af06d6dec45a8a1fa682b046e", "9afa1ba5cfe874c6b6da9e0fb84aed02dc20956b391c56178d2f54c52b049261"),
 	// 224 国产平台配额迁移曾在 Windows CRLF 文件下应用；当前镜像使用 LF，SQL 语义相同。
 	"224_user_platform_quotas_add_cn_providers.sql": newMigrationChecksumCompatibilityRule("5227db3c1a6a1e2e422a9f9ba9d1f490c708b6c6dd91ce89f3c48115421a3e55", "db855b04d3af13ebdbf70922034ecd05b0972725726287c70aeeb04a1b1f1e81"),
+	// 225 Codex 指纹回填迁移曾在 Windows CRLF 文件下应用；当前镜像使用 LF，SQL 语义相同。
+	"225_backfill_codex_fingerprint_seed.sql": newMigrationChecksumCompatibilityRule("bd8d6dff505e417eee69a2da300aa1df06e832fd668c7848f06944c7c0c3fd26", "d1af7ad680486b1735d35ed56fbe8cc03b71e59f319e9a92d230c2e0a405f42a"),
+	// 225 渠道模型时间价格迁移曾在 Windows CRLF 文件下应用；当前镜像使用 LF，SQL 语义相同。
+	"225_channel_model_time_pricing.sql": newMigrationChecksumCompatibilityRule("23f0a4da20f2f78f385e9f1cd1ed57db1a31b99b1ba54b0f498985e3a66647b1", "54e7f0c5e989ae9eae1ca658fc96432401bfec355e7cf742ed02fa10449fe0b3"),
+	// 226 渠道监控配额模式迁移曾在 Windows CRLF 文件下应用；当前镜像使用 LF，SQL 语义相同。
+	"226_channel_monitor_quota_mode.sql": newMigrationChecksumCompatibilityRule("c36c6c0ec6cc8727bb986e8cdc645990dcf8dad8f56a8c4647422e24e9dff88d", "190a6a680a7c01cd58c719cb8b2b143226541621ec6a7fb871d0a641f05b9978"),
 	// 229 在 Windows 环境曾以 CRLF 换行应用；当前镜像使用 LF，SQL 语义相同。
 	"229_plugins.sql": newMigrationChecksumCompatibilityRule("b1e97991df385eba0f62426572d7d58a0ef5c96a876df356ba070cca68e88896", "4beb7dc798c9d7d53ebe66dd7d9e1e7ee7965840fb4ad6688e421e004d72389b"),
 	// 230 与 229 同批在 Windows 环境以 CRLF 换行应用；当前镜像使用 LF。
