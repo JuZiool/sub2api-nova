@@ -162,13 +162,22 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 		require.True(t, ok)
 	})
 
-	t.Run("229 Windows换行checksum可兼容当前格式", func(t *testing.T) {
+	t.Run("224 国产平台配额迁移的 Windows checksum 可兼容当前格式", func(t *testing.T) {
 		ok := isMigrationChecksumCompatible(
-			"229_plugins.sql",
-			"4beb7dc798c9d7d53ebe66dd7d9e1e7ee7965840fb4ad6688e421e004d72389b",
-			"b1e97991df385eba0f62426572d7d58a0ef5c96a876df356ba070cca68e88896",
+			"224_user_platform_quotas_add_cn_providers.sql",
+			"db855b04d3af13ebdbf70922034ecd05b0972725726287c70aeeb04a1b1f1e81",
+			"5227db3c1a6a1e2e422a9f9ba9d1f490c708b6c6dd91ce89f3c48115421a3e55",
 		)
 		require.True(t, ok)
+	})
+
+	t.Run("224 国产平台配额迁移未知 checksum 不兼容", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"224_user_platform_quotas_add_cn_providers.sql",
+			"db855b04d3af13ebdbf70922034ecd05b0972725726287c70aeeb04a1b1f1e81",
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		)
+		require.False(t, ok)
 	})
 
 	t.Run("230 Windows换行checksum可兼容当前格式", func(t *testing.T) {
