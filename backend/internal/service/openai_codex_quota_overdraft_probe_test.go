@@ -97,7 +97,7 @@ func newCodexOverdraftProbeTestAccount(now time.Time) *Account {
 	}
 }
 
-func TestCodexQuotaOverdraftProbeUsesOnePreferredModel(t *testing.T) {
+func TestCodexQuotaOverdraftProbeUsesPreferredModels(t *testing.T) {
 	models := codexQuotaOverdraftProbeModels("gpt-5.4")
 	require.Equal(t, []string{"gpt-5.4", "gpt-5.5", "gpt-5.4-mini"}, models)
 
@@ -105,7 +105,7 @@ func TestCodexQuotaOverdraftProbeUsesOnePreferredModel(t *testing.T) {
 	for attempt := 0; attempt < codexQuotaOverdraftProbeAttemptLimit; attempt++ {
 		got = append(got, models[attempt%len(models)])
 	}
-	require.Equal(t, []string{"gpt-5.4"}, got)
+	require.Equal(t, []string{"gpt-5.4", "gpt-5.5", "gpt-5.4-mini"}, got)
 }
 
 func TestCodexQuotaOverdraftSignalsKeepFiveHourAndSevenDayCyclesSeparate(t *testing.T) {
@@ -130,7 +130,7 @@ func TestCodexQuotaOverdraftSignalsKeepFiveHourAndSevenDayCyclesSeparate(t *test
 	require.Contains(t, multiple.CycleKey, "|7d:")
 }
 
-func TestCodexQuotaOverdraftSingleProbePassesOnSuccess(t *testing.T) {
+func TestCodexQuotaOverdraftProbePassesOnFirstAvailableModel(t *testing.T) {
 	now := time.Date(2026, time.August, 13, 14, 0, 0, 0, time.UTC)
 	account := newCodexOverdraftProbeTestAccount(now)
 	repo := &codexOverdraftProbeRepoStub{account: account}
@@ -153,7 +153,7 @@ func TestCodexQuotaOverdraftSingleProbePassesOnSuccess(t *testing.T) {
 	require.Zero(t, repo.tempPauseCalls)
 }
 
-func TestCodexQuotaOverdraftSingleProbeQuotaFailurePauses(t *testing.T) {
+func TestCodexQuotaOverdraftProbeQuotaFailurePausesAfterAllAttempts(t *testing.T) {
 	now := time.Date(2026, time.August, 13, 14, 0, 0, 0, time.UTC)
 	account := newCodexOverdraftProbeTestAccount(now)
 	repo := &codexOverdraftProbeRepoStub{account: account}
@@ -348,7 +348,7 @@ func TestCodexQuotaOverdraftProbeInconclusiveNeverPauses(t *testing.T) {
 	}
 }
 
-func TestCodexQuotaOverdraftModelNotFoundIsInconclusiveWithoutRetry(t *testing.T) {
+func TestCodexQuotaOverdraftModelNotFoundIsInconclusiveAfterAllAttempts(t *testing.T) {
 	now := time.Date(2026, time.August, 13, 14, 0, 0, 0, time.UTC)
 	account := newCodexOverdraftProbeTestAccount(now)
 	repo := &codexOverdraftProbeRepoStub{account: account}
@@ -367,7 +367,7 @@ func TestCodexQuotaOverdraftModelNotFoundIsInconclusiveWithoutRetry(t *testing.T
 	require.Equal(t, codexQuotaOverdraftProbeAttemptLimit, state.Attempts)
 	require.Zero(t, state.RetryCount)
 	require.Nil(t, state.RetryAt)
-	require.Equal(t, []string{"gpt-5.4"}, models)
+	require.Equal(t, []string{"gpt-5.4", "gpt-5.5", "gpt-5.4-mini"}, models)
 	require.Zero(t, repo.tempPauseCalls)
 }
 

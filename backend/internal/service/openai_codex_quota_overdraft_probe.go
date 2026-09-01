@@ -27,7 +27,7 @@ const (
 	codexQuotaOverdraftProbeInconclusive = "inconclusive"
 	codexQuotaOverdraftProbeRecovered    = "recovered"
 
-	codexQuotaOverdraftProbeAttemptLimit   = 1
+	codexQuotaOverdraftProbeAttemptLimit   = 3
 	codexQuotaOverdraftProbeAttemptTimeout = 20 * time.Second
 	codexQuotaOverdraftProbePlanTimeout    = codexQuotaOverdraftProbeAttemptLimit * codexQuotaOverdraftProbeAttemptTimeout
 	codexQuotaOverdraftProbeBodyLimit      = 256 << 10

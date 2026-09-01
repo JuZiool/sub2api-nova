@@ -993,7 +993,7 @@ type GatewayConfig struct {
 	// 默认关闭，避免纯文本 Codex 请求被意外改写；显式携带 image_generation 工具的请求仍按分组能力转发。
 	CodexImageGenerationBridgeEnabled bool `mapstructure:"codex_image_generation_bridge_enabled"`
 	// CodexQuotaOverdraftEnabled: 是否启用 OpenAI OAuth Codex 5h/7d 额度透支。
-	// 包括请求注入、五次真实复核、调度门控和透支期用量统计；默认关闭。
+	// 包括请求注入、三次真实复核、调度门控和透支期用量统计；默认关闭。
 	CodexQuotaOverdraftEnabled bool `mapstructure:"codex_quota_overdraft_enabled"`
 	// ForcedCodexInstructionsTemplateFile: 服务端强制附加到 Codex 顶层 instructions 的模板文件路径。
 	// 模板渲染后会直接覆盖最终 instructions；若需要保留客户端 system 转换结果，请在模板中显式引用 {{ .ExistingInstructions }}。
