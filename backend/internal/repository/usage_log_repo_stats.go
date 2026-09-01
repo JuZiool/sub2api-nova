@@ -743,8 +743,8 @@ func (r *usageLogRepository) GetStatsWithFilters(ctx context.Context, filters Us
 		)
 	}
 	// endpoint 明细:best-effort(失败 log + 返空),不致命。
-		runEndpoints := func(c context.Context) {
-			res, err := r.getEndpointStatsByColumnWithFilters(c, "inbound_endpoint", start, end, filters.UserID, filters.APIKeyID, filters.AccountID, filters.GroupID, filters.Model, filters.ModelFilterSource, filters.RequestType, filters.Stream, filters.NativeCompactionV2, filters.BillingType, filters.BillingMode)
+	runEndpoints := func(c context.Context) {
+		res, err := r.getEndpointStatsByColumnWithFilters(c, "inbound_endpoint", start, end, filters.UserID, filters.APIKeyID, filters.AccountID, filters.GroupID, filters.Model, filters.ModelFilterSource, filters.RequestType, filters.Stream, filters.NativeCompactionV2, filters.BillingType, filters.BillingMode)
 
 		if err != nil {
 			if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
@@ -754,8 +754,8 @@ func (r *usageLogRepository) GetStatsWithFilters(ctx context.Context, filters Us
 		}
 		endpoints = res
 	}
-		runUpstream := func(c context.Context) {
-			res, err := r.getEndpointStatsByColumnWithFilters(c, "upstream_endpoint", start, end, filters.UserID, filters.APIKeyID, filters.AccountID, filters.GroupID, filters.Model, filters.ModelFilterSource, filters.RequestType, filters.Stream, filters.NativeCompactionV2, filters.BillingType, filters.BillingMode)
+	runUpstream := func(c context.Context) {
+		res, err := r.getEndpointStatsByColumnWithFilters(c, "upstream_endpoint", start, end, filters.UserID, filters.APIKeyID, filters.AccountID, filters.GroupID, filters.Model, filters.ModelFilterSource, filters.RequestType, filters.Stream, filters.NativeCompactionV2, filters.BillingType, filters.BillingMode)
 
 		if err != nil {
 			if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
@@ -765,8 +765,8 @@ func (r *usageLogRepository) GetStatsWithFilters(ctx context.Context, filters Us
 		}
 		upstreamEndpoints = res
 	}
-		runPaths := func(c context.Context) {
-			res, err := r.getEndpointPathStatsWithFilters(c, start, end, filters.UserID, filters.APIKeyID, filters.AccountID, filters.GroupID, filters.Model, filters.ModelFilterSource, filters.RequestType, filters.Stream, filters.NativeCompactionV2, filters.BillingType, filters.BillingMode)
+	runPaths := func(c context.Context) {
+		res, err := r.getEndpointPathStatsWithFilters(c, start, end, filters.UserID, filters.APIKeyID, filters.AccountID, filters.GroupID, filters.Model, filters.ModelFilterSource, filters.RequestType, filters.Stream, filters.NativeCompactionV2, filters.BillingType, filters.BillingMode)
 
 		if err != nil {
 			if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {

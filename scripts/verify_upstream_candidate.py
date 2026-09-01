@@ -130,9 +130,9 @@ def verify_candidate_tree(
             ).splitlines()
             if path
         )
-        if provenance.get("overlayPaths") != overlay_paths:
+        if provenance.get("overlayPaths", []) != overlay_paths:
             raise VerificationError("provenance overlayPaths does not match candidate overlay")
-        if provenance.get("overlayPatchSha256") != sha256_bytes(overlay_patch):
+        if provenance.get("overlayPatchSha256", sha256_bytes(b"")) != sha256_bytes(overlay_patch):
             raise VerificationError("provenance overlay patch hash does not match candidate")
         if overlay_patch:
             result = subprocess.run(
