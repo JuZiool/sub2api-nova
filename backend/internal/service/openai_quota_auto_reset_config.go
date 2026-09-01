@@ -58,9 +58,7 @@ func normalizeOpenAIAutoResetCreditExtra(platform, accountType string, isShadow 
 	if extra == nil {
 		return nil, nil
 	}
-	normalized := cloneOpenAIAutoResetExtra(extra)
-	delete(normalized, OpenAIAutoResetCreditStateExtraKey)
-
+	normalized := stripOpenAIAutoResetCreditManagedExtra(cloneOpenAIAutoResetExtra(extra), false)
 	_, hasEnabled := normalized[OpenAIAutoResetCreditEnabledExtraKey]
 	_, has5h := normalized[OpenAIAutoResetCredit5hThresholdExtraKey]
 	_, has7d := normalized[OpenAIAutoResetCredit7dThresholdExtraKey]
@@ -111,6 +109,32 @@ func stripOpenAIAutoResetCreditManagedExtra(extra map[string]any, stripConfig bo
 	return extra
 }
 
+// normalizeOpenAIAutoResetCreditUpdateExtra preserves omitted account-level settings
+// while validating any automatic reset configuration supplied by an admin edit.
+func normalizeOpenAIAutoResetCreditUpdateExtra(account *Account, extra map[string]any) (map[string]any, error) {
+	if account == nil {
+		return extra, nil
+	}
+	normalized := cloneOpenAIAutoResetExtra(extra)
+	if normalized == nil {
+		normalized = make(map[string]any)
+	}
+	for _, key := range []string{
+		OpenAIAutoResetCreditEnabledExtraKey,
+		OpenAIAutoResetCredit5hThresholdExtraKey,
+		OpenAIAutoResetCredit7dThresholdExtraKey,
+	} {
+		if _, provided := normalized[key]; provided {
+			continue
+		}
+		if value, exists := account.Extra[key]; exists {
+			normalized[key] = value
+		}
+	}
+	return normalizeOpenAIAutoResetCreditExtra(account.Platform, account.Type, account.IsShadow(), normalized)
+}
+
+// parseOpenAIAutoResetThreshold parses the admin-provided threshold value.
 func parseOpenAIAutoResetThreshold(value any) (float64, bool) {
 	switch typed := value.(type) {
 	case float64:

@@ -107,7 +107,9 @@ func TestRawChatStreamTruncationAfterOutputReturnsTypedError(t *testing.T) {
 
 	events, ok := c.Get(OpsUpstreamErrorsKey)
 	require.True(t, ok)
-	require.Len(t, events.([]*OpsUpstreamErrorEvent), 1)
+	typedEvents, ok := events.([]*OpsUpstreamErrorEvent)
+	require.True(t, ok)
+	require.Len(t, typedEvents, 1)
 }
 
 func TestRawChatStreamReadErrorAfterOutputKeepsTransportClassification(t *testing.T) {

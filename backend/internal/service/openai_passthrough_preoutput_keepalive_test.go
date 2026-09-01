@@ -87,8 +87,8 @@ func TestPassthroughKeepaliveDisabledKeepsWriterUntouched(t *testing.T) {
 func TestStreamingResponsePassthroughEmitsPreOutputKeepalive(t *testing.T) {
 	c, recorder := newPassthroughKeepaliveTestContext(t)
 	reader, writer := io.Pipe()
-	defer reader.Close()
-	defer writer.Close()
+	defer func() { require.NoError(t, reader.Close()) }()
+	defer func() { _ = writer.Close() }()
 	resp := &http.Response{
 		StatusCode: http.StatusOK,
 		Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
