@@ -470,6 +470,14 @@ type GatewayCache interface {
 	// distinguish a miss from a real read failure without importing the
 	// cache driver.
 	GetSessionAccountID(ctx context.Context, groupID int64, sessionHash string) (int64, error)
+	// Reasoning content cache（Responses→Chat Completions 桥接）。
+	// SetReasoningContent 按 reasoning item id 缓存 reasoning 全文，供后续请求
+	// 在客户端不回传明文 summary 时回注 reasoning_content（DeepSeek thinking
+	// mode 要求回传，否则 400）。
+	SetReasoningContent(ctx context.Context, itemID string, content string, ttl time.Duration) error
+	// GetReasoningContent 返回缓存的 reasoning 全文；未命中返回
+	// ErrReasoningContentNotFound。
+	GetReasoningContent(ctx context.Context, itemID string) (string, error)
 	// SetSessionAccountID 设置粘性会话与账号的绑定关系
 	// Set the binding between sticky session and account
 	SetSessionAccountID(ctx context.Context, groupID int64, sessionHash string, accountID int64, ttl time.Duration) error

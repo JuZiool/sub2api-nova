@@ -359,6 +359,12 @@ func intervalToModelPricing(iv *PricingInterval, supportsCacheBreakdown bool, ch
 	pricing := &ModelPricing{
 		SupportsCacheBreakdown: supportsCacheBreakdown,
 	}
+	applyMultiplier := func(value float64, multiplier *float64) float64 {
+		if multiplier == nil {
+			return value
+		}
+		return value * *multiplier
+	}
 	if iv.InputPrice != nil {
 		pricing.InputPricePerToken = *iv.InputPrice
 		pricing.InputPricePerTokenPriority = *iv.InputPrice

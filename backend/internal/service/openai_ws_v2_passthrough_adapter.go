@@ -135,6 +135,7 @@ func openAIWSPassthroughPolicyModelFromSessionFrame(account *Account, payload []
 type openAIWSPassthroughUsageMeta struct {
 	serviceTier     atomic.Pointer[string]
 	reasoningEffort atomic.Pointer[string]
+	requestedReasoningEffort atomic.Pointer[string]
 	requestModel    atomic.Pointer[string]
 	upstreamModel   atomic.Pointer[string]
 
@@ -150,6 +151,15 @@ func newOpenAIWSPassthroughUsageMeta(initialRequestModel string, firstFrame []by
 		meta.sessionRequestModel = openAIWSPassthroughRequestModelForFrame(firstFrame)
 	}
 	return meta
+}
+
+/* captureRequestedReasoningEffort 记录策略改写前客户端请求的思考力度（含模型后缀推断），用于运维观测。 */
+func (m *openAIWSPassthroughUsageMeta) captureRequestedReasoningEffort(originalBody []byte, modelCandidates ...string) {
+	if m == nil {
+		return
+	}
+	candidates := append([]string{m.sessionRequestModel}, modelCandidates...)
+	m.requestedReasoningEffort.Store(CanonicalRequestedReasoningEffort(originalBody, candidates...))
 }
 
 func (m *openAIWSPassthroughUsageMeta) initFromFirstFrame(policyOutput []byte, mappedModel string) {
@@ -797,6 +807,7 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 	// goroutine）和 OnTurnComplete / final result（runUpstreamToClient
 	// goroutine）之间同步当前 turn 的 usage metadata。
 	usageMeta.initFromFirstFrame(firstClientMessage, capturedSessionModel)
+	usageMeta.captureRequestedReasoningEffort(originalFirstClientMessage, capturedSessionModel)
 	_, initialUpstreamModel := usageMeta.turnModels(initialRequestModel)
 	SetOpsUpstreamModel(c, initialUpstreamModel)
 	promptCacheKey := strings.TrimSpace(gjson.GetBytes(firstClientMessage, "prompt_cache_key").String())
@@ -1029,6 +1040,7 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 				} else {
 					payload = next
 				}
+				usageMeta.captureRequestedReasoningEffort(originalResponseCreate)
 			}
 			turnNo := int(completedTurns.Load()) + 1
 			if turnNo < 2 {

@@ -94,6 +94,17 @@ func openAIResponsesClientToolMapping(c *gin.Context) (apicompat.ResponsesClient
 
 // clearOpenAIResponsesClientToolMapping removes mapping state from the prior
 // forwarding attempt. Forward retries accounts on the same Gin context.
+func setOpenAIResponsesClientToolMapping(c *gin.Context, mapping apicompat.ResponsesClientToolMapping) {
+	if c == nil {
+		return
+	}
+	if !hasOpenAIResponsesClientToolMapping(mapping) {
+		clearOpenAIResponsesClientToolMapping(c)
+		return
+	}
+	c.Set(openAIResponsesClientToolMappingContextKey, mapping)
+}
+
 func clearOpenAIResponsesClientToolMapping(c *gin.Context) {
 	if c == nil {
 		return

@@ -192,14 +192,14 @@ func (s *OpenAIGatewayService) forwardAsChatCompletions(
 	// Detect that shape and forward the raw body as-is, only rewriting `model`
 	// to the resolved upstream model. The downstream codex OAuth transform will
 	// still normalize store/stream/instructions/etc.
-	isResponsesShape := !gjson.GetBytes(body, "messages").Exists() && gjson.GetBytes(body, "input").Exists()
+	isResponsesShapeRaw := !gjson.GetBytes(body, "messages").Exists() && gjson.GetBytes(body, "input").Exists()
 
 	var (
 		responsesReq  *apicompat.ResponsesRequest
 		responsesBody []byte
 		err           error
 	)
-	if isResponsesShape {
+if isResponsesShapeRaw {
 		responsesBody, err = sjson.SetBytes(body, "model", upstreamModel)
 		if err != nil {
 			return nil, fmt.Errorf("rewrite model in responses-shape body: %w", err)
