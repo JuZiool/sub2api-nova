@@ -165,6 +165,15 @@ type openAIWSStateStoreTimeoutProbeCache struct {
 	delDeadlineDelta  time.Duration
 }
 
+/* nova: probe stub 补齐 0.2.0 GatewayCache 的 reasoning 缓存方法 */
+func (c *openAIWSStateStoreTimeoutProbeCache) SetReasoningContent(context.Context, string, string, time.Duration) error {
+	return nil
+}
+
+func (c *openAIWSStateStoreTimeoutProbeCache) GetReasoningContent(context.Context, string) (string, error) {
+	return "", ErrReasoningContentNotFound
+}
+
 func (c *openAIWSStateStoreTimeoutProbeCache) GetSessionAccountID(ctx context.Context, _ int64, _ string) (int64, error) {
 	if deadline, ok := ctx.Deadline(); ok {
 		c.getHasDeadline = true

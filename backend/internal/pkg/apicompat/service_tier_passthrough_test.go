@@ -8,7 +8,7 @@ import (
 
 func TestServiceTierPreservedAcrossBufferedBridges(t *testing.T) {
 	chat := &ChatCompletionsResponse{Model: "gpt-5.5", ServiceTier: "default"}
-	responses := ChatCompletionsResponseToResponses(chat, "gpt-5.5", nil, false, nil)
+	responses := ChatCompletionsResponseToResponses(chat, "gpt-5.5", nil, nil, false, nil)
 	require.Equal(t, "default", responses.ServiceTier)
 
 	converted := ResponsesToChatCompletions(responses, "gpt-5.5")

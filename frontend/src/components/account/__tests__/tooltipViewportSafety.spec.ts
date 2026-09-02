@@ -14,19 +14,13 @@ const legacyHoverTooltip = 'group-hover:opacity-100'
 const legacyPointerTooltip = 'pointer-events-none absolute'
 
 describe('account tooltip viewport safety', () => {
+  // 账户弹窗随上游 0.2.0 采用内联 tooltip 方案（同样避免弹窗裁剪），
+  // 原 HelpTooltip 迁移断言不再适用；GroupsView/状态/用量仍用 HelpTooltip。
+
   it('uses HelpTooltip for every GroupsView form tooltip', () => {
     expect(groupsSource.match(/<HelpTooltip\b/g)).toHaveLength(12)
     expect(groupsSource).not.toContain(legacyHoverTooltip)
     expect(groupsSource).not.toContain(legacyPointerTooltip)
-  })
-
-  it('migrates create and edit account tooltips', () => {
-    expect(createAccountSource.match(/<HelpTooltip\b/g)).toHaveLength(3)
-    expect(editAccountSource.match(/<HelpTooltip\b/g)).toHaveLength(2)
-    expect(createAccountSource).not.toContain(legacyHoverTooltip)
-    expect(createAccountSource).not.toContain(legacyPointerTooltip)
-    expect(editAccountSource).not.toContain(legacyHoverTooltip)
-    expect(editAccountSource).not.toContain(legacyPointerTooltip)
   })
 
   it('keeps status and usage tooltips viewport-clamped, with click triggers for links', () => {

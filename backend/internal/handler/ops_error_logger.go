@@ -1454,6 +1454,9 @@ func isKnownOpsErrorType(t string) bool {
 	switch t {
 	case "invalid_request_error",
 		"authentication_error",
+		"permission_error",
+		"model_not_found",
+		"service_unavailable",
 		"rate_limit_error",
 		"billing_error",
 		"subscription_error",

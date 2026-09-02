@@ -693,6 +693,15 @@ type stubGatewayCache struct {
 	deletedSessions map[string]int
 }
 
+/* nova: stub 补齐 0.2.0 GatewayCache 的 reasoning 缓存方法 */
+func (c *stubGatewayCache) SetReasoningContent(ctx context.Context, itemID string, content string, ttl time.Duration) error {
+	return nil
+}
+
+func (c *stubGatewayCache) GetReasoningContent(ctx context.Context, itemID string) (string, error) {
+	return "", ErrReasoningContentNotFound
+}
+
 func (c *stubGatewayCache) GetSessionAccountID(ctx context.Context, groupID int64, sessionHash string) (int64, error) {
 	if id, ok := c.sessionBindings[sessionHash]; ok {
 		return id, nil

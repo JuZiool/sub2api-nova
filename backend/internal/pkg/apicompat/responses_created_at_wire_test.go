@@ -40,10 +40,10 @@ func TestChatCompletionsResponseToResponses_CarriesCreatedAt(t *testing.T) {
 		Created: 1700000000,
 		Model:   "deepseek-v4-flash",
 		Choices: []ChatChoice{{Message: ChatMessage{Role: "assistant", Content: json.RawMessage(`"hi"`)}}},
-	}, "deepseek-v4-flash", nil, false, nil)
+	}, "deepseek-v4-flash", nil, nil, false, nil)
 	require.EqualValues(t, 1700000000, withUpstreamTime.CreatedAt)
 
-	withoutUpstreamTime := ChatCompletionsResponseToResponses(nil, "deepseek-v4-flash", nil, false, nil)
+	withoutUpstreamTime := ChatCompletionsResponseToResponses(nil, "deepseek-v4-flash", nil, nil, false, nil)
 	require.Greater(t, withoutUpstreamTime.CreatedAt, int64(0))
 }
 

@@ -784,7 +784,11 @@ func TestClassifyOpsAuthClientErrorsExcludedFromSLA(t *testing.T) {
 			errType := normalizeOpsErrorType(tt.errType, tt.code)
 			phase, isBusinessLimited, errorOwner, errorSource := classifyOpsErrorLog(c, errType, tt.message, tt.code, tt.status)
 
-			require.Equal(t, "api_error", errType)
+			wantErrType := "api_error"
+			if tt.errType == "permission_error" {
+				wantErrType = "permission_error"
+			}
+			require.Equal(t, wantErrType, errType)
 			require.Equal(t, "auth", phase)
 			require.True(t, isBusinessLimited)
 			require.Equal(t, "client", errorOwner)
@@ -935,7 +939,7 @@ func TestClassifyOpsLocalBusinessLimitErrorsExcludedFromSLA(t *testing.T) {
 			message:     "This group is restricted to Claude Code clients (/v1/messages only)",
 			code:        "",
 			status:      http.StatusForbidden,
-			wantErrType: "api_error",
+			wantErrType: "permission_error",
 			wantPhase:   "request",
 		},
 		{
@@ -944,7 +948,7 @@ func TestClassifyOpsLocalBusinessLimitErrorsExcludedFromSLA(t *testing.T) {
 			message:     "Image generation is not enabled for this group",
 			code:        "",
 			status:      http.StatusForbidden,
-			wantErrType: "api_error",
+			wantErrType: "permission_error",
 			wantPhase:   "request",
 		},
 		{
@@ -980,7 +984,7 @@ func TestClassifyOpsLocalBusinessLimitErrorsExcludedFromSLA(t *testing.T) {
 			message:     "model claude-3-5-sonnet not in whitelist",
 			code:        "",
 			status:      http.StatusForbidden,
-			wantErrType: "api_error",
+			wantErrType: "permission_error",
 			wantPhase:   "request",
 		},
 		{
@@ -1007,7 +1011,7 @@ func TestClassifyOpsLocalBusinessLimitErrorsExcludedFromSLA(t *testing.T) {
 			message:     "openai service_tier=priority is not allowed for model gpt-5.5",
 			code:        "",
 			status:      http.StatusForbidden,
-			wantErrType: "api_error",
+			wantErrType: "permission_error",
 			wantPhase:   "request",
 		},
 		{

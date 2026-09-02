@@ -9,6 +9,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// assertHTTP2Attached 验证 http2 已挂载到 http.Transport。x/net v0.56 +
+// Go 1.27 起 ConfigureTransports 经 Protocols 协调（不再填充 TLSNextProto、
+// 重复调用也不报错），因此以 Protocols.HTTP2Enabled() 做跨版本检测。
+func assertHTTP2Attached(t *testing.T, tr *http.Transport) {
+	t.Helper()
+	require.True(t, tr.Protocols != nil && tr.Protocols.HTTP2(),
+		"http2 必须已挂载到 http.Transport 上")
+}
+
 func http2KeepAliveTestPoolSettings() poolSettings {
 	return poolSettings{
 		maxIdleConns:          10,
@@ -34,7 +43,7 @@ func TestEnableOpenAIHTTP2KeepAlive_EnablesPingHealthCheck(t *testing.T) {
 	require.Positive(t, h2.ReadIdleTimeout, "必须启用空闲 PING 探测以剔除死连接")
 	require.Equal(t, openAIHTTP2ReadIdleTimeout, h2.ReadIdleTimeout)
 	require.Equal(t, openAIHTTP2PingTimeout, h2.PingTimeout, "PING 无响应必须有超时判定")
-	require.NotNil(t, tr.TLSNextProto["h2"], "http2 必须已挂到底层 http.Transport 上")
+	assertHTTP2Attached(t, tr)
 }
 
 // openai_h2 模式构建的 Transport 必须带上 H2 PING 健康探测，从源头剔除死连接。
@@ -42,7 +51,7 @@ func TestBuildUpstreamTransport_OpenAIH2_EnablesPingHealthCheck(t *testing.T) {
 	tr, err := buildUpstreamTransport(http2KeepAliveTestPoolSettings(), nil, upstreamProtocolModeOpenAIH2)
 	require.NoError(t, err)
 	require.True(t, tr.ForceAttemptHTTP2, "openai_h2 必须启用 HTTP/2")
-	require.NotNil(t, tr.TLSNextProto["h2"], "openai_h2 必须显式配置 http2 以启用 ReadIdleTimeout")
+	assertHTTP2Attached(t, tr)
 }
 
 // 非 H2 模式（default/h1）不应因本次改动被误配置：default 走 Go 自动 H2（惰性配置，
@@ -62,6 +71,6 @@ func TestBuildUpstreamTransport_OpenAIH2_WithHTTPProxy_EnablesKeepAlive(t *testi
 	tr, err := buildUpstreamTransport(http2KeepAliveTestPoolSettings(), proxyURL, upstreamProtocolModeOpenAIH2)
 	require.NoError(t, err)
 	require.True(t, tr.ForceAttemptHTTP2)
-	require.NotNil(t, tr.TLSNextProto["h2"], "经代理的 openai_h2 也必须启用 http2 keepalive")
+	assertHTTP2Attached(t, tr)
 	require.NotNil(t, tr.Proxy, "HTTP 代理仍须通过 Transport.Proxy 生效")
 }
