@@ -356,12 +356,12 @@ const sortedModels = computed(() => {
   })
 })
 
-/** 模型专属倍率:后端按分组 model_rate_multipliers 解析出的模型倍率,未配置回退分组倍率。 */
+/** nova:模型专属倍率(分组 model_rate_multipliers 解析值),未配置回退分组倍率。 */
 const modelRate = (model: PlazaModel): number => {
   return model.rate_multiplier ?? props.rateMultiplier
 }
 
-/** 行生效倍率:用户专属倍率优先,否则取模型专属倍率;时段行再乘时段倍率(去浮点噪声)。 */
+/** nova:行生效倍率,用户专属倍率优先;时段行再乘时段倍率(去浮点噪声)。 */
 const effectiveRate = (model: PlazaModel, period: PlazaTimePricingPeriod | null = null): number => {
   const base = props.userRateMultiplier ?? modelRate(model)
   return period ? Math.round(base * period.multiplier * 1000) / 1000 : base
