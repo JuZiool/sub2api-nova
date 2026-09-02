@@ -1280,6 +1280,25 @@
             @select="onCnPresetSelect"
           />
         </div>
+        <div v-else>
+          <label class="input-label">{{ t('admin.accounts.cnProviders.apiProtocol.endpoints') }}</label>
+          <div class="mt-2 space-y-3">
+            <div v-for="item in cnAdaptiveProtocolOptions" :key="item.value">
+              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                {{ t(`admin.accounts.cnProviders.apiProtocol.${item.labelKey}`) }}
+              </label>
+              <input
+                v-model="adaptiveBaseUrls[item.value]"
+                type="text"
+                class="input"
+                :data-testid="`cn-adaptive-base-url-${item.value}`"
+              />
+            </div>
+          </div>
+          <p v-if="!cnSupportsNativeResponses(form.platform)" class="input-hint">
+            {{ t('admin.accounts.cnProviders.apiProtocol.responsesFallbackDesc') }}
+          </p>
+        </div>
         <div>
           <label class="input-label">{{ t('admin.accounts.apiKeyRequired') }}</label>
           <input
@@ -3738,6 +3757,8 @@ import {
   applyAntigravityProjectID,
   applyHeaderOverride,
   applyInterceptWarmup,
+  cnSupportsNativeResponses,
+  defaultCNAdaptiveBaseUrls,
   defaultCNBaseUrl,
   isHeaderOverrideCapable,
   validateHeaderOverrideRows,
@@ -3919,8 +3940,16 @@ const upstreamBillingAutoProbeEnabled = ref(true)
 // ── 国产供应商（Kimi / Zhipu / DeepSeek）账号类型、API 协议与端点 ──
 const accountMode = ref<CnAccountMode>('payg')
 // API 协议决定转发端点与格式：cc=现有转换链，anthropic=原生直通（Claude Code），
-// responses=deepseek 原生 Responses 端点（Codex）。与账号类型正交。
-const apiProtocol = ref<CnApiProtocol>('chat_completions')
+// responses=deepseek / kimi 原生 Responses 端点（Codex）。与账号类型正交。
+const apiProtocol = ref<CnApiProtocol>('adaptive')
+// 智谱团队版 Coding Plan：组织/项目 ID，写入 credentials 供额度探测切换团队端点
+const zhipuOrganization = ref('')
+const zhipuProject = ref('')
+const adaptiveBaseUrls = ref<Record<CnNativeApiProtocol, string>>({
+  chat_completions: '',
+  anthropic: '',
+  responses: ''
+})
 const isCNPlatform = computed(
   () => form.platform === 'kimi' || form.platform === 'zhipu' || form.platform === 'deepseek'
 )
@@ -3932,17 +3961,29 @@ const cnPresetPlatform = computed<'kimi' | 'zhipu' | 'deepseek'>(() => {
   }
   return 'kimi'
 })
-// 当前平台可选的协议档（responses 仅 deepseek）。
+// 当前平台可选的协议档（responses 仅 deepseek / kimi）。
 const cnProtocolOptions = computed<Array<{ value: CnApiProtocol; labelKey: string }>>(() => {
   const opts: Array<{ value: CnApiProtocol; labelKey: string }> = [
     { value: 'chat_completions', labelKey: 'chatCompletions' },
     { value: 'anthropic', labelKey: 'anthropic' }
   ]
-  if (form.platform === 'deepseek') {
+  if (cnSupportsNativeResponses(form.platform)) {
     opts.push({ value: 'responses', labelKey: 'responses' })
   }
   return opts
 })
+const cnAdaptiveProtocolOptions = computed<Array<{ value: CnNativeApiProtocol; labelKey: string }>>(() => {
+  const opts: Array<{ value: CnNativeApiProtocol; labelKey: string }> = [
+    { value: 'chat_completions', labelKey: 'chatCompletions' },
+    { value: 'anthropic', labelKey: 'anthropic' }
+  ]
+  if (cnSupportsNativeResponses(form.platform)) opts.push({ value: 'responses', labelKey: 'responses' })
+  return opts
+})
+
+function resetAdaptiveBaseUrls(platform: 'kimi' | 'zhipu' | 'deepseek', mode: CnAccountMode) {
+  adaptiveBaseUrls.value = defaultCNAdaptiveBaseUrls(platform, mode)
+}
 // 当前选中平台的品牌色（选中卡片描边 / 图标底色），与 platformColors 取色一致。
 const cnAccentActiveClass = computed(() => {
   switch (form.platform) {

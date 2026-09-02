@@ -62,6 +62,20 @@
             @select="onCnPresetSelect"
           />
         </div>
+        <div v-else>
+          <label class="input-label">{{ t('admin.accounts.cnProviders.apiProtocol.endpoints') }}</label>
+          <div class="mt-2 space-y-3">
+            <div v-for="item in editAdaptiveProtocolOptions" :key="item.value">
+              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                {{ t(`admin.accounts.cnProviders.apiProtocol.${item.labelKey}`) }}
+              </label>
+              <input v-model="editAdaptiveBaseUrls[item.value]" type="text" class="input" />
+            </div>
+          </div>
+          <p v-if="!cnSupportsNativeResponses(account.platform)" class="input-hint">
+            {{ t('admin.accounts.cnProviders.apiProtocol.responsesFallbackDesc') }}
+          </p>
+        </div>
         <!-- Account Mode Selection (CN providers) -->
         <div v-if="isCNApiKeyAccount">
           <label class="input-label">{{ t('admin.accounts.cnProviders.accountMode.title') }}</label>
@@ -2790,6 +2804,8 @@ import {
   isHeaderOverrideCapable,
   splitHeaderOverridesObject,
   validateHeaderOverrideRows,
+  cnSupportsNativeResponses,
+  defaultCNAdaptiveBaseUrls,
   defaultCNBaseUrl,
   HEADER_OVERRIDE_ENABLED_CREDENTIAL_KEY,
   HEADER_OVERRIDES_CREDENTIAL_KEY,
@@ -2916,12 +2932,20 @@ const cnProtocolOptions = computed<Array<{ value: CnApiProtocol; labelKey: strin
     { value: 'chat_completions', labelKey: 'chatCompletions' },
     { value: 'anthropic', labelKey: 'anthropic' }
   ]
-  if (props.account?.platform === 'deepseek') {
+  if (cnSupportsNativeResponses(props.account?.platform ?? '')) {
     opts.push({ value: 'responses', labelKey: 'responses' })
   }
   return opts
 })
-watch(editApiProtocol, (protocol) => {
+const editAdaptiveProtocolOptions = computed<Array<{ value: CnNativeApiProtocol; labelKey: string }>>(() => {
+  const opts: Array<{ value: CnNativeApiProtocol; labelKey: string }> = [
+    { value: 'chat_completions', labelKey: 'chatCompletions' },
+    { value: 'anthropic', labelKey: 'anthropic' }
+  ]
+  if (cnSupportsNativeResponses(props.account?.platform ?? '')) opts.push({ value: 'responses', labelKey: 'responses' })
+  return opts
+})
+watch(editApiProtocol, (protocol, previousProtocol) => {
   if (!isCNApiKeyAccount.value || syncingForm.value) return
   editBaseUrl.value = defaultCNBaseUrl(props.account!.platform, editAccountMode.value, protocol)
 })
@@ -3757,8 +3781,13 @@ const syncFormFromAccount = (newAccount: Account | null) => {
       editAccountMode.value = credentials.account_mode === 'coding' ? 'coding' : 'payg'
       const storedProtocol = credentials.api_protocol
       editApiProtocol.value =
-        storedProtocol === 'anthropic' || storedProtocol === 'responses' ? storedProtocol : 'chat_completions'
-      if (newAccount.platform !== 'deepseek' && editApiProtocol.value === 'responses') {
+        storedProtocol === 'adaptive' ||
+        storedProtocol === 'chat_completions' ||
+        storedProtocol === 'anthropic' ||
+        storedProtocol === 'responses'
+          ? storedProtocol
+          : 'chat_completions'
+      if (!cnSupportsNativeResponses(newAccount.platform) && editApiProtocol.value === 'responses') {
         editApiProtocol.value = 'chat_completions'
       }
     }

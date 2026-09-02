@@ -1367,8 +1367,8 @@ func (a *Account) IsCodingPlan() bool {
 
 // GetAPIProtocol 返回国产供应商账号的上游 API 协议。存储于
 // credentials["api_protocol"]；缺失或与平台不匹配时回退 chat_completions
-// （与既有行为完全一致）。responses 协议仅 deepseek 支持（官方原生 /responses
-// 端点，适配 Codex）；kimi/zhipu 无此端点。
+// （与既有行为完全一致）。responses 协议仅 deepseek / kimi 支持（官方原生
+// Responses 端点，适配 Codex）；zhipu 无此端点。
 func (a *Account) GetAPIProtocol() string {
 	if a == nil || !a.IsCNProvider() {
 		return APIProtocolChatCompletions
@@ -1377,13 +1377,102 @@ func (a *Account) GetAPIProtocol() string {
 	case APIProtocolAnthropic:
 		return APIProtocolAnthropic
 	case APIProtocolResponses:
-		if a.Platform == PlatformDeepseek {
+		if a.SupportsNativeCNResponses() {
 			return APIProtocolResponses
 		}
 	case APIProtocolChatCompletions:
 		return APIProtocolChatCompletions
 	}
 	return APIProtocolChatCompletions
+}
+
+// SupportsNativeCNResponses 报告该国产供应商是否提供原生 Responses 端点。
+// DeepSeek 官方为 /responses（无 /v1）；Kimi 按量付费与 Coding Plan 均为
+// /v1/responses（moonshot.cn / kimi.com/coding）。
+func (a *Account) SupportsNativeCNResponses() bool {
+	if a == nil {
+		return false
+	}
+	switch a.Platform {
+	case PlatformDeepseek, PlatformKimi:
+		return true
+	default:
+		return false
+	}
+}
+
+// UsesNativeCNResponses 报告当前账号是否应按原生 Responses 协议转发
+// （显式 responses，或 adaptive 且平台具备原生端点）。
+func (a *Account) UsesNativeCNResponses() bool {
+	if a == nil || !a.SupportsNativeCNResponses() {
+		return false
+	}
+	switch a.GetAPIProtocol() {
+	case APIProtocolResponses, APIProtocolAdaptive:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsAdaptiveAPIProtocol 报告账号是否按入站协议动态选择供应商原生端点。
+func (a *Account) IsAdaptiveAPIProtocol() bool {
+	return a.GetAPIProtocol() == APIProtocolAdaptive
+}
+
+// GetCNProtocolBaseURL 返回国产供应商指定协议的上游 base URL。
+// adaptive 账号优先使用 api_base_urls 中的分协议地址，缺失时按平台和
+// account_mode 使用官方默认端点。base_url 继续作为 Chat Completions 地址兼容旧字段。
+func (a *Account) GetCNProtocolBaseURL(protocol string) string {
+	if a == nil || !a.IsCNProvider() {
+		return ""
+	}
+	if a.IsAdaptiveAPIProtocol() {
+		if baseURLs, ok := a.Credentials["api_base_urls"].(map[string]any); ok {
+			if baseURL, ok := baseURLs[protocol].(string); ok && strings.TrimSpace(baseURL) != "" {
+				return strings.TrimSpace(baseURL)
+			}
+		}
+		if protocol == APIProtocolChatCompletions {
+			if baseURL := strings.TrimSpace(a.GetCredential("base_url")); baseURL != "" {
+				return baseURL
+			}
+		}
+	}
+	return a.defaultCNProtocolBaseURL(protocol)
+}
+
+func (a *Account) defaultCNProtocolBaseURL(protocol string) string {
+	switch protocol {
+	case APIProtocolAnthropic:
+		switch a.Platform {
+		case PlatformKimi:
+			if a.GetAccountMode() == AccountModeCoding {
+				return DefaultKimiCodingAnthropicBaseURL
+			}
+			return DefaultKimiPayGAnthropicBaseURL
+		case PlatformZhipu:
+			return DefaultZhipuAnthropicBaseURL
+		case PlatformDeepseek:
+			return DefaultDeepseekAnthropicBaseURL
+		}
+	case APIProtocolChatCompletions, APIProtocolResponses:
+		switch a.Platform {
+		case PlatformKimi:
+			if a.GetAccountMode() == AccountModeCoding {
+				return DefaultKimiCodingBaseURL
+			}
+			return DefaultKimiPayGBaseURL
+		case PlatformZhipu:
+			if a.GetAccountMode() == AccountModeCoding {
+				return DefaultZhipuCodingBaseURL
+			}
+			return DefaultZhipuPayGBaseURL
+		case PlatformDeepseek:
+			return DefaultDeepseekBaseURL
+		}
+	}
+	return ""
 }
 
 // IsAnthropicProtocol 报告账号是否以原生 Anthropic 协议接入上游
