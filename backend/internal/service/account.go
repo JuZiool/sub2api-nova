@@ -15,6 +15,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai_compat"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
 )
@@ -324,6 +325,12 @@ func (a *Account) IsGeminiCodeAssist() bool {
 	return oauthType == "code_assist"
 }
 
+/* IsGeminiGoogleOne reports whether this account uses the legacy consumer
+// Gemini CLI / Code Assist OAuth channel. */
+func (a *Account) IsGeminiGoogleOne() bool {
+	return a.Platform == PlatformGemini && a.Type == AccountTypeOAuth && a.GeminiOAuthType() == "google_one"
+}
+
 func (a *Account) CanGetUsage() bool {
 	return a.Type == AccountTypeOAuth
 }
@@ -625,6 +632,9 @@ func (a *Account) resolveModelMapping(rawMapping map[string]any) map[string]stri
 		return nil
 	}
 	if len(rawMapping) == 0 {
+		if a.IsGeminiGoogleOne() {
+			return geminicli.GoogleOneModelMapping()
+		}
 		// Antigravity 平台使用默认映射
 		if a.Platform == domain.PlatformAntigravity {
 			return domain.DefaultAntigravityModelMapping
@@ -658,6 +668,9 @@ func (a *Account) resolveModelMapping(rawMapping map[string]any) map[string]stri
 		return result
 	}
 
+	if a.IsGeminiGoogleOne() {
+		return geminicli.GoogleOneModelMapping()
+	}
 	// Antigravity 平台使用默认映射
 	if a.Platform == domain.PlatformAntigravity {
 		return domain.DefaultAntigravityModelMapping
@@ -1323,6 +1336,13 @@ func (a *Account) GetOpenAIBaseURL() string {
 	if !a.IsOpenAI() && !a.IsCNProvider() {
 		return ""
 	}
+	if a.IsCNProvider() && a.IsAdaptiveAPIProtocol() {
+		if baseURLs, ok := a.Credentials["api_base_urls"].(map[string]any); ok {
+			if baseURL, ok := baseURLs[APIProtocolChatCompletions].(string); ok && strings.TrimSpace(baseURL) != "" {
+				return strings.TrimSpace(baseURL)
+			}
+		}
+	}
 	if a.Type == AccountTypeAPIKey || a.Type == AccountTypeUpstream {
 		if baseURL := strings.TrimSpace(a.GetCredential("base_url")); baseURL != "" {
 			return baseURL
@@ -1374,6 +1394,8 @@ func (a *Account) GetAPIProtocol() string {
 		return APIProtocolChatCompletions
 	}
 	switch strings.TrimSpace(a.GetCredential("api_protocol")) {
+	case APIProtocolAdaptive:
+		return APIProtocolAdaptive
 	case APIProtocolAnthropic:
 		return APIProtocolAnthropic
 	case APIProtocolResponses:
@@ -1485,8 +1507,11 @@ func (a *Account) IsAnthropicProtocol() bool {
 // （上游路径为 {base}/v1/messages）。优先取凭证 base_url，缺失时按
 // 供应商 × 接入模式返回默认端点。非 Anthropic 协议账号返回空串。
 func (a *Account) GetAnthropicProtocolBaseURL() string {
-	if a == nil || !a.IsAnthropicProtocol() {
+	if a == nil || (!a.IsAnthropicProtocol() && !a.IsAdaptiveAPIProtocol()) {
 		return ""
+	}
+	if a.IsAdaptiveAPIProtocol() {
+		return a.GetCNProtocolBaseURL(APIProtocolAnthropic)
 	}
 	if a.Type == AccountTypeAPIKey || a.Type == AccountTypeUpstream {
 		if baseURL := strings.TrimSpace(a.GetCredential("base_url")); baseURL != "" {
@@ -1880,12 +1905,18 @@ func (a *Account) openAIEndpointCapabilitySet() (map[string]bool, bool) {
 
 	switch capabilities := raw.(type) {
 	case []any:
+		if len(capabilities) == 0 {
+			return nil, false
+		}
 		for _, item := range capabilities {
 			if value, ok := item.(string); ok {
 				add(value)
 			}
 		}
 	case []string:
+		if len(capabilities) == 0 {
+			return nil, false
+		}
 		for _, value := range capabilities {
 			add(value)
 		}

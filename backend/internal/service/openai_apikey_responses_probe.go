@@ -136,6 +136,7 @@ func (s *AccountTestService) ProbeOpenAIAPIKeyResponsesSupport(ctx context.Conte
 			return
 		}
 		_ = s.accountRepo.UpdateExtra(ctx, account.ID, map[string]any{
+			openai_compat.ExtraKeyResponsesMode:      string(openai_compat.ResponsesSupportModeAuto),
 			openai_compat.ExtraKeyResponsesSupported: false,
 		})
 		return
