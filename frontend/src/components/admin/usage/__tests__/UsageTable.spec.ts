@@ -66,6 +66,7 @@ const messages: Record<string, string> = {
 	'usage.upstreamResponseModel': 'Upstream response',
 	'usage.modelVariant': 'Possible version variant',
 	'usage.modelMismatch': 'Different model',
+	'usage.cacheHitRate': 'Cache hit rate',
 }
 
 vi.mock('vue-i18n', async () => {
@@ -216,6 +217,35 @@ describe('admin UsageTable tooltip', () => {
     expect(text).toContain('$5.0000 / 1M tokens')
     expect(text).toContain('$30.0000 / 1M tokens')
     expect(text).toContain('$0.069568')
+  })
+
+  it('shows cache hit rate in the token column', () => {
+    const wrapper = mount(UsageTable, {
+      props: {
+        data: [{
+          ...baseImageRow,
+          request_id: 'req-cache-rate',
+          billing_mode: 'token',
+          image_count: 0,
+          input_tokens: 200,
+          cache_creation_tokens: 300,
+          cache_read_tokens: 500,
+          output_tokens: 100,
+        }],
+        loading: false,
+        columns: [],
+      },
+      global: {
+        stubs: {
+          DataTable: DataTableStub,
+          EmptyState: true,
+          Icon: true,
+          Teleport: true,
+        },
+      },
+    })
+
+    expect(wrapper.get('[data-testid="cache-hit-rate"]').text()).toBe('Cache hit rate:50.0%')
   })
 
   it('shows requested and upstream models separately for admin rows', () => {
