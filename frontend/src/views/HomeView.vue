@@ -138,7 +138,7 @@
               {{ t('home.heroDescription') }}
             </p>
 
-            <div data-testid="hero-actions" class="mt-5 grid grid-cols-2 gap-3 sm:mt-8 sm:flex sm:flex-row sm:justify-center lg:justify-start">
+            <div data-testid="hero-actions" class="mt-5 flex justify-center sm:mt-8 lg:justify-start">
               <router-link
                 :to="primaryActionPath"
                 class="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-lg shadow-primary-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 sm:gap-2 sm:px-6 sm:text-base"

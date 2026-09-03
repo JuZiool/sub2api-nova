@@ -106,10 +106,13 @@ describe('HomeView compact mode', () => {
 
   it('keeps only the primary action in the mobile hero', () => {
     const wrapper = mountHome()
-    const actions = wrapper.get('[data-testid="hero-actions"]').findAllComponents(RouterLinkStub)
+    const actionGroup = wrapper.get('[data-testid="hero-actions"]')
+    const actions = actionGroup.findAllComponents(RouterLinkStub)
 
     expect(actions).toHaveLength(1)
     expect(actions[0].props('to')).toBe('/register')
+    expect(actionGroup.classes()).toContain('justify-center')
+    expect(actionGroup.classes()).not.toContain('grid-cols-2')
   })
 
   it('does not render a footer attribution in compact mode', () => {
