@@ -74,6 +74,9 @@ const (
 	// thread_id 按客户端原始 session-id 确定性派生（每个真实 Codex 会话一个独立线程）。
 	// 上游看到 1 台设备 + 1 会话 + N 线程，最接近正常用户 spawn 子代理的模式。
 	codexFingerprintSession codexFingerprintMode = "session"
+	// codexFingerprintSingleMachine 是 session 模式的产品化别名：
+	// 用于明确表达单机多窗口场景，内部复用完全相同的 ID 收敛语义。
+	codexFingerprintSingleMachine codexFingerprintMode = "single_machine"
 	// codexFingerprintFull 收敛所有标识：installation_id + session_id + thread_id。
 	// 上游看到 1 台设备 + 1 会话 + 1 线程，最激进。
 	codexFingerprintFull codexFingerprintMode = "full"
@@ -116,7 +119,7 @@ func codexFingerprintModeFromExtra(extra map[string]any) codexFingerprintMode {
 	}
 	raw, _ := extra[codexFingerprintModeExtraKey].(string)
 	switch codexFingerprintMode(strings.TrimSpace(raw)) {
-	case codexFingerprintOff, codexFingerprintDevice, codexFingerprintSession, codexFingerprintFull:
+	case codexFingerprintOff, codexFingerprintDevice, codexFingerprintSession, codexFingerprintSingleMachine, codexFingerprintFull:
 		return codexFingerprintMode(strings.TrimSpace(raw))
 	default:
 		return codexFingerprintOff
@@ -125,7 +128,7 @@ func codexFingerprintModeFromExtra(extra map[string]any) codexFingerprintMode {
 
 func codexFingerprintModeRequiresSeed(mode codexFingerprintMode) bool {
 	switch mode {
-	case codexFingerprintDevice, codexFingerprintSession, codexFingerprintFull:
+	case codexFingerprintDevice, codexFingerprintSession, codexFingerprintSingleMachine, codexFingerprintFull:
 		return true
 	default:
 		return false
@@ -303,7 +306,7 @@ func resolveCodexFingerprintIDs(account *Account, clientSessionID string, mode c
 	case codexFingerprintDevice:
 		return ids
 
-	case codexFingerprintSession:
+	case codexFingerprintSession, codexFingerprintSingleMachine:
 		ids.sessionID = resolveConvergedSessionID(seed)
 		ids.threadID = resolveConvergedThreadID(seed, clientSessionID)
 		if ids.threadID == "" {
@@ -504,7 +507,7 @@ func shouldRewriteCodexFingerprintPromptCacheKey(ids *codexFingerprintIDs, promp
 	if ids == nil || !ids.originalBodySessionIDCaptured || ids.originalBodySessionID == "" || ids.sessionID == "" {
 		return false
 	}
-	if ids.mode != codexFingerprintSession && ids.mode != codexFingerprintFull {
+	if ids.mode != codexFingerprintSession && ids.mode != codexFingerprintSingleMachine && ids.mode != codexFingerprintFull {
 		return false
 	}
 	return promptCacheKey == ids.originalBodySessionID

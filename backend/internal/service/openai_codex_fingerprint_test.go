@@ -74,6 +74,7 @@ func TestGetCodexFingerprintMode(t *testing.T) {
 		{"显式 off", newTestOAuthAccount(1, map[string]any{codexFingerprintModeExtraKey: "off"}), codexFingerprintOff},
 		{"device", newTestOAuthAccount(1, map[string]any{codexFingerprintModeExtraKey: "device"}), codexFingerprintDevice},
 		{"session", newTestOAuthAccount(1, map[string]any{codexFingerprintModeExtraKey: "session"}), codexFingerprintSession},
+		{"single_machine", newTestOAuthAccount(1, map[string]any{codexFingerprintModeExtraKey: "single_machine"}), codexFingerprintSingleMachine},
 		{"full", newTestOAuthAccount(1, map[string]any{codexFingerprintModeExtraKey: "full"}), codexFingerprintFull},
 	}
 	for _, tt := range tests {
@@ -140,7 +141,8 @@ func TestResolveCodexFingerprintIDsFromRequest_DefaultIsOff(t *testing.T) {
 
 // 管理员显式 opt-in 的账号行为不变。
 func TestResolveCodexFingerprintIDsFromRequest_ExplicitOptInHonored(t *testing.T) {
-	for _, mode := range []string{"device", "session", "full"} {
+	for _, mode := range []string{"device", "session", "single_machine", "full"} {
+
 		t.Run(mode, func(t *testing.T) {
 			account := newTestOAuthAccount(1, map[string]any{codexFingerprintModeExtraKey: mode})
 			ids := resolveCodexFingerprintIDsFromRequest(account, nil)
@@ -280,6 +282,50 @@ func TestApplyCodexFingerprintHeaders_SessionMode_DifferentClients(t *testing.T)
 	assert.NotEqual(t, hA.Get("thread-id"), hB.Get("thread-id"), "不同客户端 thread_id 应不同")
 	assert.NotEqual(t, hA.Get("x-codex-window-id"), hB.Get("x-codex-window-id"), "不同客户端 window_id 应不同")
 	assert.Equal(t, hA.Get("x-codex-installation-id"), hB.Get("x-codex-installation-id"))
+}
+
+func TestApplyCodexFingerprintHeaders_SingleMachineModeReusesSessionSemantics(t *testing.T) {
+	account := newTestOAuthAccount(1, map[string]any{
+		codexFingerprintModeExtraKey: "single_machine",
+	})
+	clientA := http.Header{}
+	clientA.Set("session-id", "client-A")
+	idsA := resolveCodexFingerprintIDsFromRequest(account, clientA)
+	require.NotNil(t, idsA)
+
+	clientB := http.Header{}
+	clientB.Set("session-id", "client-B")
+	idsB := resolveCodexFingerprintIDsFromRequest(account, clientB)
+	require.NotNil(t, idsB)
+
+	assert.Equal(t, codexFingerprintSingleMachine, idsA.mode)
+	assert.Equal(t, idsA.installationID, idsB.installationID, "单机多窗口应共用账号级设备 ID")
+	assert.Equal(t, idsA.sessionID, idsB.sessionID, "单机多窗口应共用账号级会话 ID")
+	assert.NotEqual(t, idsA.threadID, idsB.threadID, "不同窗口应保留独立线程")
+	assert.NotEqual(t, idsA.turnID, idsB.turnID, "每个请求应生成独立 turn ID")
+	assert.Equal(t, idsA.threadID+":0", idsA.windowID)
+	assert.Equal(t, idsB.threadID+":0", idsB.windowID)
+}
+
+func TestApplyCodexFingerprintHeaders_SingleMachineModeMatchesSessionHeaders(t *testing.T) {
+	account := newTestOAuthAccount(2, map[string]any{
+		codexFingerprintModeExtraKey: "single_machine",
+	})
+	clientHeaders := http.Header{}
+	clientHeaders.Set("session-id", "client-session")
+	ids := resolveCodexFingerprintIDsFromRequest(account, clientHeaders)
+	require.NotNil(t, ids)
+
+	h := http.Header{}
+	h.Set("x-codex-turn-metadata", `{"installation_id":"original","session_id":"original","thread_id":"original","turn_id":"original","window_id":"original:0"}`)
+	applyCodexFingerprintHeaders(h, ids)
+
+	assert.Equal(t, ids.installationID, h.Get("x-codex-installation-id"))
+	assert.Equal(t, ids.sessionID, h.Get("session-id"))
+	assert.Equal(t, ids.sessionID, h.Get("session_id"))
+	assert.Equal(t, ids.threadID, h.Get("thread-id"))
+	assert.Equal(t, ids.threadID, h.Get("x-client-request-id"))
+	assert.Equal(t, ids.windowID, h.Get("x-codex-window-id"))
 }
 
 // --- full 模式 ---
@@ -596,7 +642,8 @@ func applyMapAndRawFingerprintBodiesForTest(t *testing.T, body []byte, ids *code
 }
 
 func TestApplyCodexFingerprintPromptCacheKey_MapRawEquivalence(t *testing.T) {
-	for _, mode := range []codexFingerprintMode{codexFingerprintSession, codexFingerprintFull} {
+	for _, mode := range []codexFingerprintMode{codexFingerprintSession, codexFingerprintSingleMachine, codexFingerprintFull} {
+
 		t.Run(string(mode)+"/default", func(t *testing.T) {
 			account := newTestOAuthAccount(4300, map[string]any{codexFingerprintModeExtraKey: string(mode)})
 			ids := resolveCodexFingerprintIDs(account, "header-session", mode)
