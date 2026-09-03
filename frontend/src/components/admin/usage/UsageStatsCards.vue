@@ -55,6 +55,12 @@
               </span>
             </span>
           </span>
+          <template v-if="cacheHitRate != null">
+            <span>/</span>
+            <span class="text-violet-600 dark:text-violet-400">
+              {{ t('usage.cacheHitRate') }}: {{ cacheHitRate.toFixed(1) }}%
+            </span>
+          </template>
         </p>
       </div>
     </div>
@@ -125,4 +131,13 @@ const formatTokens = (value: number) => {
 
 const cacheLabel = () => t('usage.cacheTotal')
 const cacheDetailLabel = () => t('usage.cacheBreakdown')
+
+const cacheHitRate = computed(() => {
+  const inputTokens = Number(props.stats?.total_input_tokens) || 0
+  const cacheCreationTokens = Number(props.stats?.total_cache_creation_tokens) || 0
+  const cacheReadTokens = Number(props.stats?.total_cache_read_tokens) || 0
+  const totalPromptTokens = inputTokens + cacheCreationTokens + cacheReadTokens
+
+  return totalPromptTokens > 0 ? (cacheReadTokens / totalPromptTokens) * 100 : null
+})
 </script>
