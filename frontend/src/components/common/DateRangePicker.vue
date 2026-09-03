@@ -122,7 +122,7 @@ const triggerRef = ref<HTMLButtonElement | null>(null)
 const dropdownRef = ref<HTMLElement | null>(null)
 const localStartDate = ref(props.startDate)
 const localEndDate = ref(props.endDate)
-const activePreset = ref<string | null>('last24Hours')
+const activePreset = ref<string | null>('today')
 const dropdownPosition = reactive({
   top: null as number | null,
   bottom: null as number | null,
