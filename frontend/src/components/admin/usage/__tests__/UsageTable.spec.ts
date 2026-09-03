@@ -245,7 +245,7 @@ describe('admin UsageTable tooltip', () => {
       },
     })
 
-    expect(wrapper.get('[data-testid="cache-hit-rate"]').text()).toBe('Cache hit rate:50.0%')
+    expect(wrapper.get('[data-testid="cache-hit-rate"]').text()).toBe('50.0%')
   })
 
   it('shows requested and upstream models separately for admin rows', () => {

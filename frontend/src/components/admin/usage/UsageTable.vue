@@ -166,10 +166,14 @@
                   <span v-if="row.cache_creation_1h_tokens > 0" class="inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-orange-100 text-orange-600 ring-1 ring-inset ring-orange-200 dark:bg-orange-500/20 dark:text-orange-400 dark:ring-orange-500/30">1h</span>
                   <span v-if="row.cache_ttl_overridden" :title="t('usage.cacheTtlOverriddenHint')" class="inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-rose-100 text-rose-600 ring-1 ring-inset ring-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:ring-rose-500/30 cursor-help">R</span>
                 </div>
-              </div>
-              <div v-if="promptTokenCount(row) > 0" data-testid="cache-hit-rate" class="flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400">
-                <span>{{ t('usage.cacheHitRate') }}:</span>
-                <span class="font-medium tabular-nums">{{ formatCacheHitRate(row) }}%</span>
+                <span
+                  v-if="promptTokenCount(row) > 0"
+                  data-testid="cache-hit-rate"
+                  :title="t('usage.cacheHitRate')"
+                  class="ml-auto text-xs font-medium tabular-nums text-violet-600 dark:text-violet-400"
+                >
+                  {{ formatCacheHitRate(row) }}%
+                </span>
               </div>
               <div v-if="hasImageInputTokens(row)" class="flex items-center gap-2">
                 <div class="inline-flex items-center gap-1">
