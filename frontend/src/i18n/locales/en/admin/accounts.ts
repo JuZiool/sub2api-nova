@@ -612,6 +612,7 @@ export default {
         codexFingerprintOff: 'Off (passthrough, default)',
         codexFingerprintDevice: 'Device only',
         codexFingerprintSession: 'Device + Session',
+        codexFingerprintSingleMachine: 'Single-machine multi-window',
         codexFingerprintFull: 'Full convergence',
         codexImageTool: 'Codex image bridge policy',
         codexImageToolDesc:

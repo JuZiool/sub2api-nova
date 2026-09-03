@@ -686,6 +686,7 @@ export default {
         codexFingerprintOff: '关闭（透传，默认）',
         codexFingerprintDevice: '仅设备',
         codexFingerprintSession: '设备+会话',
+        codexFingerprintSingleMachine: '单机多窗口',
         codexFingerprintFull: '完全收敛',
         codexImageTool: 'Codex 图片桥接策略',
         codexImageToolDesc:
