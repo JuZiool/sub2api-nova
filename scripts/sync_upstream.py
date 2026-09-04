@@ -183,6 +183,8 @@ def write_provenance(config: Config, report: dict, patch: bytes) -> str:
         "appliedPaths": report.get("appliedPaths", []),
         "adaptedPaths": report.get("adaptedPaths", []),
         "preservedProtectedPaths": report.get("preservedProtectedPaths", []),
+        "absorbedNewMigrationPaths": report.get("absorbedNewMigrationPaths", []),
+        "pendingNewProtectedPaths": report.get("pendingNewProtectedPaths", []),
         "excludedPaths": report.get("excludedPaths", []),
         "versionPaths": report.get("versionPaths", []),
     }
@@ -240,6 +242,12 @@ def deleted_paths(config: Config, old: str, new: str) -> list[str]:
         if len(fields) >= 2 and fields[0] == "D":
             deleted.append(fields[1])
     return sorted(deleted)
+
+
+def added_paths(config: Config, old: str, new: str) -> list[str]:
+    """上游新增文件（上游有、Nova 树不存在的路径）。"""
+    output = run_git(config, "diff", "--diff-filter=A", "--name-only", "--no-renames", old, new)
+    return sorted({line for line in output.splitlines() if line})
 
 
 def ensure_clean(config: Config) -> None:
@@ -438,6 +446,8 @@ def write_report(config: Config, report: dict) -> None:
     for title, key in (
         ("实际应用路径", "appliedPaths"),
         ("已保留 Nova 代码的保护路径", "preservedProtectedPaths"),
+        ("吸收的上游新增迁移（backend/migrations/）", "absorbedNewMigrationPaths"),
+        ("保护路径新增文件待人工放行", "pendingNewProtectedPaths"),
         ("版本元数据路径", "versionPaths"),
         ("真实三方冲突路径", "conflicts"),
         ("无法应用路径", "unappliedPaths"),
@@ -550,8 +560,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         if not is_upstream_ancestor(config, old, new):
             raise SyncError(f"上游新提交不是旧成功基线的后代：{old} -> {new}")
         paths = changed_paths(config, old, new)
+        added = added_paths(config, old, new)
         policy = manifest["protectedPathPolicy"]
         applied_paths, preserved_protected_paths = split_protected_paths(paths, policy)
+        # 根治"上游新增迁移被保护清单静默过滤"：上游新增文件在 Nova 树中不存在，
+        # 没有"Nova 代码要保留"的语义，整批丢弃会让代码引用缺失的列/索引
+        # （历史事故见迁移 238/239 与上游 226/228 对照）。
+        # - backend/migrations/ 下的上游新增文件自动吸收（幂等 SQL，随链校验）；
+        # - 其余保护路径的新增文件仍保留 Nova 侧，但单独登记待人工放行，
+        #   不再混在 preservedProtectedPaths 中静默消失。
+        protected_added = sorted(path for path in added if path in preserved_protected_paths)
+        absorbed_new_migrations = sorted(
+            path for path in protected_added if path.startswith("backend/migrations/")
+        )
+        pending_new_protected = sorted(set(protected_added) - set(absorbed_new_migrations))
+        applied_paths = sorted(set(applied_paths) | set(absorbed_new_migrations))
+        preserved_protected_paths = sorted(set(preserved_protected_paths) - set(absorbed_new_migrations))
         critical = [path for path in paths if path_matches(path, policy["criticalPaths"])]
         manual = [path for path in paths if path_matches(path, policy["manualReviewPaths"])]
         stop_deleted = [path for path in deleted_paths(config, old, new) if path_matches(path, policy["stopOnDeletePaths"])]
@@ -584,6 +608,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             "preflightDiagnostics": preflight.diagnostics,
             "appliedPaths": applied_paths,
             "preservedProtectedPaths": preserved_protected_paths,
+            "absorbedNewMigrationPaths": absorbed_new_migrations,
+            "pendingNewProtectedPaths": pending_new_protected,
             "versionPaths": version_paths,
             "criticalPaths": critical,
             "manualReviewPaths": manual,

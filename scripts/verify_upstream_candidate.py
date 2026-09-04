@@ -241,6 +241,11 @@ def verify_candidate(
         fields = line.split("\t", 2)
         if len(fields) >= 2 and fields[0] == "D":
             deleted.append(fields[1])
+    added = sorted(
+        path
+        for path in git_text(root, "diff", "--diff-filter=A", "--name-only", "--no-renames", old, new).splitlines()
+        if path
+    )
 
     critical = sorted(path for path in paths if path_matches(path, policy["criticalPaths"]))
     manual = sorted(path for path in paths if path_matches(path, policy["manualReviewPaths"]))
@@ -248,13 +253,29 @@ def verify_candidate(
         path for path in deleted if path_matches(path, policy["stopOnDeletePaths"])
     )
     protected = protected_patterns(policy)
-    preserved_protected = sorted(path for path in paths if path_matches(path, protected))
+    preserved_protected_all = sorted(path for path in paths if path_matches(path, protected))
+    # 与 sync_upstream.py 同规则：上游新增且落在 backend/migrations/ 的文件不适用
+    # "保留 Nova 代码"语义，必须被吸收（见 sync 报告 absorbedNewMigrationPaths），
+    # 因此不计入 preservedProtectedPaths，允许出现在 appliedPaths。
+    absorbed_new_migrations = sorted(
+        path
+        for path in added
+        if path in preserved_protected_all and path.startswith("backend/migrations/")
+    )
+    preserved_protected = sorted(set(preserved_protected_all) - set(absorbed_new_migrations))
     applied = sorted(path for path in provenance.get("appliedPaths", []) if path)
     adapted = sorted(path for path in provenance.get("adaptedPaths", []) if path)
     if any(path not in paths for path in applied + adapted):
         raise VerificationError("provenance applied or adapted paths contain a non-upstream path")
     if any(path in preserved_protected for path in applied + adapted):
         raise VerificationError("provenance applied or adapted paths contain a protected path")
+    if any(path not in applied for path in absorbed_new_migrations):
+        raise VerificationError("provenance absorbed new migration is not applied")
+    declared_absorbed = sorted(
+        path for path in (provenance.get("absorbedNewMigrationPaths") or []) if path
+    )
+    if declared_absorbed != absorbed_new_migrations:
+        raise VerificationError("provenance absorbedNewMigrationPaths does not match upstream classification")
     if set(applied).intersection(adapted):
         raise VerificationError("provenance appliedPaths and adaptedPaths overlap")
     excluded = sorted(
@@ -275,9 +296,14 @@ def verify_candidate(
     for field, expected in (
         ("appliedPaths", applied),
         ("preservedProtectedPaths", preserved_protected),
+        ("absorbedNewMigrationPaths", absorbed_new_migrations),
         ("versionPaths", version_paths),
     ):
-        if provenance.get(field) != expected:
+        # absorbedNewMigrationPaths 是后加字段：旧 provenance 缺失时视为空列表
+        declared = provenance.get(field)
+        if declared is None and field == "absorbedNewMigrationPaths":
+            declared = []
+        if declared != expected:
             raise VerificationError(f"provenance {field} does not match upstream classification")
     if candidate_sha is not None:
         verify_candidate_tree(root, provenance, base_sha, candidate_sha, patch)
@@ -291,6 +317,7 @@ def verify_candidate(
         "stopOnDeletePaths": stop_deleted,
         "appliedPaths": applied,
         "preservedProtectedPaths": preserved_protected,
+        "absorbedNewMigrationPaths": absorbed_new_migrations,
         "versionPaths": version_paths,
         "eligible": True,
     }
