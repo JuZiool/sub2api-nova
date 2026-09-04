@@ -463,17 +463,20 @@ func (s *BillingService) initFallbackPricing() {
 
 	// ---- DeepSeek V4 系列 ----
 	// Source: https://api-docs.deepseek.com/quick_start/pricing
-	// （deepseek-chat / deepseek-reasoner 为 deepseek-v4-flash 的兼容别名，2026/07/24 弃用）
+	// 官方口径（2026-08-23 起生效）：现行模型 deepseek-v4-flash / deepseek-v4-pro；
+	// deepseek-chat / deepseek-reasoner 已停服（兼容别名仍按 flash 兜底）。
+	// 以下为官方低谷价（高峰价 = 2× 低谷价，仅工作日 01:00–04:00 与 06:00–10:00 UTC）。
+	// Nova 暂未引入峰谷时段机制，全天按官方低谷价计费（高峰时段少收的取舍见决策清单 #3）。
 	s.fallbackPrices["deepseek-v4-pro"] = &ModelPricing{
-		InputPricePerToken:     4.35e-7,  // $0.435 per MTok (cache miss)
-		OutputPricePerToken:    8.7e-7,   // $0.87 per MTok
-		CacheReadPricePerToken: 3.625e-9, // $0.003625 per MTok (cache hit)
+		InputPricePerToken:     6.6e-7,  // $0.66 per MTok (cache miss, off-peak)
+		OutputPricePerToken:    1.98e-6, // $1.98 per MTok
+		CacheReadPricePerToken: 2.2e-8,  // $0.022 per MTok (cache hit)
 		SupportsCacheBreakdown: false,
 	}
 	s.fallbackPrices["deepseek-v4-flash"] = &ModelPricing{
-		InputPricePerToken:     1.4e-7, // $0.14 per MTok (cache miss)
-		OutputPricePerToken:    2.8e-7, // $0.28 per MTok
-		CacheReadPricePerToken: 2.8e-9, // $0.0028 per MTok (cache hit)
+		InputPricePerToken:     2.2e-7, // $0.22 per MTok (cache miss, off-peak)
+		OutputPricePerToken:    6.6e-7, // $0.66 per MTok
+		CacheReadPricePerToken: 7e-9,   // $0.007 per MTok (cache hit)
 		SupportsCacheBreakdown: false,
 	}
 
