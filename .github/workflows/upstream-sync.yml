@@ -2,7 +2,8 @@ name: 上游自动同步候选
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    # 每天 UTC 00:00（北京时间 08:00）检查一次上游更新，无更新时正常结束
+    - cron: "0 0 * * *"
   workflow_dispatch:
     inputs:
       upstream_commit:
