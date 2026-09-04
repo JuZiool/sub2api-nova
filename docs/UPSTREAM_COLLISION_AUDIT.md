@@ -133,6 +133,7 @@
 - ✅ **#5/#6/#7 冻结确认**:ServiceTier 口径、流内 429 headers、deepseek fail-closed 保持 Nova 现状,不改
 - ✅ **#8 已实施**(`abffacead`):composite 路由目标平台放开国产(迁移 240 复刻上游 227 + handler oneof + 前端选项三处同步),仅放开"允许配置"能力,不配不生效,未触碰 Nova 定制
 - **冒烟**:镜像 sha-8359fd513(含 1-3 计费修复)全新数据目录部署验证通过(/health、登录、日志正常),验证环境已清理
+- **冒烟**:镜像 sha-abffacead(含 #8)全新数据目录验证通过:迁移 240 已应用,composite 约束确认含 kimi/zhipu/deepseek,/health 正常;验证环境已清理
 
 | # | 事项 | 现状 | 推荐 | 理由与成本 |
 | --- | --- | --- | --- | --- |
