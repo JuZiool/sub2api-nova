@@ -107,3 +107,16 @@
 - `passthrough.go`:32 hunk → 少量调用点 + 1 个 Nova hooks 文件
 - `GroupsView.vue`:49 hunk → 2~8 hunk
 - 融合脚本:加 gofmt 归一化步骤,漂移类伪冲突不再计入统计
+
+## 7. P0 完成度矩阵(2026-09-04 收尾)
+
+| 区域 | 定性 | 实施动作 | 状态 |
+| --- | --- | --- | --- |
+| passthrough.go | 32 hunk 分类完成 | A 漂移清理(注释归位/包装调用)、D6 空错误码对齐上游;A 类其余为等价重排与注释,收益低不逐处清理 | ✅ 已提交推送 |
+| billing_service.go | 441 行差异仅 11.3% 格式,长期分叉 | 长上下文扩展(常量+usesLegacy+CalculateCostWithLongContext)抽入 `billing_nova_ext.go`,diff 441→317 行 | ✅ 已提交推送 |
+| GroupsView.vue | 不需分页;Nova 区块可子组件化 | **子组件抽取待实施**(6614 行单文件,需 UI 验收) | ⏳ 待办 |
+| types/index.ts + i18n | 上游自基线零改动,差异全 Nova 定制 | **决策:保持现状即最薄**;仅 5 行覆写是真实冲突面;触发条件(上游块级重写/词条激增)后再切 overlay | ✅ 已决策并记录 |
+| ent/schema + 生成物 | 无手改生成物,13 列全 schema 驱动 | **决策:不整体上移**(group 热路径/usage_log 事务一致性风险);新功能开新实体;238/239 迁移缺口已修复并全新库冒烟;同步脚本根修已落地 | ✅ 已提交推送 |
+| 上游净增 C1(代理快照 e9e3c46cb/4c1f920d5) | 60 文件系统级功能 | 属 merge-base 后新功能,**建议随下一次全量同步按 Nova 分批流程吸收**,不手工移植 | ⏳ 排入下次同步 |
+
+**验证基线**:go1.27.0(GOTOOLCHAIN,与上游 go.mod 一致)下 `internal/service`、`internal/repository`、`migrations` 全绿;脚本测试 19 passed;迁移链全新数据库 Compose 冒烟通过(镜像 sha-cb472cf6)。
