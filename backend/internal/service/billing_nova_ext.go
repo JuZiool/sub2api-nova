@@ -18,6 +18,16 @@ func usesOpenAILegacyLongContextPricing(normalized string) bool {
 	return normalized == "gpt-5.4" || normalized == "gpt-5.5" || normalized == "gpt-5.5-pro"
 }
 
+// longContextMultiplierOrOne 把长上下文倍率归一为 1：目录数据单侧漏配（≤0）时按 1x 计费，
+// 防止直乘 0 导致该分项免费（上游同款防御）。Nova"显式 0 关闭阶梯"的语义由阈值与
+// LongContextExplicit 在启用判定层处理，不受此归一影响。
+func longContextMultiplierOrOne(m float64) float64 {
+	if m <= 0 {
+		return 1
+	}
+	return m
+}
+
 // CalculateCostWithLongContext 计算费用，支持长上下文双倍计费
 // threshold: 阈值（如 200000），超过此值的部分按 extraMultiplier 倍计费
 // extraMultiplier: 超出部分的倍率（如 2.0 表示双倍）
