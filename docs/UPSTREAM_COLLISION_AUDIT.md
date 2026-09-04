@@ -117,6 +117,6 @@
 | GroupsView.vue | 不需分页;Nova 区块可子组件化 | **第一步已实施**:模型专属倍率编辑器抽为 `GroupsRateRulesEditor.vue`(模板 60+ 行×2 移出,typecheck/lint/vitest 223/build 全绿);hidden models textarea(与 modelsList 状态强耦合)暂留父页;platform 白名单/tooltip 回灌待产品确认 | ✅ 已提交推送(a3abc8e8c) |
 | types/index.ts + i18n | 上游自基线零改动,差异全 Nova 定制 | **决策:保持现状即最薄**;仅 5 行覆写是真实冲突面;触发条件(上游块级重写/词条激增)后再切 overlay | ✅ 已决策并记录 |
 | ent/schema + 生成物 | 无手改生成物,13 列全 schema 驱动 | **决策:不整体上移**(group 热路径/usage_log 事务一致性风险);新功能开新实体;238/239 迁移缺口已修复并全新库冒烟;同步脚本根修已落地 | ✅ 已提交推送 |
-| 上游净增 C1(代理快照 e9e3c46cb/4c1f920d5) | 60 文件系统级功能 | 属 merge-base 后新功能,**建议随下一次全量同步按 Nova 分批流程吸收**,不手工移植 | ⏳ 排入下次同步 |
+| 上游净增 C1(代理快照 e9e3c46cb/4c1f920d5) | 60 文件系统级功能 | **已移植**(d708f7244,PR #6179 以 `cherry-pick -m 1` 应用,仅 4 文件冲突):接收 proxy_id/proxy_name 归属快照与哨兵规则;保留 Nova compact 回退上抛语义(未采纳同帧合成响应);3 个上游语义测试未适配而移除;service 全量回归+全仓编译通过 | ✅ 已提交推送 |
 
 **验证基线**:go1.27.0(GOTOOLCHAIN,与上游 go.mod 一致)下 `internal/service`、`internal/repository`、`migrations` 全绿;脚本测试 19 passed;迁移链全新数据库 Compose 冒烟通过(镜像 sha-cb472cf6)。
