@@ -86,6 +86,10 @@
 - 待办:`227_composite_routes_add_cn_providers.sql`(约束放宽)是否补齐需产品确认(Nova 前端已收紧 composite 平台到 5 个)
 - 根修:同步脚本对"上游新增迁移"应从"直接过滤"改为"登记+人工放行",防止再次重演
 
+**全新数据库冒烟验证(2026-09-04,镜像 sha-cb472cf6)**:空数据目录启动 Compose(独立 project/端口 18081),完整迁移链执行成功:
+`schema_migrations` 含 238/239;`channel_model_pricing.fast_multiplier/flex_multiplier` 列存在;
+`usage_logs` 两个 effective 索引存在;`/health` ok;管理员登录成功;验证后容器与临时目录已清理。
+
 ### 6.2 待业务拍板清单(不自动实施)
 
 1. `billing_service.go` R15 乘 0 免费漏洞(建议跟随上游 orOne 归一化,或数据校验双侧 >0)
