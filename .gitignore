@@ -145,6 +145,7 @@ deploy/docker-compose.override.yml
 vite.config.js
 docs/*
 !docs/frontend-liquid-glass-execution-plan.md
+!docs/UPSTREAM_COLLISION_AUDIT.md
 !docs/upstream-auto-sync-plan.md
 !docs/PAYMENT.md
 !docs/PAYMENT_CN.md
