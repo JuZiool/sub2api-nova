@@ -8,12 +8,7 @@
       "backend/internal/service/openai_codex_quota_overdraft_integration.go",
       "backend/internal/service/openai_codex_quota_overdraft_probe.go",
       "backend/internal/repository/account_repo_codex_overdraft.go",
-      "backend/internal/service/cn_provider_balance_check_service.go",
-      "backend/internal/service/cn_provider_balance_service.go",
-      "backend/internal/service/cn_provider_quota_service.go",
-      "backend/internal/domain/constants.go",
       "backend/internal/service/domain_constants.go",
-      "backend/internal/payment",
       "frontend/src/views/HomeView.vue",
       "frontend/src/styles",
       "frontend/src/components",
@@ -39,9 +34,7 @@
       "backend/migrations",
       "deploy",
       "Dockerfile",
-      "backend/internal/service/openai_codex_quota_overdraft.go",
-      "backend/internal/service/cn_provider_balance_service.go",
-      "backend/internal/payment"
+      "backend/internal/service/openai_codex_quota_overdraft.go"
     ]
   },
   "classificationRules": {
@@ -57,5 +50,5 @@
     "frontend lint, typecheck, tests, and build",
     "Nova Docker Compose build, startup, and health smoke checks"
   ],
-  "updatedAt": "2026-08-26T00:00:00Z"
+  "updatedAt": "2026-09-05T00:00:00Z"
 }
