@@ -119,4 +119,4 @@
 | ent/schema + 生成物 | 无手改生成物,13 列全 schema 驱动 | **决策:不整体上移**(group 热路径/usage_log 事务一致性风险);新功能开新实体;238/239 迁移缺口已修复并全新库冒烟;同步脚本根修已落地 | ✅ 已提交推送 |
 | 上游净增 C1(代理快照 e9e3c46cb/4c1f920d5) | 60 文件系统级功能 | **已移植**(d708f7244,PR #6179 以 `cherry-pick -m 1` 应用,仅 4 文件冲突):接收 proxy_id/proxy_name 归属快照与哨兵规则;保留 Nova compact 回退上抛语义(未采纳同帧合成响应);3 个上游语义测试未适配而移除;service 全量回归+全仓编译通过 | ✅ 已提交推送 |
 
-**验证基线**:go1.27.0(GOTOOLCHAIN,与上游 go.mod 一致)下 `internal/service`、`internal/repository`、`migrations` 全绿;脚本测试 19 passed;迁移链全新数据库 Compose 冒烟通过(镜像 sha-cb472cf6)。
+**验证基线**:go1.27.0(GOTOOLCHAIN,与上游 go.mod 一致)下 `internal/service`、`internal/repository`、`migrations` 全绿;脚本测试 19 passed;迁移链全新数据库 Compose 冒烟通过(镜像 sha-cb472cf6);C1 移植镜像 sha-d708f7244 全新数据目录部署冒烟通过(/health、登录、日志、迁移链)。
