@@ -595,24 +595,14 @@
           />
           <p class="input-hint">{{ t("admin.groups.rateMultiplierHint") }}</p>
         </div>
-        <div class="space-y-2 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-          <div class="flex items-center justify-between gap-2">
-            <div>
-              <label class="input-label">模型专属倍率</label>
-              <p class="input-hint">自动获取可用模型，倍率由管理员设置；未配置模型使用默认倍率。</p>
-            </div>
-            <button type="button" class="btn btn-secondary btn-sm" @click="addModelRateRule(createForm.model_rate_multipliers)">添加规则</button>
-          </div>
-          <select class="input w-full" :disabled="createModelRateCandidatesLoading" @change="addCandidateModelRateRule(createForm.model_rate_multipliers, $event)">
-            <option value="">{{ createModelRateCandidatesLoading ? '正在获取模型…' : '从自动获取的模型中添加' }}</option>
-            <option v-for="model in createModelRateCandidates" :key="model" :value="model">{{ model }}</option>
-          </select>
-          <div v-for="(rule, index) in createForm.model_rate_multipliers" :key="`${rule.pattern}-${index}`" class="flex gap-2">
-            <input v-model.trim="rule.pattern" class="input flex-1" placeholder="模型名称或前缀，例如 gpt-5.6-*" />
-            <input v-model.number="rule.multiplier" class="input w-28" type="number" min="0" max="1000" step="any" />
-            <button type="button" class="btn btn-danger btn-sm" @click="createForm.model_rate_multipliers.splice(index, 1)">删除</button>
-          </div>
-        </div>
+        <GroupsRateRulesEditor
+          :rules="createForm.model_rate_multipliers"
+          :candidates="createModelRateCandidates"
+          :loading="createModelRateCandidatesLoading"
+          @add="addModelRateRule(createForm.model_rate_multipliers)"
+          @pick="addModelRateRule(createForm.model_rate_multipliers, $event)"
+          @remove="createForm.model_rate_multipliers.splice($event, 1)"
+        />
         <div>
           <label class="input-label">{{ t("admin.groups.form.rpmLimit") }}</label>
           <input
@@ -2306,24 +2296,14 @@
             data-tour="group-form-multiplier"
           />
         </div>
-        <div class="space-y-2 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-          <div class="flex items-center justify-between gap-2">
-            <div>
-              <label class="input-label">模型专属倍率</label>
-              <p class="input-hint">自动获取可用模型，倍率由管理员设置；未配置模型使用默认倍率。</p>
-            </div>
-            <button type="button" class="btn btn-secondary btn-sm" @click="addModelRateRule(editForm.model_rate_multipliers)">添加规则</button>
-          </div>
-          <select class="input w-full" :disabled="editModelRateCandidatesLoading" @change="addCandidateModelRateRule(editForm.model_rate_multipliers, $event)">
-            <option value="">{{ editModelRateCandidatesLoading ? '正在获取模型…' : '从自动获取的模型中添加' }}</option>
-            <option v-for="model in editModelRateCandidates" :key="model" :value="model">{{ model }}</option>
-          </select>
-          <div v-for="(rule, index) in editForm.model_rate_multipliers" :key="`${rule.pattern}-${index}`" class="flex gap-2">
-            <input v-model.trim="rule.pattern" class="input flex-1" placeholder="模型名称或前缀，例如 gpt-5.6-*" />
-            <input v-model.number="rule.multiplier" class="input w-28" type="number" min="0" max="1000" step="any" />
-            <button type="button" class="btn btn-danger btn-sm" @click="editForm.model_rate_multipliers.splice(index, 1)">删除</button>
-          </div>
-        </div>
+        <GroupsRateRulesEditor
+          :rules="editForm.model_rate_multipliers"
+          :candidates="editModelRateCandidates"
+          :loading="editModelRateCandidatesLoading"
+          @add="addModelRateRule(editForm.model_rate_multipliers)"
+          @pick="addModelRateRule(editForm.model_rate_multipliers, $event)"
+          @remove="editForm.model_rate_multipliers.splice($event, 1)"
+        />
         <div>
           <label class="input-label">{{ t("admin.groups.form.rpmLimit") }}</label>
           <input
@@ -4411,6 +4391,7 @@ import HelpTooltip from "@/components/common/HelpTooltip.vue";
 import Icon from "@/components/icons/Icon.vue";
 import GroupRateMultipliersModal from "@/components/admin/group/GroupRateMultipliersModal.vue";
 import GroupRPMOverridesModal from "@/components/admin/group/GroupRPMOverridesModal.vue";
+import GroupsRateRulesEditor from "@/components/admin/group/GroupsRateRulesEditor.vue";
 import GroupCapacityBadge from "@/components/common/GroupCapacityBadge.vue";
 import ReasoningEffortPolicyFields from "@/components/admin/group/ReasoningEffortPolicyFields.vue";
 import PricingEntryCard from "@/components/admin/channel/PricingEntryCard.vue";
@@ -5361,16 +5342,6 @@ const addModelRateRule = (rules: ModelRateMultiplierRule[], pattern = "") => {
   const normalized = pattern.trim();
   if (normalized && rules.some((rule) => rule.pattern.trim() === normalized)) return;
   rules.push({ pattern: normalized, multiplier: 1 });
-};
-
-const addCandidateModelRateRule = (
-  rules: ModelRateMultiplierRule[],
-  event: Event,
-) => {
-  const select = event.target as HTMLSelectElement;
-  const pattern = select.value;
-  if (pattern) addModelRateRule(rules, pattern);
-  select.value = "";
 };
 
 const moveCreateModelsListItem = (fromIndex: number, toIndex: number) => {
