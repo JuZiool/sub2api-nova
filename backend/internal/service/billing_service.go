@@ -364,9 +364,29 @@ func (s *BillingService) initFallbackPricing() {
 		LongContextInputMultiplier:     openAIGPT54LongContextInputMultiplier,
 		LongContextOutputMultiplier:    openAIGPT54LongContextOutputMultiplier,
 	}
-	// GPT-5.5 / GPT-5.5 Pro 暂无独立定价，回退到 GPT-5.4。
-	s.fallbackPrices["gpt-5.5"] = s.fallbackPrices["gpt-5.4"]
-	s.fallbackPrices["gpt-5.5-pro"] = s.fallbackPrices["gpt-5.4"]
+	// OpenAI GPT-5.5 官方价格（USD/token）；Fast/priority 为标准价 2.5 倍
+	// （来源：platform.openai.com/docs/pricing，随上游独立价卡，不再别名 GPT-5.4）。
+	// 长上下文走 Nova legacy 名单（usesOpenAILegacyLongContextPricing），由
+	// applyModelSpecificPricingPolicy 补默认阈值/倍率，语义与 GPT-5.4 卡一致。
+	s.fallbackPrices["gpt-5.5"] = &ModelPricing{
+		InputPricePerToken:                 5e-6,    // $5 per MTok
+		InputPricePerTokenPriority:         12.5e-6, // $12.5 per MTok（Fast 2.5x）
+		OutputPricePerToken:                30e-6,   // $30 per MTok
+		OutputPricePerTokenPriority:        75e-6,   // $75 per MTok（Fast 2.5x）
+		CacheCreationPricePerToken:         5e-6,    // 官方未列独立 cache-write，按输入价兜底
+		CacheCreationPricePerTokenPriority: 12.5e-6,
+		CacheReadPricePerToken:             0.5e-6, // $0.5 per MTok
+		CacheReadPricePerTokenPriority:     1.25e-6,
+		SupportsCacheBreakdown:             false,
+	}
+	// GPT-5.5 Pro 官方价格；当前不提供 Fast/priority 档（保留标准价）。
+	s.fallbackPrices["gpt-5.5-pro"] = &ModelPricing{
+		InputPricePerToken:         30e-6,  // $30 per MTok
+		OutputPricePerToken:        180e-6, // $180 per MTok
+		CacheCreationPricePerToken: 30e-6,  // 官方未列独立 cache-write，按输入价兜底
+		CacheReadPricePerToken:     30e-6,  // 官方未列独立 cached-input，按输入价兜底
+		SupportsCacheBreakdown:     false,
+	}
 
 	// OpenAI GPT-5.6 官方价格（USD/token）。缓存写入为输入价的 1.25 倍。
 	s.fallbackPrices["gpt-5.6-sol"] = &ModelPricing{

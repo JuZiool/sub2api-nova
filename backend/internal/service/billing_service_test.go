@@ -282,7 +282,7 @@ func TestCalculateCost_OpenAIGPT54LongContextMarkerRequiresActualCostIncrease(t 
 	require.False(t, cost.LongContextBillingApplied)
 }
 
-func TestCalculateCost_OpenAIGPT55ProUsesGPT55PricingPolicy(t *testing.T) {
+func TestCalculateCost_OpenAIGPT55ProUsesOfficialPricingPolicy(t *testing.T) {
 	svc := newTestBillingService()
 
 	tokens := UsageTokens{
@@ -293,12 +293,29 @@ func TestCalculateCost_OpenAIGPT55ProUsesGPT55PricingPolicy(t *testing.T) {
 	cost, err := svc.CalculateCost("gpt-5.5-pro", tokens, 1.0)
 	require.NoError(t, err)
 
-	expectedInput := float64(tokens.InputTokens) * 2.5e-6 * 2.0
-	expectedOutput := float64(tokens.OutputTokens) * 15e-6 * 1.5
+	// GPT-5.5 Pro 官方价（$30/$180 per MTok）+ Nova legacy 长上下文名单倍率（2x/1.5x）。
+	expectedInput := float64(tokens.InputTokens) * 30e-6 * 2.0
+	expectedOutput := float64(tokens.OutputTokens) * 180e-6 * 1.5
 	require.InDelta(t, expectedInput, cost.InputCost, 1e-10)
 	require.InDelta(t, expectedOutput, cost.OutputCost, 1e-10)
 	require.InDelta(t, expectedInput+expectedOutput, cost.TotalCost, 1e-10)
 	require.InDelta(t, expectedInput+expectedOutput, cost.ActualCost, 1e-10)
+}
+
+func TestCalculateCost_OpenAIGPT55FallbackUsesOfficialPricing(t *testing.T) {
+	svc := newTestBillingService()
+
+	// 低于长上下文阈值：走官方标准价，不叠加 legacy 倍率。
+	cost, err := svc.CalculateCost("gpt-5.5", UsageTokens{InputTokens: 1000, OutputTokens: 100}, 1.0)
+	require.NoError(t, err)
+	require.InDelta(t, 1000*5e-6, cost.InputCost, 1e-10)
+	require.InDelta(t, 100*30e-6, cost.OutputCost, 1e-10)
+
+	// Fast/priority 档：标准价 2.5 倍。
+	fastCost, err := svc.CalculateCostWithServiceTier("gpt-5.5", UsageTokens{InputTokens: 1000, OutputTokens: 100}, 1.0, "fast")
+	require.NoError(t, err)
+	require.InDelta(t, 1000*12.5e-6, fastCost.InputCost, 1e-10)
+	require.InDelta(t, 100*75e-6, fastCost.OutputCost, 1e-10)
 }
 
 // 回归测试 #2293：长上下文计费触发时，cache_read_tokens 也应应用 LongContextInputMultiplier。
