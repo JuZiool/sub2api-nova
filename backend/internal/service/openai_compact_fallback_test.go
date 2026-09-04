@@ -193,6 +193,74 @@ func TestOpenAIGatewayForwardRetriesExplicitNativeCompactHTTPFailureOnce(t *test
 	require.NotContains(t, upstream.requests[1].URL.Path, "/compact")
 }
 
+func compactFallbackManagedProxyAccount() (*Account, *Proxy) {
+	proxy := &Proxy{ID: 10060, Name: "wldsg82-ipv6-10060", Protocol: "http", Host: "proxy.example", Port: 8080}
+	return &Account{
+		ID: 1, Name: "openai-oauth", Platform: PlatformOpenAI, Type: AccountTypeOAuth, Concurrency: 1,
+		Credentials: map[string]any{"access_token": "oauth-token", "chatgpt_account_id": "chatgpt-account"},
+		Status:      StatusActive, Schedulable: true,
+		ProxyID: &proxy.ID, Proxy: proxy,
+	}, proxy
+}
+
+func requireCompactEventsAttributedTo(t *testing.T, events []*OpsUpstreamErrorEvent, proxy *Proxy) {
+	t.Helper()
+	for i, ev := range events {
+		require.NotNil(t, ev.ProxyID, "event %d proxy_id", i)
+		require.Equal(t, proxy.ID, *ev.ProxyID, "event %d proxy_id", i)
+		require.Equal(t, proxy.Name, ev.ProxyName, "event %d proxy_name", i)
+	}
+}
+
+// Non-streaming SSE compact retry: the first attempt's failure must be recorded
+// as its own attempt (it previously vanished on `continue`), carrying the
+// managed proxy the transport actually used.
+func TestOpenAIGatewayForwardNonStreamCompactRetryRecordsAttemptWithManagedProxy(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	body := []byte(`{"model":"gpt-5.5","stream":false,"instructions":"compact-test","input":[{"type":"message","role":"user","content":"hello"},{"type":"compaction_trigger"}]}`)
+	c := newOpenAICompactFallbackTestContext(t, "/v1/responses")
+	c.Request.Body = io.NopCloser(bytes.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+	MarkOpenAINativeCompactionV2(c)
+
+	upstream := &httpUpstreamRecorder{responses: []*http.Response{
+		{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"text/event-stream"}, "X-Request-Id": []string{"rid_compact_1"}},
+			Body: io.NopCloser(strings.NewReader("event: response.failed\n" +
+				`data: {"type":"response.failed","response":{"status":"failed","error":{"code":"context_length_exceeded","message":"context window exceeded"}}}` + "\n\n")),
+		},
+		{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body:       io.NopCloser(strings.NewReader(`{"id":"resp_compact","status":"completed","model":"gpt-5.4","output":[],"usage":{"input_tokens":1,"output_tokens":1}}`)),
+		},
+	}}
+	svc := &OpenAIGatewayService{
+		cfg:          &config.Config{Gateway: config.GatewayConfig{OpenAICompactModel: "gpt-5.4"}},
+		httpUpstream: upstream,
+	}
+	account, proxy := compactFallbackManagedProxyAccount()
+
+	result, err := svc.Forward(context.Background(), c, account, body)
+
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Len(t, upstream.bodies, 2)
+	require.Equal(t, proxy.URL(), upstream.lastProxyURL)
+	rawEvents, ok := c.Get(OpsUpstreamErrorsKey)
+	require.True(t, ok)
+	events, ok := rawEvents.([]*OpsUpstreamErrorEvent)
+	require.True(t, ok)
+	require.Len(t, events, 1)
+	require.Equal(t, "retry", events[0].Kind)
+	require.Equal(t, "compact_model_fallback", events[0].Reason)
+	require.Equal(t, "rid_compact_1", events[0].UpstreamRequestID)
+	requireCompactEventsAttributedTo(t, events, proxy)
+}
+
+// Streaming compact fallback whose second attempt fails with a failover-class
+// error: both the retry event and the failover event must carry the proxy.
 func TestOpenAIGatewayForwardRetriesExplicitNativeCompactSSEFailureBeforeOutput(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	body := []byte(`{"model":"gpt-5.5","stream":false,"instructions":"compact-test","input":[{"type":"message","role":"user","content":"hello"},{"type":"compaction_trigger"}]}`)

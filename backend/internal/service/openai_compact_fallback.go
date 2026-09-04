@@ -21,6 +21,50 @@ func (e *openAICompactFallbackSignal) Error() string {
 	return e.message
 }
 
+// appendOpenAICompactFallbackRetryOps 记录一次 compact 模型回退重试的运维事件
+// （随上游 PR #6179 引入，纯监控记账，不参与转发与计费）。
+func (s *OpenAIGatewayService) appendOpenAICompactFallbackRetryOps(
+	c *gin.Context,
+	account *Account,
+	resp *http.Response,
+	payload []byte,
+	message string,
+	passthrough bool,
+) {
+	if account == nil {
+		return
+	}
+	statusCode := http.StatusBadRequest
+	requestID := ""
+	if resp != nil {
+		statusCode = resp.StatusCode
+		requestID = resp.Header.Get("x-request-id")
+	}
+	detail := ""
+	if s != nil && s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
+		maxBytes := s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes
+		if maxBytes <= 0 {
+			maxBytes = 2048
+		}
+		detail = truncateString(string(payload), maxBytes)
+	}
+	appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+		ProxyID:              opsUpstreamProxyID(account),
+		ProxyName:            opsUpstreamProxyName(account),
+		Platform:             account.Platform,
+		AccountID:            account.ID,
+		AccountName:          account.Name,
+		UpstreamStatusCode:   statusCode,
+		UpstreamRequestID:    requestID,
+		Passthrough:          passthrough,
+		Kind:                 "retry",
+		Reason:               "compact_model_fallback",
+		Message:              sanitizeUpstreamErrorMessage(strings.TrimSpace(message)),
+		Detail:               detail,
+		UpstreamResponseBody: detail,
+	})
+}
+
 func asOpenAICompactFallbackSignal(err error) (*openAICompactFallbackSignal, bool) {
 	var signal *openAICompactFallbackSignal
 	return signal, errors.As(err, &signal) && signal != nil
