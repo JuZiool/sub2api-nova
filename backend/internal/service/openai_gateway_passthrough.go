@@ -92,8 +92,6 @@ func openAIResponsesClientToolMapping(c *gin.Context) (apicompat.ResponsesClient
 	return mapping, ok && typed && hasOpenAIResponsesClientToolMapping(mapping)
 }
 
-// clearOpenAIResponsesClientToolMapping removes mapping state from the prior
-// forwarding attempt. Forward retries accounts on the same Gin context.
 func setOpenAIResponsesClientToolMapping(c *gin.Context, mapping apicompat.ResponsesClientToolMapping) {
 	if c == nil {
 		return
@@ -105,6 +103,8 @@ func setOpenAIResponsesClientToolMapping(c *gin.Context, mapping apicompat.Respo
 	c.Set(openAIResponsesClientToolMappingContextKey, mapping)
 }
 
+// clearOpenAIResponsesClientToolMapping removes mapping state from the prior
+// forwarding attempt. Forward retries accounts on the same Gin context.
 func clearOpenAIResponsesClientToolMapping(c *gin.Context) {
 	if c == nil {
 		return
@@ -229,7 +229,7 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 			return nil, adaptErr
 		}
 		body = adaptedBody
-		c.Set(openAIResponsesClientToolMappingContextKey, mapping)
+		setOpenAIResponsesClientToolMapping(c, mapping)
 	}
 
 	sanitizedBody, sanitized, err := sanitizeEmptyBase64InputImagesInOpenAIBody(body)
