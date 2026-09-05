@@ -34,10 +34,13 @@ type noAccountErrorClassification struct {
 	ModelNotFound bool // true when this is a 404 model_not_found classification
 }
 
+//nolint:unused // 保留：Nova 429 fail-closed 语义的判定依据，上游重构后暂无调用点
 var selectionModelRateLimitedPattern = regexp.MustCompile(`(?:model_rate_limited|rate_limited)=(\d+)`)
 
 // classifySelectionFailureError preserves the scheduler's compact reason when
 // every model-capable account is temporarily rate limited.
+//
+//nolint:unused // 保留：Nova 429 fail-closed 语义的判定依据，上游重构后暂无调用点
 func classifySelectionFailureError(err error, fallback noAccountErrorClassification) noAccountErrorClassification {
 	if err == nil {
 		return fallback

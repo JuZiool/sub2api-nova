@@ -154,7 +154,6 @@ func configuredServiceTierMultiplier(serviceTier string, pricing *ModelPricing) 
 			if pricing.FastMultiplier != nil {
 				return *pricing.FastMultiplier
 			}
-			break
 		case "flex":
 			if pricing.FlexMultiplier != nil {
 				return *pricing.FlexMultiplier

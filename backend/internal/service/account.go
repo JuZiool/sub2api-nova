@@ -325,8 +325,8 @@ func (a *Account) IsGeminiCodeAssist() bool {
 	return oauthType == "code_assist"
 }
 
-/* IsGeminiGoogleOne reports whether this account uses the legacy consumer
-// Gemini CLI / Code Assist OAuth channel. */
+// IsGeminiGoogleOne reports whether this account uses the legacy consumer
+// Gemini CLI / Code Assist OAuth channel.
 func (a *Account) IsGeminiGoogleOne() bool {
 	return a.Platform == PlatformGemini && a.Type == AccountTypeOAuth && a.GeminiOAuthType() == "google_one"
 }

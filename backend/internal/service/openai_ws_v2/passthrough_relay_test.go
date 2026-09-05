@@ -46,6 +46,7 @@ type eofReplacementFrameConn struct {
 	err error
 }
 
+//nolint:unused // 上游测试脚手架，保留以便后续用例复用
 type cancelJoinProbeFrameConn struct {
 	readStarted  chan struct{}
 	readCanceled chan struct{}
