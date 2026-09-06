@@ -57,6 +57,9 @@ func (s *OpenAIGatewayService) forwardAnthropicViaNativeAnthropicEndpoint(
 		}
 		body = rewritten
 	}
+	if normalized, changed := NormalizeGLM53AnthropicThinking(body, upstreamModel); changed {
+		body = normalized
+	}
 
 	// 与 Anthropic 平台 passthrough 相同的 pre-filter：剥离空文本块与上游
 	// 无法接受的 web-search 历史块（GLM/Kimi/DeepSeek 对 server_tool_use 400）。
@@ -233,6 +236,7 @@ func (s *OpenAIGatewayService) handleNativeAnthropicBufferedResponse(
 
 	return &OpenAIForwardResult{
 		RequestID:        resp.Header.Get("x-request-id"),
+		UpstreamHeaders:  resp.Header,
 		Usage:            claudeUsageToOpenAIUsage(usage),
 		Model:            originalModel,
 		BillingModel:     billingModel,
@@ -503,6 +507,7 @@ func (s *OpenAIGatewayService) nativeAnthropicStreamResult(
 	}
 	return &OpenAIForwardResult{
 		RequestID:        resp.Header.Get("x-request-id"),
+		UpstreamHeaders:  resp.Header,
 		Usage:            claudeUsageToOpenAIUsage(usage),
 		Model:            originalModel,
 		BillingModel:     billingModel,
