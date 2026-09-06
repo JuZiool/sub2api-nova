@@ -586,7 +586,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             for relative in ("FORK_VERSION", "backend/cmd/server/VERSION")
             if (config.root / relative).exists()
         ]
-        blocked = preflight.blocked
+        # 新增的受保护文件无法通过“保留现有 Nova 文件”安全处理，因为 Nova
+        # 树中没有对应实现可保留。候选必须停下，等待按完整功能链人工放行。
+        blocked = preflight.blocked or bool(pending_new_protected)
         report = {
             "generatedAt": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "oldUpstreamCommit": old,

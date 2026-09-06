@@ -187,6 +187,29 @@ class SyncUpstreamFixtureTests(unittest.TestCase):
             self.assertIn("sync/delete", git(fixture.root, "branch"))
             self.assertTrue((fixture.root / "stop.txt").exists())
 
+    def test_new_protected_path_blocks_candidate_for_manual_review(self):
+        with tempfile.TemporaryDirectory() as directory:
+            policy = {
+                "criticalPaths": ["frontend/src/components/"],
+                "manualReviewPaths": [],
+                "stopOnDeletePaths": [],
+            }
+            fixture = SyncFixture(Path(directory), policy)
+            component = fixture.root / "frontend/src/components/NewUpstreamField.vue"
+            git(fixture.root, "switch", "-c", "upstream-work")
+            component.write_text("<template />\n", encoding="utf-8")
+            new = commit(fixture.root, "upstream adds protected component")
+            git(fixture.root, "switch", "main")
+            git(fixture.root, "branch", "-D", "upstream-work")
+
+            result = fixture.run(new, "--branch", "sync/protected-addition")
+
+            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertNotIn("sync/protected-addition", git(fixture.root, "branch"))
+            report = (fixture.root / "artifacts/report.md").read_text(encoding="utf-8")
+            self.assertIn("blocked", report)
+            self.assertIn("NewUpstreamField.vue", report)
+
 
 if __name__ == "__main__":
     unittest.main()
